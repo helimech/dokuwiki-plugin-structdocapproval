@@ -1,0 +1,124 @@
+.plugin-structdocapproval-banner {
+    border: 1px solid @ini_border;
+    background: @ini_background_alt;
+    padding: 0.85rem 1rem;
+    margin: 0 0 1.25rem 0;
+    clear: both;
+
+    &.compact {
+        padding: 0.35rem 0.6rem;
+        margin-bottom: 0.75rem;
+    }
+
+    &.reader {
+        padding: 0.3rem 0.6rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.92em;
+    }
+
+    .docapproval-headline {
+        font-size: 1.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .docapproval-context,
+    .docapproval-training-summary,
+    .docapproval-return-note {
+        margin: 0.25rem 0;
+    }
+
+    .docapproval-return-note {
+        border-left: 4px solid #c66;
+        padding: 0.35rem 0.6rem;
+        background: rgba(204, 102, 102, 0.08);
+    }
+
+    .docapproval-stages {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(9rem, 1fr));
+        gap: 0.5rem;
+        margin: 0.75rem 0;
+    }
+
+    .docapproval-stage {
+        border-top: 3px solid @ini_border;
+        padding: 0.35rem 0.45rem;
+        min-width: 0;
+
+        &.done { border-top-color: #4a8; }
+        &.active { border-top-color: #d98b16; font-weight: 600; }
+        &.pending { opacity: 0.55; }
+
+        .stage-title { white-space: nowrap; }
+        .stage-user, .stage-date { font-size: 0.9em; font-weight: normal; overflow-wrap: anywhere; }
+        .stage-symbol { display: inline-block; width: 1.2em; }
+    }
+
+    .docapproval-actions {
+        border-top: 1px solid @ini_border;
+        padding-top: 0.65rem;
+        margin-top: 0.65rem;
+    }
+
+    .docapproval-action-form {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        align-items: center;
+        margin: 0.25rem 0;
+
+        label { margin: 0; }
+        input.docapproval-comment { min-width: 22em; }
+        input.docapproval-note { min-width: 26em; }
+        input.docapproval-version { width: 7em; }
+        button.danger { border-color: #a44; }
+    }
+
+    details.docapproval-admin-override {
+        margin-top: 0.55rem;
+        opacity: 0.85;
+    }
+
+    .docapproval-warning { font-weight: 600; }
+}
+
+.plugin-structdocapproval-version,
+.plugin-structdocapproval-revision-status {
+    border-radius: 2px;
+    background: rgba(80, 170, 110, 0.18);
+    padding: 0.1em 0.3em;
+}
+
+.plugin-structdocapproval-rules {
+    width: 100%;
+    table-layout: auto;
+
+    input.edit { width: 100%; min-width: 8em; box-sizing: border-box; }
+    td:nth-child(3) input { min-width: 18em; }
+    .rule-actions { white-space: nowrap; }
+}
+
+.plugin-structdocapproval-current table,
+.plugin-structdocapproval-history table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.plugin-structdocapproval-current th,
+.plugin-structdocapproval-current td,
+.plugin-structdocapproval-history th,
+.plugin-structdocapproval-history td {
+    padding-right: 1em;
+    vertical-align: top;
+}
+
+.plugin-structdocapproval-current td:first-child,
+.plugin-structdocapproval-history td:first-child {
+    min-width: 12em;
+}
+
+@media (max-width: 900px) {
+    .plugin-structdocapproval-banner .docapproval-stages {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

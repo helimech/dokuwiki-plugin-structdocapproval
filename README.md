@@ -41,6 +41,37 @@ Editors and workflow participants see the full workflow tracker and the actions 
 
 A DokuWiki **Minor Change** on a Published page may preserve Published status when made by an administrator or assigned Publisher and when the option is enabled. Minor edits during Draft, Review, Training, or Ready-to-Publish return to Draft like other content changes.
 
+## DW2PDF integration
+
+Struct DocApproval adds document-control placeholders to DW2PDF templates through DW2PDF's `PLUGIN_DW2PDF_REPLACE` event. No changes to DW2PDF itself are required.
+
+Available placeholders:
+
+- `@DOCREV@` — Published document revision; `DRAFT` when exporting an unpublished working revision
+- `@DOCDATE@` — publication date
+- `@DOCPUBLISHEDBY@` — publisher display name
+- `@DOCSTATUS@` — `Published` or `WORKING DRAFT - NOT APPROVED`
+- `@DOCLASTPUBREV@` — last Published document revision
+- `@DOCLASTPUBDATE@` — last Published date
+
+Example `footer.html`:
+
+```html
+<table width="100%">
+  <tr>
+    <td>@ID@</td>
+    <td style="text-align:center;">Revision @DOCREV@</td>
+    <td style="text-align:right;">@DOCSTATUS@ &nbsp; @DOCDATE@ &nbsp; Page @PAGE@ of @PAGES@</td>
+  </tr>
+</table>
+```
+
+A working revision exported by a workflow participant is deliberately marked `DRAFT` / `WORKING DRAFT - NOT APPROVED`. Ordinary readers continue to be restricted to the last Published revision.
+
+## Workflow notes
+
+The generic workflow Note is recorded on successful actions as well as returns. Notes are optional for Ready for Review, Approve, Training Review, and Publish, but remain mandatory for Return for Changes, Return to Training, Return to Draft, and Admin Override. Training Note remains a separate field because it describes the training disposition/release-readiness action.
+
 ## Dashboard syntax
 
 Current workflow / work queue:

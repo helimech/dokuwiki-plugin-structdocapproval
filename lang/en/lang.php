@@ -45,8 +45,9 @@ $lang['version_unset'] = 'initial';
 $lang['return_note'] = 'Workflow note';
 $lang['reviewer'] = 'Reviewer';
 $lang['no_reviewer'] = 'No eligible reviewer is configured for this page.';
-$lang['comment_optional_return_required'] = 'Comment (required when returning)';
-$lang['return_comment'] = 'Return comment';
+$lang['note_optional'] = 'Note (optional)';
+$lang['comment_optional_return_required'] = 'Note (required when returning)';
+$lang['return_comment'] = 'Note (required when returning)';
 $lang['training_impact'] = 'Training Impact';
 $lang['training_note'] = 'Training Note';
 $lang['new_version'] = 'New Version';
@@ -123,3 +124,7 @@ $lang['email_training'] = 'Training disposition';
 $lang['email_training_note'] = 'Training note';
 $lang['email_view_page'] = 'View page';
 $lang['email_view_diff'] = 'View changes since the previous published revision';
+
+// DW2PDF integration
+$lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';
+$lang['dw2pdf_published'] = 'Published';

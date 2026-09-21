@@ -46,12 +46,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         $this->renderContext($ID, $shown);
         $this->renderStages($shown);
 
-        if ($shown->get('comment') && in_array($shown->get('action'), [
-            Constants::ACTION_REVIEW_RETURNED,
-            Constants::ACTION_RETURN_TRAINING,
-            Constants::ACTION_RETURN_DRAFT,
-            Constants::ACTION_ADMIN_OVERRIDE,
-        ], true)) {
+        if ($shown->get('comment')) {
             echo '<div class="docapproval-return-note"><strong>' . hsc($this->getLang('return_note')) . ':</strong> ' . hsc($shown->get('comment')) . '</div>';
         }
 
@@ -178,6 +173,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
                     echo '<input type="hidden" name="structdocapproval[reviewer]" value="' . hsc($reviewers[0]) . '" />';
                     echo '<span class="assigned-to">' . hsc($this->getLang('reviewer')) . ': ' . userlink($reviewers[0]) . '</span> ';
                 }
+                echo '<label>' . hsc($this->getLang('note_optional')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
                 echo $this->actionButton(Constants::ACTION_READY_FOR_REVIEW);
                 echo '</form>';
             }
@@ -195,6 +191,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             }
             echo '</select></label> ';
             echo '<label>' . hsc($this->getLang('training_note')) . ' <input type="text" class="edit docapproval-note" name="structdocapproval[training_note]" /></label> ';
+            echo '<label>' . hsc($this->getLang('note_optional')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_TRAINING_REVIEWED);
             echo '</form>';
         } elseif ($status === Constants::STATUS_READY_TO_PUBLISH && $this->db->canPublish($pid)) {
@@ -202,7 +199,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             $suggested = $previous ? Constants::nextVersion((string)$previous->get('version')) : '001';
             echo $this->formStart();
             echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" value="' . hsc($suggested) . '" /></label> ';
-            echo '<label>' . hsc($this->getLang('return_comment')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_PUBLISH);
             echo $this->actionButton(Constants::ACTION_RETURN_TRAINING, 'secondary');
             echo $this->actionButton(Constants::ACTION_RETURN_DRAFT, 'danger');

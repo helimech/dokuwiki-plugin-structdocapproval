@@ -4,6 +4,14 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.3 test build — 2026-09-21
+
+- Added DW2PDF template placeholders for Published revision, date, publisher, status, and last Published revision/date.
+- Working-revision PDF exports are explicitly marked DRAFT / WORKING DRAFT - NOT APPROVED.
+- Workflow notes are now retained on successful transitions as well as returns.
+- Added optional notes at Ready for Review and Training Review; publication notes are retained when Publish is selected.
+- Generic action notes remain separate from the Training Note field.
+
 ## 0.2 test build — 2026-09-17
 
 - Added compact Published banner for ordinary readers.

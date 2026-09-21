@@ -49,7 +49,8 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                     ->set('submitted_by', $actor)
                     ->set('submitted_at', $now)
                     ->set('assigned_reviewer', $reviewer)
-                    ->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version','comment']);
+                    ->set('comment', trim((string)($params['comment'] ?? '')))
+                    ->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
                 break;
 
             case Constants::ACTION_REVIEW_APPROVED:
@@ -91,7 +92,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                     ->set('training_at', $now)
                     ->set('training_disposition', $disposition)
                     ->set('training_note', $note)
-                    ->set('comment', '')
+                    ->set('comment', trim((string)($params['comment'] ?? '')))
                     ->clear(['published_by','published_at','version']);
                 break;
 
@@ -104,7 +105,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                     ->set('version', $version)
                     ->set('published_by', $actor)
                     ->set('published_at', $now)
-                    ->set('comment', '');
+                    ->set('comment', trim((string)($params['comment'] ?? '')));
                 break;
 
             case Constants::ACTION_RETURN_TRAINING:
@@ -163,7 +164,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
     protected function requiredComment(array $params): string
     {
         $comment = trim((string)($params['comment'] ?? ''));
-        if ($comment === '') throw new RuntimeException('A comment is required when returning or overriding a page.');
+        if ($comment === '') throw new RuntimeException('A note is required when returning or overriding a page.');
         return $comment;
     }
 

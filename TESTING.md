@@ -118,3 +118,29 @@ This build has been PHP syntax-checked and its plugin-owned SQL/JSON have been s
 - As an editor/reviewer/training/publisher/admin, confirm the full workflow tracker is still visible.
 - Turn **Enable the administrator workflow override tool** off in Configuration Settings. Confirm the Admin Override details section disappears and a crafted override POST is rejected server-side.
 - With the override tool off, confirm an administrator can still perform normal Review/Training/Publish actions.
+
+
+## 9. Workflow notes
+
+- Ready for Review with an optional Note → confirm the note appears in workflow history.
+- Review Approve with a Note → confirm the note is retained.
+- Review Return for Changes with no Note → must be rejected.
+- Training Review with a Training Note and a separate optional Note → confirm both are retained.
+- Publish with a Note → confirm the publication row in workflow history contains the note.
+- Return to Training / Return to Draft with no Note → must be rejected.
+
+## 10. DW2PDF placeholders
+
+Create or edit a DW2PDF template footer and include:
+
+```html
+@ID@ | Revision @DOCREV@ | @DOCSTATUS@ | @DOCDATE@ | Page @PAGE@ of @PAGES@
+```
+
+Then test:
+
+- Published controlled page → revision is three-digit Published revision and status is Published.
+- Working Draft exported by an editor/workflow participant → `@DOCREV@` is `DRAFT` and status is `WORKING DRAFT - NOT APPROVED`.
+- Ordinary reader exporting while a newer Draft exists → PDF remains based on the Published revision and shows the Published revision metadata.
+- Historical Published revision export → footer matches that historical Published revision.
+- Uncontrolled page → DocApproval placeholders resolve blank rather than leaking raw token text.

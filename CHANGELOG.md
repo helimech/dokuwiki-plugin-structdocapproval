@@ -4,6 +4,15 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.4 test build — 2026-09-23
+
+- Notification emails now contain an explicit HTML body plus a plain-text fallback.
+- Email field labels are bold in the HTML version.
+- Page display uses the first DokuWiki headline when available, with page ID as fallback.
+- Workflow actors display their configured DokuWiki real name when available, falling back to login.
+- Page and diff URLs are explicit HTML hyperlinks rather than relying on mail-client auto-link detection.
+- Generic workflow Comment wording is now presented as Note.
+
 ## 0.3 test build — 2026-09-21
 
 - Added DW2PDF template placeholders for Published revision, date, publisher, status, and last Published revision/date.

@@ -144,3 +144,15 @@ Then test:
 - Ordinary reader exporting while a newer Draft exists → PDF remains based on the Published revision and shows the Published revision metadata.
 - Historical Published revision export → footer matches that historical Published revision.
 - Uncontrolled page → DocApproval placeholders resolve blank rather than leaking raw token text.
+
+
+## 11. Notification email formatting
+
+With workflow email enabled:
+
+- Trigger a workflow notification in New Outlook, Outlook on the web, and Gmail if available.
+- Confirm Page, Action, Current status, Action by, Note, Training disposition, and Training note labels are bold in HTML-capable clients.
+- Confirm Page uses the page's first headline; remove the headline temporarily and confirm it falls back to the page ID.
+- Confirm Action by shows the DokuWiki user's configured real name (First Last) and falls back to login only when no real name is available.
+- Confirm View page and View changes since the previous published revision are explicit clickable hyperlinks in New Outlook.
+- View the message as plain text/source or in a plain-text client and confirm the full URLs remain present in the text alternative.

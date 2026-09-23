@@ -45,7 +45,8 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $mailer = new Mailer();
         $mailer->bcc($recipients);
         $mailer->subject(sprintf($this->getLang('email_subject'), $this->getLang('action_' . $action), $pid));
-        $mailer->setBody($this->buildBody($action, $record));
+        $body = $this->buildBody($action, $record);
+        $mailer->setBody($body['text'], null, null, $body['html']);
         if (!$mailer->send()) throw new RuntimeException('DokuWiki Mailer reported that the message was not sent.');
     }
 
@@ -92,29 +93,55 @@ class helper_plugin_structdocapproval_notify extends Plugin
         if ($data && !empty($data['mail'])) $emails[$data['mail']] = true;
     }
 
-    protected function buildBody(string $action, WorkflowRecord $record): string
+    protected function buildBody(string $action, WorkflowRecord $record): array
     {
         $pid = $record->getPid();
-        $lines = [
+        $title = trim((string)p_get_first_heading($pid));
+        if ($title === '') $title = $pid;
+
+        $actionLabel = $this->getLang('action_' . $action);
+        $statusLabel = $this->getLang('status_' . $record->get('status'));
+        $actorName = $this->displayName((string)$record->get('actor'));
+        $pageUrl = wl($pid, '', true, '&');
+
+        $text = [
             $this->getLang('email_intro'),
             '',
-            $this->getLang('email_page') . ': ' . $pid,
-            $this->getLang('email_action') . ': ' . $this->getLang('action_' . $action),
-            $this->getLang('email_status') . ': ' . $this->getLang('status_' . $record->get('status')),
-            $this->getLang('email_actor') . ': ' . $record->get('actor'),
+            $this->getLang('email_page') . ': ' . $title,
+            $this->getLang('email_action') . ': ' . $actionLabel,
+            $this->getLang('email_status') . ': ' . $statusLabel,
+            $this->getLang('email_actor') . ': ' . $actorName,
         ];
+
+        $html = '<p>' . hsc($this->getLang('email_intro')) . '</p>';
+        $html .= '<p>';
+        $html .= $this->htmlField($this->getLang('email_page'), $title);
+        $html .= $this->htmlField($this->getLang('email_action'), $actionLabel);
+        $html .= $this->htmlField($this->getLang('email_status'), $statusLabel);
+        $html .= $this->htmlField($this->getLang('email_actor'), $actorName);
+
         if (trim((string)$record->get('comment')) !== '') {
-            $lines[] = $this->getLang('email_comment') . ': ' . $record->get('comment');
+            $note = (string)$record->get('comment');
+            $text[] = $this->getLang('email_comment') . ': ' . $note;
+            $html .= $this->htmlField($this->getLang('email_comment'), $note);
         }
         if (trim((string)$record->get('training_disposition')) !== '') {
-            $lines[] = $this->getLang('email_training') . ': ' . $this->getLang('training_' . $record->get('training_disposition'));
+            $training = $this->getLang('training_' . $record->get('training_disposition'));
+            $text[] = $this->getLang('email_training') . ': ' . $training;
+            $html .= $this->htmlField($this->getLang('email_training'), $training);
         }
         if (trim((string)$record->get('training_note')) !== '') {
-            $lines[] = $this->getLang('email_training_note') . ': ' . $record->get('training_note');
+            $trainingNote = (string)$record->get('training_note');
+            $text[] = $this->getLang('email_training_note') . ': ' . $trainingNote;
+            $html .= $this->htmlField($this->getLang('email_training_note'), $trainingNote);
         }
+        $html .= '</p>';
 
-        $lines[] = '';
-        $lines[] = $this->getLang('email_view_page') . ': ' . wl($pid, '', true, '&');
+        $text[] = '';
+        $text[] = $this->getLang('email_view_page') . ': ' . $pageUrl;
+
+        $html .= '<p><strong>' . hsc($this->getLang('email_view_page')) . ':</strong> ' .
+            '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a><br>';
 
         $previous = WorkflowRecord::latestPublished($pid, (int)$record->get('revision'));
         if ($previous) {
@@ -123,8 +150,39 @@ class helper_plugin_structdocapproval_notify extends Plugin
                 'rev2[0]' => $previous->get('revision'),
                 'rev2[1]' => $record->get('revision'),
             ], true, '&');
-            $lines[] = $this->getLang('email_view_diff') . ': ' . $diff;
+            $text[] = $this->getLang('email_view_diff') . ': ' . $diff;
+            $html .= '<strong>' . hsc($this->getLang('email_view_diff')) . ':</strong> ' .
+                '<a href="' . hsc($diff) . '">' . hsc($diff) . '</a><br>';
         }
-        return implode("\n", $lines) . "\n";
+        $html .= '</p>';
+
+        $text[] = '';
+        $text[] = $this->getLang('email_closing');
+        $html .= '<p><em>' . hsc($this->getLang('email_closing')) . '</em></p>';
+
+        return [
+            'text' => implode("\n", $text) . "\n",
+            'html' => $html,
+        ];
     }
+
+    protected function htmlField(string $label, string $value): string
+    {
+        return '<strong>' . hsc($label) . ':</strong> ' . hsc($value) . '<br>';
+    }
+
+    protected function displayName(string $user): string
+    {
+        if ($user === '') return '';
+
+        /** @var AuthPlugin $auth */
+        global $auth;
+        if ($auth) {
+            $data = $auth->getUserData($user);
+            if ($data && !empty($data['name'])) return (string)$data['name'];
+        }
+
+        return $user;
+    }
+
 }

@@ -68,6 +68,10 @@ Example `footer.html`:
 
 A working revision exported by a workflow participant is deliberately marked `DRAFT` / `WORKING DRAFT - NOT APPROVED`. Ordinary readers continue to be restricted to the last Published revision.
 
+## Notification email formatting
+
+Workflow notification emails are sent with both plain-text and HTML bodies. The HTML version uses bold field labels, explicit hyperlinks for page/diff links, the page's first heading as its display title (falling back to the page ID), and the DokuWiki user's configured real name instead of the login wherever available. The plain-text part remains available for clients that do not render HTML.
+
 ## Workflow notes
 
 The generic workflow Note is recorded on successful actions as well as returns. Notes are optional for Ready for Review, Approve, Training Review, and Publish, but remain mandatory for Return for Changes, Return to Training, Return to Draft, and Admin Override. Training Note remains a separate field because it describes the training disposition/release-readiness action.

@@ -105,7 +105,7 @@ $lang['action'] = 'Action';
 $lang['actor'] = 'Actor';
 $lang['revision'] = 'Wiki Revision';
 $lang['assigned_reviewer'] = 'Assigned Reviewer';
-$lang['comment'] = 'Comment';
+$lang['comment'] = 'Note';
 $lang['select_page'] = 'Page';
 $lang['select_page_prompt'] = 'Select a page…';
 $lang['show_history'] = 'Show History';
@@ -119,11 +119,12 @@ $lang['email_page'] = 'Page';
 $lang['email_action'] = 'Action';
 $lang['email_status'] = 'Current status';
 $lang['email_actor'] = 'Action by';
-$lang['email_comment'] = 'Comment';
+$lang['email_comment'] = 'Note';
 $lang['email_training'] = 'Training disposition';
 $lang['email_training_note'] = 'Training note';
 $lang['email_view_page'] = 'View page';
 $lang['email_view_diff'] = 'View changes since the previous published revision';
+$lang['email_closing'] = 'Thank you,';
 
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';

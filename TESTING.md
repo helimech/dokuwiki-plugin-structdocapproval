@@ -156,3 +156,11 @@ With workflow email enabled:
 - Confirm Action by shows the DokuWiki user's configured real name (First Last) and falls back to login only when no real name is available.
 - Confirm View page and View changes since the previous published revision are explicit clickable hyperlinks in New Outlook.
 - View the message as plain text/source or in a plain-text client and confirm the full URLs remain present in the text alternative.
+
+
+## 12. Page move / rename
+
+- Move a controlled Published page to a new page ID inside the same controlled namespace. Confirm there is no SQL UNIQUE constraint error and the Published status/history follows the page.
+- Move/rename a page where the destination PID already has a materialized DocApproval assignment row. Confirm the source assignment replaces it without an error.
+- Rename a page governed by an exact-page DocApproval rule. Confirm the exact rule follows the new page ID.
+- Retry a move operation where possible. Confirm the DocApproval move handler does not create duplicate assignment rows or throw a UNIQUE constraint error.

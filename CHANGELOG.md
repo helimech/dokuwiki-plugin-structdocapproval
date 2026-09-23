@@ -4,6 +4,13 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.5 test build — 2026-09-23
+
+- Fixed Move plugin integration when the destination page ID already has a materialized DocApproval assignment row.
+- Destination assignment rows are now replaced safely instead of causing a UNIQUE constraint failure.
+- Removed duplicate renaming of the Struct-backed workflow data table; Struct's own Move integration already handles Struct schema data.
+- The DocApproval assignment move handler is now idempotent when a move event is retried.
+
 ## 0.4 test build — 2026-09-23
 
 - Notification emails now contain an explicit HTML body plus a plain-text fallback.

@@ -104,44 +104,51 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $actorName = $this->displayName((string)$record->get('actor'));
         $pageUrl = wl($pid, '', true, '&');
 
+        // Keep the plain-text alternative in the same visual order as the HTML email.
         $text = [
             $this->getLang('email_intro'),
             '',
-            $this->getLang('email_page') . ': ' . $title,
-            $this->getLang('email_action') . ': ' . $actionLabel,
-            $this->getLang('email_status') . ': ' . $statusLabel,
-            $this->getLang('email_actor') . ': ' . $actorName,
+            $this->textField($this->getLang('email_page'), $title) .
+                '    ' . $this->textField($this->getLang('email_status'), $statusLabel),
+            $this->textField($this->getLang('email_view_page'), $pageUrl),
+            '',
+            $this->textField($this->getLang('email_action'), $actionLabel),
+            $this->textField($this->getLang('email_actor'), $actorName),
         ];
 
         $html = '<p>' . hsc($this->getLang('email_intro')) . '</p>';
+
+        // Summary block: Page + Current status, then the direct page link.
         $html .= '<p>';
-        $html .= $this->htmlField($this->getLang('email_page'), $title);
+        $html .= $this->htmlFieldInline($this->getLang('email_page'), $title);
+        $html .= '&nbsp;&nbsp;&nbsp;&nbsp;';
+        $html .= $this->htmlFieldInline($this->getLang('email_status'), $statusLabel);
+        $html .= '<br>';
+        $html .= '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
+            '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a>';
+        $html .= '</p>';
+
+        // Action details are intentionally separated from the current document summary.
+        $html .= '<p>';
         $html .= $this->htmlField($this->getLang('email_action'), $actionLabel);
-        $html .= $this->htmlField($this->getLang('email_status'), $statusLabel);
         $html .= $this->htmlField($this->getLang('email_actor'), $actorName);
 
         if (trim((string)$record->get('comment')) !== '') {
             $note = (string)$record->get('comment');
-            $text[] = $this->getLang('email_comment') . ': ' . $note;
+            $text[] = $this->textField($this->getLang('email_comment'), $note);
             $html .= $this->htmlField($this->getLang('email_comment'), $note);
         }
         if (trim((string)$record->get('training_disposition')) !== '') {
             $training = $this->getLang('training_' . $record->get('training_disposition'));
-            $text[] = $this->getLang('email_training') . ': ' . $training;
+            $text[] = $this->textField($this->getLang('email_training'), $training);
             $html .= $this->htmlField($this->getLang('email_training'), $training);
         }
         if (trim((string)$record->get('training_note')) !== '') {
             $trainingNote = (string)$record->get('training_note');
-            $text[] = $this->getLang('email_training_note') . ': ' . $trainingNote;
+            $text[] = $this->textField($this->getLang('email_training_note'), $trainingNote);
             $html .= $this->htmlField($this->getLang('email_training_note'), $trainingNote);
         }
         $html .= '</p>';
-
-        $text[] = '';
-        $text[] = $this->getLang('email_view_page') . ': ' . $pageUrl;
-
-        $html .= '<p><strong>' . hsc($this->getLang('email_view_page')) . ':</strong> ' .
-            '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a><br>';
 
         $previous = WorkflowRecord::latestPublished($pid, (int)$record->get('revision'));
         if ($previous) {
@@ -150,11 +157,15 @@ class helper_plugin_structdocapproval_notify extends Plugin
                 'rev2[0]' => $previous->get('revision'),
                 'rev2[1]' => $record->get('revision'),
             ], true, '&');
-            $text[] = $this->getLang('email_view_diff') . ': ' . $diff;
-            $html .= '<strong>' . hsc($this->getLang('email_view_diff')) . ':</strong> ' .
-                '<a href="' . hsc($diff) . '">' . hsc($diff) . '</a><br>';
+
+            $text[] = '';
+            $text[] = $this->getLang('email_view_diff') . ':';
+            $text[] = $diff;
+
+            // Keep the long diff URL on its own line so Outlook can wrap it cleanly.
+            $html .= '<p><strong>' . hsc($this->getLang('email_view_diff')) . ':</strong><br>' .
+                '<a href="' . hsc($diff) . '">' . hsc($diff) . '</a></p>';
         }
-        $html .= '</p>';
 
         $text[] = '';
         $text[] = $this->getLang('email_closing');
@@ -168,7 +179,17 @@ class helper_plugin_structdocapproval_notify extends Plugin
 
     protected function htmlField(string $label, string $value): string
     {
-        return '<strong>' . hsc($label) . ':</strong> ' . hsc($value) . '<br>';
+        return '<strong>' . hsc($label) . ':</strong>&nbsp;&nbsp;' . hsc($value) . '<br>';
+    }
+
+    protected function htmlFieldInline(string $label, string $value): string
+    {
+        return '<strong>' . hsc($label) . ':</strong>&nbsp;&nbsp;' . hsc($value);
+    }
+
+    protected function textField(string $label, string $value): string
+    {
+        return $label . ':  ' . $value;
     }
 
     protected function displayName(string $user): string

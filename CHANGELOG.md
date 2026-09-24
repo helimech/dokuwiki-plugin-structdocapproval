@@ -4,6 +4,13 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.6 test build — 2026-09-24
+
+- Reorganized notification emails so Page/Current status appear first, followed by View page and then the action details.
+- Renamed the email Action label to Last Action to distinguish it from Current status.
+- Added additional spacing after email field labels for readability.
+- Moved the long previous-published diff URL onto its own line below the bold header so Outlook can wrap it cleanly.
+
 ## 0.5 test build — 2026-09-23
 
 - Fixed Move plugin integration when the destination page ID already has a materialized DocApproval assignment row.

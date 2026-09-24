@@ -164,3 +164,12 @@ With workflow email enabled:
 - Move/rename a page where the destination PID already has a materialized DocApproval assignment row. Confirm the source assignment replaces it without an error.
 - Rename a page governed by an exact-page DocApproval rule. Confirm the exact rule follows the new page ID.
 - Retry a move operation where possible. Confirm the DocApproval move handler does not create duplicate assignment rows or throw a UNIQUE constraint error.
+
+
+## 13. Notification email layout
+
+- Confirm Page and Current status appear together at the top of the message.
+- Confirm View page appears immediately below the Page/Current status summary.
+- Confirm Last Action, Action by, Note, and any Training fields appear in the second block.
+- Confirm there is visible extra spacing between each bold field label and its value.
+- Confirm the previous-published diff heading is on one line and the long clickable URL starts on the following line.

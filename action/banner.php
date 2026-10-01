@@ -27,17 +27,22 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
 
         $latest = WorkflowRecord::latest($ID);
         if (!$latest) return;
+
+        // Ordinary readers must always get publication metadata from an actual
+        // Published workflow record. Admin state repairs can create multiple
+        // workflow rows against the same unchanged DokuWiki content revision.
+        if (!$this->db->canViewWorking($ID)) {
+            $published = $REV
+                ? WorkflowRecord::publishedForRevision($ID, (int)$REV)
+                : WorkflowRecord::latestPublished($ID);
+            if ($published) $this->renderReaderPublished($published);
+            return;
+        }
+
         $shownRev = (int)($REV ?: $INFO['currentrev']);
         $shown = WorkflowRecord::latestForRevision($ID, $shownRev) ?: $latest;
         $isCurrent = !$REV && (int)$shown->get('revision') === (int)$latest->get('revision') &&
             $shown->getRid() === $latest->getRid();
-
-        // Ordinary readers only need the controlled-document publication marker. Editors,
-        // assigned workflow users, and administrators retain the full workflow banner.
-        if ($shown->get('status') === Constants::STATUS_PUBLISHED && !$this->db->canViewWorking($ID)) {
-            $this->renderReaderPublished($shown);
-            return;
-        }
 
         $compact = $this->getConf('compact_view') ? ' compact' : '';
         echo '<div class="plugin-structdocapproval-banner status-' . hsc($shown->get('status')) . $compact . '">';
@@ -210,7 +215,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             echo '<details class="docapproval-admin-override"><summary>' . hsc($this->getLang('admin_override')) . '</summary>';
             echo $this->formStart();
             echo '<label>' . hsc($this->getLang('override_target')) . ' <select name="structdocapproval[target_status]">';
-            foreach (Constants::statuses() as $s) echo '<option value="' . hsc($s) . '">' . hsc($this->getLang('status_' . $s)) . '</option>';
+            foreach (Constants::adminOverrideStatuses() as $s) echo '<option value="' . hsc($s) . '">' . hsc($this->getLang('status_' . $s)) . '</option>';
             echo '</select></label> ';
             echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" /></label> ';
             echo '<label>' . hsc($this->getLang('override_reason')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';

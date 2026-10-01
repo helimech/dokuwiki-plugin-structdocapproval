@@ -128,7 +128,9 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 if (!$this->getConf('admin_override_enable')) throw new RuntimeException('Administrator workflow override is disabled in the plugin configuration.');
                 if (!auth_isadmin()) throw new RuntimeException('Only administrators may use workflow override.');
                 $target = trim((string)($params['target_status'] ?? ''));
-                if (!in_array($target, Constants::statuses(), true)) throw new RuntimeException('Invalid override target status.');
+                if (!in_array($target, Constants::adminOverrideStatuses(), true)) {
+                    throw new RuntimeException('Invalid override target status. Draft must be created by editing the page.');
+                }
                 $next->set('status', $target)->set('comment', $this->requiredComment($params));
                 $this->applyOverrideClears($next, $target);
                 if ($target === Constants::STATUS_PUBLISHED) {
@@ -170,9 +172,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
 
     protected function applyOverrideClears(WorkflowRecord $record, string $target): void
     {
-        if ($target === Constants::STATUS_DRAFT) {
-            $record->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
-        } elseif ($target === Constants::STATUS_AWAITING_REVIEW) {
+        if ($target === Constants::STATUS_AWAITING_REVIEW) {
             $record->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
         } elseif ($target === Constants::STATUS_AWAITING_TRAINING) {
             $record->clear(['training_by','training_at','training_disposition','training_note','published_by','published_at','version']);

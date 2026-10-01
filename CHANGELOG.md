@@ -4,6 +4,14 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.7 test build — 2026-10-01
+
+- Fixed ordinary-reader display after an administrator changes workflow state without changing page content.
+- Ordinary readers now resolve the compact revision banner from an actual Published workflow record, even when a newer workflow row shares the same DokuWiki revision.
+- Avoids forcing historical-revision mode when the Published content revision is already the current physical page revision.
+- Removed Draft as an Admin Override target. A real page edit remains the way to start a new Draft cycle.
+- Server-side validation rejects crafted Admin Override requests targeting Draft.
+
 ## 0.6 test build — 2026-09-24
 
 - Reorganized notification emails so Page/Current status appear first, followed by View page and then the action details.

@@ -41,7 +41,16 @@ class action_plugin_structdocapproval_show extends ActionPlugin
             return;
         }
 
-        self::$forcedPublishedRev = (int)$published->get('revision');
+        // An administrative state repair can create a non-Published workflow row
+        // without changing the underlying DokuWiki content revision. If the last
+        // Published workflow record points at the current physical page revision,
+        // the content ordinary readers should see is already the current page.
+        // Do not force DokuWiki into historical-revision mode in that case.
+        $publishedRev = (int)$published->get('revision');
+        $currentRev = (int)($INFO['currentrev'] ?? 0);
+        if ($publishedRev && $publishedRev === $currentRev) return;
+
+        self::$forcedPublishedRev = $publishedRev;
         $REV = self::$forcedPublishedRev;
         $INFO['rev'] = self::$forcedPublishedRev;
     }

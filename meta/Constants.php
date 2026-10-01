@@ -43,6 +43,20 @@ class Constants
         ];
     }
 
+    /**
+     * Administrative repair targets. Draft is intentionally excluded: a real
+     * content edit is the correct way to create a new Draft cycle.
+     */
+    public static function adminOverrideStatuses(): array
+    {
+        return [
+            self::STATUS_AWAITING_REVIEW,
+            self::STATUS_AWAITING_TRAINING,
+            self::STATUS_READY_TO_PUBLISH,
+            self::STATUS_PUBLISHED,
+        ];
+    }
+
     public static function trainingDispositions(): array
     {
         return [

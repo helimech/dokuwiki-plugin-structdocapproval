@@ -173,3 +173,14 @@ With workflow email enabled:
 - Confirm Last Action, Action by, Note, and any Training fields appear in the second block.
 - Confirm there is visible extra spacing between each bold field label and its value.
 - Confirm the previous-published diff heading is on one line and the long clickable URL starts on the following line.
+
+
+## 14. Admin override / reader protection
+
+- Publish a controlled page and note its Published revision.
+- As an administrator, use Admin Override to change the workflow state without editing the page.
+- As a read-only user, confirm the page still shows only the compact Published Revision banner and does not expose the full workflow tracker or historical-revision toolbar.
+- Confirm the reader still sees the last Published content.
+- Confirm Draft is absent from the Admin Override target list.
+- Submit a crafted Admin Override request with target status `draft` and confirm the server rejects it.
+- Make a normal content edit to the Published page and confirm the workflow enters Draft normally.

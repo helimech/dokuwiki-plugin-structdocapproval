@@ -29,6 +29,19 @@ Each include rule has Reviewer, Training, and Publisher fields. Later matching n
 
 Existing pages newly brought under control are initialized as Published. New pages created later inside a controlled area begin as Draft.
 
+## Page moves
+
+Workflow history follows the page when it is renamed or moved.
+
+- Published page → controlled destination: allowed; the destination's ordered Reviewer/Training/Publisher rules become authoritative.
+- Published page → uncontrolled destination: allowed; active DocApproval control is removed immediately, while all workflow history is retained.
+- Draft / Awaiting Review / Awaiting Training / Ready to Publish → controlled destination: allowed; the active workflow and history are preserved and destination routing rules apply to later stages.
+- Draft / Awaiting Review / Awaiting Training / Ready to Publish → uncontrolled destination: blocked before the move begins.
+- Exact-page assignment rules follow the renamed page.
+- Moving an uncontrolled existing page into a controlled namespace initializes its current live revision as the Published baseline.
+
+An already assigned reviewer remains attached to the current Awaiting Review workflow record; later Training/Publisher permissions come from the destination rules.
+
 ## Reader view
 
 Ordinary readers see a compact publication banner:

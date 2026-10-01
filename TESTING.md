@@ -184,3 +184,16 @@ With workflow email enabled:
 - Confirm Draft is absent from the Admin Override target list.
 - Submit a crafted Admin Override request with target status `draft` and confirm the server rejects it.
 - Make a normal content edit to the Published page and confirm the workflow enters Draft normally.
+
+
+## 15. Destination-aware page moves
+
+- Move a Published controlled page from a controlled namespace to another controlled namespace with different Reviewer/Training/Publisher assignments. Confirm the toolbar remains and the destination rule values become current.
+- Move a Published controlled page to an uncontrolled namespace. Confirm the DocApproval toolbar disappears immediately without running Reconcile.
+- Confirm the full workflow history follows the new page ID even after control is removed.
+- Move that uncontrolled page back into a controlled namespace. Confirm the current live revision is initialized as the new Published baseline and older history is still present.
+- Move a Draft page to another controlled namespace. Confirm the Draft/status/history are retained and later workflow stages use destination assignments.
+- Submit a page for Review, then move it to another controlled namespace. Confirm the already assigned Reviewer for that active review remains the reviewer for that review cycle.
+- Attempt to move Draft / Awaiting Review / Awaiting Training / Ready to Publish into an uncontrolled namespace. Confirm Move is blocked before any page content or history is relocated.
+- Create a planned/tree namespace move containing at least one active workflow page whose destination is uncontrolled. Confirm the plan is aborted before any pages are moved.
+- Rename a page controlled by an exact-page rule. Confirm that exact rule follows the page and the move is allowed.

@@ -4,6 +4,17 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.8 test build — 2026-10-01
+
+- Reworked Move integration so destination DocApproval rules are authoritative after a page rename/move.
+- Published pages moved to an uncontrolled namespace immediately become uncontrolled while retaining complete workflow history.
+- Pages moved between controlled namespaces immediately adopt the destination Reviewer/Training/Publisher rules.
+- Active non-Published workflows are blocked from moving into an uncontrolled destination.
+- Planned/tree/namespace Move operations are pre-scanned and aborted before execution if any active controlled page would escape control.
+- Exact-page DocApproval rules continue to follow their page.
+- Added a fail-safe that keeps an active page controlled if a nonstandard Move/API path bypasses pre-move validation.
+- Moving an uncontrolled existing page into a controlled namespace initializes the moved live revision as a new Published baseline.
+
 ## 0.7 test build — 2026-10-01
 
 - Fixed ordinary-reader display after an administrator changes workflow state without changing page content.

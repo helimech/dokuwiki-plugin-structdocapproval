@@ -29,6 +29,23 @@ Each include rule has Reviewer, Training, and Publisher fields. Later matching n
 
 Existing pages newly brought under control are initialized as Published. New pages created later inside a controlled area begin as Draft.
 
+## Page-level exclusion
+
+For one-off exceptions, place the following directive on its own line in the page:
+
+```
+~~NOREVISIONCONTROL~~
+```
+
+The directive has final precedence over the ordered assignment rules and renders no visible page content.
+
+- Only an administrator or the page's assigned/resolved Publisher may add or remove it.
+- It may be added to an uncontrolled page or a controlled page whose workflow is currently Published.
+- It cannot be added while the page is Draft, Awaiting Review, Awaiting Training Review, or Ready to Publish.
+- All existing DocApproval workflow history is retained when the page becomes uncontrolled.
+- Save & Sync and Reconcile Existing Pages both honor the directive.
+- Removing the directive from a page that matches a control rule brings the page back under DocApproval; that save enters the normal Draft workflow, preserving the prior live revision as a Published baseline when needed.
+
 ## Page moves
 
 Workflow history follows the page when it is renamed or moved.

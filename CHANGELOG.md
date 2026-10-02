@@ -4,6 +4,16 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.10 test build — 2026-10-02
+
+- Added page-local `~~NOREVISIONCONTROL~~` for one-off exclusions from DocApproval.
+- The directive has final precedence over ordered assignment rules and renders no visible output.
+- Only administrators or the assigned/resolved Publisher may add or remove the directive.
+- Active non-Published workflows cannot be opted out with the directive.
+- Published pages can be explicitly de-controlled while retaining all existing workflow history.
+- Removing the directive allows the page's normal assignment rules to take effect again.
+- Save & Sync and Reconcile Existing Pages now report page-directive exclusions separately from rule exclusions.
+
 ## 0.9 test build — 2026-10-02
 
 - Added DW2PDF `@DOCHEADERMETA@` for templates shared by controlled and uncontrolled pages.

@@ -11,7 +11,55 @@ class action_plugin_structdocapproval_save extends ActionPlugin
 {
     public function register(EventHandler $controller)
     {
+        // Validate privileged page-local opt-out changes before DokuWiki writes them.
+        $controller->register_hook('COMMON_WIKIPAGE_SAVE', 'BEFORE', $this, 'validateNoRevisionControl', null, PHP_INT_MIN);
         $controller->register_hook('COMMON_WIKIPAGE_SAVE', 'AFTER', $this, 'handleSave');
+    }
+
+    /**
+     * Only administrators or the page's assigned/resolved Publisher may add/remove
+     * ~~NOREVISIONCONTROL~~. An active non-Published workflow may not be opted out.
+     */
+    public function validateNoRevisionControl(Event $event): void
+    {
+        global $INPUT, $USERINFO;
+
+        $changeType = $event->data['changeType'] ?? null;
+        if (defined('DOKU_CHANGE_TYPE_DELETE') && $changeType === DOKU_CHANGE_TYPE_DELETE) return;
+
+        $oldContent = (string)($event->data['oldContent'] ?? '');
+        $newContent = (string)($event->data['newContent'] ?? '');
+        $oldHas = Assignments::contentHasNoRevisionControl($oldContent);
+        $newHas = Assignments::contentHasNoRevisionControl($newContent);
+        if ($oldHas === $newHas) return;
+
+        $pid = cleanID((string)($event->data['id'] ?? ''));
+        if ($pid === '') return;
+
+        $assignments = Assignments::getInstance(true);
+        $user = $INPUT->server->str('REMOTE_USER');
+        $groups = $USERINFO['grps'] ?? [];
+
+        if (!$assignments->canManageNoRevisionControl($pid, $user, $groups)) {
+            $event->preventDefault();
+            $event->stopPropagation();
+            msg($this->getLang('directive_change_denied'), -1);
+            return;
+        }
+
+        // Adding the directive to an actively controlled working revision would allow
+        // unfinished content to escape workflow protection. Removal is always safe.
+        if ($newHas && !$oldHas) {
+            $currentAssignment = $assignments->getMaterialized($pid);
+            if ($currentAssignment && (bool)$currentAssignment['controlled']) {
+                $current = WorkflowRecord::latest($pid);
+                if (!$current || $current->get('status') !== Constants::STATUS_PUBLISHED) {
+                    $event->preventDefault();
+                    $event->stopPropagation();
+                    msg($this->getLang('directive_active_blocked'), -1);
+                }
+            }
+        }
     }
 
     public function handleSave(Event $event): void
@@ -26,16 +74,33 @@ class action_plugin_structdocapproval_save extends ActionPlugin
         $assignments = Assignments::getInstance(true);
         $oldAssignment = $assignments->getMaterialized($id);
         $wasControlled = $oldAssignment && (bool)$oldAssignment['controlled'];
-        $resolved = $assignments->resolvePage($id);
+        $oldContent = (string)($event->data['oldContent'] ?? '');
+        $newContent = (string)($event->data['newContent'] ?? '');
+        $hasDirective = Assignments::contentHasNoRevisionControl($newContent);
+        $resolved = $assignments->resolvePage($id, $newContent);
+
+        // A valid page-local opt-out takes effect immediately on save. If an active
+        // workflow somehow already coexists with the directive (for example old data
+        // from before this feature), keep the page controlled and let normal workflow
+        // save handling continue until the conflict is resolved.
+        if ($hasDirective) {
+            $current = WorkflowRecord::latest($id);
+            if (
+                !$wasControlled ||
+                ($current && $current->get('status') === Constants::STATUS_PUBLISHED)
+            ) {
+                $assignments->materializePage($id, $newContent);
+                return;
+            }
+        }
 
         // Never silently de-control an already managed page during an ordinary page save.
-        // Exclusions are applied explicitly from Sync/Reconcile, which can block removal when
-        // an active workflow exists. This prevents a rule edit from unexpectedly exposing a
-        // working draft to normal readers on the next save.
+        // Central rule exclusions are applied explicitly from Sync/Reconcile. The page-local
+        // directive is handled above because it was permission-checked in the BEFORE hook.
         if ($oldAssignment && (bool)$oldAssignment['controlled'] && !$resolved['controlled']) {
             // Keep the last materialized assignment until an administrator reconciles it.
         } else {
-            $assignments->materializePage($id);
+            $assignments->materializePage($id, $newContent);
         }
 
         if (!$assignments->isControlled($id)) return;
@@ -48,7 +113,8 @@ class action_plugin_structdocapproval_save extends ActionPlugin
 
         // If an existing, previously-unmanaged page is first encountered through a newly
         // matching rule before an administrator has run Sync/Reconcile, preserve its previous
-        // live revision as the Published baseline before making the new edit a Draft.
+        // live revision as the Published baseline before making the new edit a Draft. This
+        // also handles removal of ~~NOREVISIONCONTROL~~ from a page whose rules require control.
         $initializedBaseline = false;
         $oldRevision = (int)($event->data['oldRevision'] ?? 0);
         $isCreate = defined('DOKU_CHANGE_TYPE_CREATE') && $changeType === DOKU_CHANGE_TYPE_CREATE;
@@ -99,5 +165,4 @@ class action_plugin_structdocapproval_save extends ActionPlugin
             ->set('revision', $newRevision);
         $record->save();
     }
-
 }

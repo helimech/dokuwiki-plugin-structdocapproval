@@ -70,6 +70,10 @@ class helper_plugin_structdocapproval_sync extends Plugin
                 return;
             }
 
+            if (!empty($resolved['excluded_by_directive'])) {
+                $stats['directive_excluded']++;
+            }
+
             $changed = !$old ||
                 (bool)$old['controlled'] !== (bool)$resolved['controlled'] ||
                 (string)($old['reviewer'] ?? '') !== (string)$resolved[Constants::ROLE_REVIEWER] ||
@@ -108,7 +112,7 @@ class helper_plugin_structdocapproval_sync extends Plugin
             }
 
             if ($old && (bool)$old['controlled'] && !$resolved['controlled']) {
-                $stats['excluded']++;
+                if (empty($resolved['excluded_by_directive'])) $stats['excluded']++;
             } elseif ($changed) {
                 $stats['updated']++;
             } else {
@@ -122,7 +126,7 @@ class helper_plugin_structdocapproval_sync extends Plugin
 
     protected function emptyStats(): array
     {
-        return ['matched'=>0,'initialized'=>0,'updated'=>0,'excluded'=>0,'conflicts'=>0,'unchanged'=>0,'errors'=>0];
+        return ['matched'=>0,'initialized'=>0,'updated'=>0,'excluded'=>0,'directive_excluded'=>0,'conflicts'=>0,'unchanged'=>0,'errors'=>0];
     }
 
     public function getAllWikiPages(): array

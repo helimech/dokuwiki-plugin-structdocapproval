@@ -214,3 +214,16 @@ Confirm:
 - Uncontrolled page → `-- PAGE NOT SUBJECT TO REVISION CONTROL`.
 - Existing individual placeholders such as `@DOCREV@`, `@DOCSTATUS@`, and `@DOCDATE@` still work exactly as before.
 - On an uncontrolled page, the individual DocApproval placeholders remain blank while `@DOCHEADERMETA@` carries the explicit uncontrolled-page notice.
+
+
+## 17. Page-local ~~NOREVISIONCONTROL~~ exclusion
+
+In a namespace that is normally controlled by an assignment rule:
+
+1. Add `~~NOREVISIONCONTROL~~` on its own line to an otherwise uncontrolled/new page as an administrator. Confirm the directive does not render and the page remains outside DocApproval.
+2. On a Published controlled page, add the directive as an administrator or assigned Publisher. Confirm the save succeeds, the DocApproval toolbar disappears immediately, and existing workflow history remains available for later reuse.
+3. Attempt the same change as an ordinary editor. Confirm the save is rejected.
+4. Put a controlled page into Draft, Awaiting Review, Awaiting Training Review, and Ready to Publish in turn and attempt to add the directive. Confirm each save is rejected.
+5. Run Reconcile Existing Pages. Confirm the page remains excluded and the completion message reports it under "excluded by page directive".
+6. Remove the directive as an administrator or assigned Publisher. Confirm the page's normal namespace/page rules take effect again and the removal save enters Draft rather than silently publishing new controlled content.
+7. Mention `~~NOREVISIONCONTROL~~` in ordinary prose without placing it alone on a line. Confirm the page is not excluded.

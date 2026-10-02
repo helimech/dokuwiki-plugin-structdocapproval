@@ -6,6 +6,8 @@ use dokuwiki\plugin\sqlite\SQLiteDB;
 
 class Assignments
 {
+    public const NO_REVISION_CONTROL_DIRECTIVE = '~~NOREVISIONCONTROL~~';
+
     /** @var SQLiteDB */
     protected $sqlite;
     protected $rules = [];
@@ -109,11 +111,13 @@ class Assignments
     }
 
     /**
-     * Resolve ordered rules for a page. Later matching + rules override only nonblank role fields.
-     * A - rule toggles controlled off but preserves the accumulated roles, allowing a later + rule
-     * to re-include a specific page while inheriting earlier role values.
+     * Resolve only the ordered central assignment rules for a page.
+     *
+     * Later matching + rules override only nonblank role fields. A - rule toggles
+     * control off but preserves accumulated roles, allowing a later + rule to
+     * re-include a specific page while inheriting earlier role values.
      */
-    public function resolvePage(string $pid): array
+    public function resolveRulesOnly(string $pid): array
     {
         $pid = cleanID($pid);
         $resolved = [
@@ -122,7 +126,9 @@ class Assignments
             Constants::ROLE_TRAINING => '',
             Constants::ROLE_PUBLISHER => '',
             'matched_rules' => [],
+            'excluded_by_directive' => false,
         ];
+
         /** @var \helper_plugin_structdocapproval_assignments $matcher */
         $matcher = plugin_load('helper', 'structdocapproval_assignments');
         $pns = ':' . getNS($pid) . ':';
@@ -134,19 +140,62 @@ class Assignments
                 $resolved['controlled'] = false;
                 continue;
             }
+
             $resolved['controlled'] = true;
             foreach ([Constants::ROLE_REVIEWER, Constants::ROLE_TRAINING, Constants::ROLE_PUBLISHER] as $role) {
-                if (trim((string)$rule[$role]) !== '') $resolved[$role] = trim((string)$rule[$role]);
+                if (trim((string)$rule[$role]) !== '') {
+                    $resolved[$role] = trim((string)$rule[$role]);
+                }
             }
         }
+
         return $resolved;
     }
 
-    /** Materialize current resolved assignment for quick runtime checks. */
-    public function materializePage(string $pid): array
+    /**
+     * Resolve central rules plus the page-local ~~NOREVISIONCONTROL~~ directive.
+     *
+     * The directive has final precedence over the ordered rules, but the resolved
+     * role values are retained in the materialized row for audit/authorization use.
+     */
+    public function resolvePage(string $pid, ?string $content = null): array
     {
         $pid = cleanID($pid);
-        $resolved = $this->resolvePage($pid);
+        $resolved = $this->resolveRulesOnly($pid);
+
+        if ($content === null) {
+            $content = page_exists($pid) ? (string)rawWiki($pid) : '';
+        }
+
+        if (self::contentHasNoRevisionControl($content)) {
+            $resolved['controlled'] = false;
+            $resolved['excluded_by_directive'] = true;
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * The directive must appear by itself on a line. This avoids treating ordinary
+     * prose such as documentation mentioning the directive as an opt-out.
+     */
+    public static function contentHasNoRevisionControl(string $content): bool
+    {
+        return preg_match('/^[ \t]*~~NOREVISIONCONTROL~~[ \t]*$/mi', $content) === 1;
+    }
+
+    public function pageHasNoRevisionControl(string $pid): bool
+    {
+        $pid = cleanID($pid);
+        if (!page_exists($pid)) return false;
+        return self::contentHasNoRevisionControl((string)rawWiki($pid));
+    }
+
+    /** Materialize current resolved assignment for quick runtime checks. */
+    public function materializePage(string $pid, ?string $content = null): array
+    {
+        $pid = cleanID($pid);
+        $resolved = $this->resolvePage($pid, $content);
         $this->sqlite->query(
             'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, resolved_at) VALUES (?,?,?,?,?,?)',
             [
@@ -188,8 +237,7 @@ class Assignments
             $groups = $USERINFO['grps'] ?? [];
         }
         $spec = $this->getRoleSpec($pid, $role);
-        if ($spec === '') return false;
-        return auth_isMember($spec, $userId, $groups);
+        return $this->userMatchesSpec($spec, $userId, $groups);
     }
 
     public function userHasAnyRole(string $pid, string $userId = '', array $groups = []): bool
@@ -204,6 +252,51 @@ class Assignments
     {
         $parts = preg_split('/\s*,\s*/', trim($spec), -1, PREG_SPLIT_NO_EMPTY);
         return array_values(array_unique($parts ?: []));
+    }
+
+    public function userMatchesSpec(string $spec, string $userId = '', array $groups = []): bool
+    {
+        global $INPUT, $USERINFO;
+
+        if ($userId === '') {
+            $userId = $INPUT->server->str('REMOTE_USER');
+            $groups = $USERINFO['grps'] ?? [];
+        }
+        if ($userId === '' || trim($spec) === '') return false;
+
+        foreach ($this->splitSpec($spec) as $token) {
+            if (auth_isMember($token, $userId, $groups)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Page-level revision-control opt-out is a privileged document-control action.
+     *
+     * Administrators may always manage it. Otherwise the current materialized
+     * Publisher assignment is preferred; if the page is currently uncontrolled,
+     * use the Publisher that the central rules would assign without the directive.
+     */
+    public function canManageNoRevisionControl(string $pid, string $userId = '', array $groups = []): bool
+    {
+        if (auth_isadmin()) return true;
+
+        global $INPUT, $USERINFO;
+        if ($userId === '') {
+            $userId = $INPUT->server->str('REMOTE_USER');
+            $groups = $USERINFO['grps'] ?? [];
+        }
+
+        $pid = cleanID($pid);
+        $row = $this->getMaterialized($pid);
+        $spec = $row ? trim((string)($row[Constants::ROLE_PUBLISHER] ?? '')) : '';
+
+        if ($spec === '') {
+            $rules = $this->resolveRulesOnly($pid);
+            $spec = trim((string)$rules[Constants::ROLE_PUBLISHER]);
+        }
+
+        return $this->userMatchesSpec($spec, $userId, $groups);
     }
 
     /**

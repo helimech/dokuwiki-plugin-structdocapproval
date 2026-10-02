@@ -57,6 +57,9 @@ $lang['override_reason'] = 'Reason (required)';
 $lang['transition_saved'] = 'Document approval workflow updated.';
 $lang['notification_failed'] = 'The workflow was updated, but the notification email could not be sent: %s';
 
+$lang['directive_change_denied'] = 'Only an administrator or the assigned Publisher may add or remove ~~NOREVISIONCONTROL~~.';
+$lang['directive_active_blocked'] = '~~NOREVISIONCONTROL~~ cannot be added while this page has an active Draft/Review/Training/Publication workflow. Publish or otherwise resolve the workflow first.';
+
 // training dispositions
 $lang['training_na'] = 'N/A – No training impact';
 $lang['training_existing_adequate'] = 'Existing training adequate';
@@ -75,7 +78,7 @@ $lang['remove_rule'] = 'Remove Rule';
 $lang['move_up'] = 'Move rule up';
 $lang['move_down'] = 'Move rule down';
 $lang['sync_rule'] = 'Save & Sync';
-$lang['rules_help'] = 'Pattern may be an exact page ID, namespace wildcard (for example policy:**), or a full regular expression. Blank role cells inherit earlier matching values. Comma-separated users/@groups are allowed. For Review, groups are expanded to actual users when a page is submitted.';
+$lang['rules_help'] = 'Pattern may be an exact page ID, namespace wildcard (for example policy:**), or a full regular expression. Blank role cells inherit earlier matching values. Comma-separated users/@groups are allowed. For Review, groups are expanded to actual users when a page is submitted. One-off page exclusions may use ~~NOREVISIONCONTROL~~ on its own line; only an administrator or assigned Publisher may add or remove that directive.';
 $lang['invalid_pattern'] = 'Invalid or empty assignment pattern';
 $lang['rule_added'] = 'Rule added. Sync the rule to initialize/update existing matching pages.';
 $lang['rules_saved'] = 'Rules saved. Sync affected rules or run Reconcile Existing Pages.';
@@ -83,11 +86,11 @@ $lang['rule_moved'] = 'Rule order changed. Run Reconcile Existing Pages if the n
 $lang['rule_not_found'] = 'Assignment rule not found.';
 
 $lang['reconcile_heading'] = 'Reconcile Existing Pages';
-$lang['reconcile_intro'] = 'Re-evaluate all existing wiki pages against the ordered rules. Newly controlled existing pages are initialized as Published. An actively controlled page will not be excluded while it is Draft or in review/training/publication; that conflict is reported instead.';
+$lang['reconcile_intro'] = 'Re-evaluate all existing wiki pages against the ordered rules and the page-local ~~NOREVISIONCONTROL~~ directive. Newly controlled existing pages are initialized as Published. An actively controlled page will not be excluded while it is Draft or in review/training/publication; that conflict is reported instead.';
 $lang['reconcile_run'] = 'Reconcile Existing Pages';
-$lang['sync_done'] = 'Rule saved and synchronized: %d pages matched; %d initialized as Published; %d assignments updated; %d excluded; %d active-workflow conflicts; %d errors.';
-$lang['remove_done'] = 'Rule removed and affected pages recalculated: %d pages matched; %d initialized as Published; %d assignments updated; %d excluded; %d active-workflow conflicts; %d errors.';
-$lang['reconcile_done'] = 'Reconcile complete: %d pages scanned; %d initialized as Published; %d assignments updated; %d excluded; %d active-workflow conflicts; %d errors.';
+$lang['sync_done'] = 'Rule saved and synchronized: %d pages matched; %d initialized as Published; %d assignments updated; %d excluded by rules; %d excluded by page directive; %d active-workflow conflicts; %d errors.';
+$lang['remove_done'] = 'Rule removed and affected pages recalculated: %d pages matched; %d initialized as Published; %d assignments updated; %d excluded by rules; %d excluded by page directive; %d active-workflow conflicts; %d errors.';
+$lang['reconcile_done'] = 'Reconcile complete: %d pages scanned; %d initialized as Published; %d assignments updated; %d excluded by rules; %d excluded by page directive; %d active-workflow conflicts; %d errors.';
 $lang['sync_page_error'] = 'Could not synchronize page %s: %s';
 
 // current / history tables

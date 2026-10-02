@@ -106,7 +106,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
     {
         $text = sprintf(
             $this->getLang($langKey),
-            $s['matched'], $s['initialized'], $s['updated'], $s['excluded'], $s['conflicts'], $s['errors']
+            $s['matched'], $s['initialized'], $s['updated'], $s['excluded'], $s['directive_excluded'], $s['conflicts'], $s['errors']
         );
         msg($text, ($s['errors'] || $s['conflicts']) ? 0 : 1);
     }

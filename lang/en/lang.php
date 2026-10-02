@@ -129,6 +129,7 @@ $lang['email_closing'] = 'Thank you,';
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';
 $lang['dw2pdf_published'] = 'Published';
+$lang['dw2pdf_uncontrolled'] = 'PAGE NOT SUBJECT TO REVISION CONTROL';
 
 $lang['move_blocked_active_uncontrolled'] = 'Move blocked: %s has an active DocApproval workflow and the destination %s is not controlled by any DocApproval rule. Publish the page or move it to another controlled location.';
 $lang['move_safeguard_active_uncontrolled'] = 'DocApproval safety hold: %s was moved by a path that bypassed the normal pre-move validation. The page remains controlled because its workflow is still active.';

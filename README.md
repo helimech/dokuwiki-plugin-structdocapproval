@@ -66,6 +66,7 @@ Available placeholders:
 - `@DOCSTATUS@` — `Published` or `WORKING DRAFT - NOT APPROVED`
 - `@DOCLASTPUBREV@` — last Published document revision
 - `@DOCLASTPUBDATE@` — last Published date
+- `@DOCHEADERMETA@` — complete header suffix. Controlled pages show revision/status/date; uncontrolled pages show `PAGE NOT SUBJECT TO REVISION CONTROL`
 
 Example `footer.html`:
 
@@ -80,6 +81,20 @@ Example `footer.html`:
 ```
 
 A working revision exported by a workflow participant is deliberately marked `DRAFT` / `WORKING DRAFT - NOT APPROVED`. Ordinary readers continue to be restricted to the last Published revision.
+
+For mixed controlled/uncontrolled templates, a header can use:
+
+```html
+<td style="text-align: right">@TITLE@ @DOCHEADERMETA@</td>
+```
+
+Examples:
+
+- Published controlled page: `Title -- REV: 009 (Published 2026-10-02)`
+- Working controlled page: `Title -- REV: DRAFT (WORKING DRAFT - NOT APPROVED)`
+- Uncontrolled page: `Title -- PAGE NOT SUBJECT TO REVISION CONTROL`
+
+The original individual DocApproval tokens remain available. On uncontrolled pages those individual fields continue to resolve blank so existing templates do not repeat the warning in every field.
 
 ## Notification email formatting
 

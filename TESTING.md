@@ -197,3 +197,20 @@ With workflow email enabled:
 - Attempt to move Draft / Awaiting Review / Awaiting Training / Ready to Publish into an uncontrolled namespace. Confirm Move is blocked before any page content or history is relocated.
 - Create a planned/tree namespace move containing at least one active workflow page whose destination is uncontrolled. Confirm the plan is aborted before any pages are moved.
 - Rename a page controlled by an exact-page rule. Confirm that exact rule follows the page and the move is allowed.
+
+
+## 16. DW2PDF composite header metadata
+
+Use the following in a DW2PDF header:
+
+```html
+<td style="text-align: right">@TITLE@ @DOCHEADERMETA@</td>
+```
+
+Confirm:
+
+- Published controlled page → `-- REV: NNN (Published {date})`.
+- Working controlled page → `-- REV: DRAFT (WORKING DRAFT - NOT APPROVED)`.
+- Uncontrolled page → `-- PAGE NOT SUBJECT TO REVISION CONTROL`.
+- Existing individual placeholders such as `@DOCREV@`, `@DOCSTATUS@`, and `@DOCDATE@` still work exactly as before.
+- On an uncontrolled page, the individual DocApproval placeholders remain blank while `@DOCHEADERMETA@` carries the explicit uncontrolled-page notice.

@@ -4,6 +4,14 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.9 test build — 2026-10-02
+
+- Added DW2PDF `@DOCHEADERMETA@` for templates shared by controlled and uncontrolled pages.
+- Published controlled pages render a combined revision/status/date suffix.
+- Working controlled pages render a combined DRAFT / NOT APPROVED suffix.
+- Uncontrolled pages explicitly render `PAGE NOT SUBJECT TO REVISION CONTROL` instead of leaving the composite header metadata blank.
+- Existing individual DW2PDF placeholders remain unchanged and continue to resolve blank on uncontrolled pages.
+
 ## 0.8 test build — 2026-10-01
 
 - Reworked Move integration so destination DocApproval rules are authoritative after a page rename/move.

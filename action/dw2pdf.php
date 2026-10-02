@@ -16,6 +16,7 @@ use dokuwiki\plugin\structdocapproval\meta\WorkflowRecord;
  *   @DOCSTATUS@        Published or WORKING DRAFT - NOT APPROVED
  *   @DOCLASTPUBREV@    Previous/current Published document revision
  *   @DOCLASTPUBDATE@   Previous/current Published date
+ *   @DOCHEADERMETA@     Complete header suffix, including an explicit uncontrolled-page notice
  */
 class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
 {
@@ -36,6 +37,7 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
             '@DOCSTATUS@',
             '@DOCLASTPUBREV@',
             '@DOCLASTPUBDATE@',
+            '@DOCHEADERMETA@',
         ] as $token) {
             if (!array_key_exists($token, $replace)) $replace[$token] = '';
         }
@@ -45,7 +47,15 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
 
         /** @var helper_plugin_structdocapproval_db $db */
         $db = plugin_load('helper', 'structdocapproval_db');
-        if (!$db || !$db->isControlled($pid)) return;
+        if (!$db) return;
+
+        // Keep the individual DocApproval fields blank on uncontrolled pages so
+        // existing templates do not suddenly repeat warning text in every field.
+        // The composite header token is intentionally explicit instead.
+        if (!$db->isControlled($pid)) {
+            $replace['@DOCHEADERMETA@'] = hsc('-- ' . $this->getLang('dw2pdf_uncontrolled'));
+            return;
+        }
 
         $context = is_array($event->data['context'] ?? null) ? $event->data['context'] : [];
         $revision = (int)($context['rev'] ?? 0);
@@ -71,11 +81,17 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
             $replace['@DOCSTATUS@'] = hsc($this->getLang('dw2pdf_published'));
             $replace['@DOCLASTPUBREV@'] = hsc($version);
             $replace['@DOCLASTPUBDATE@'] = hsc($date);
+            $replace['@DOCHEADERMETA@'] = hsc(
+                '-- REV: ' . $version . ' (' . $this->getLang('dw2pdf_published') . ' ' . $date . ')'
+            );
             return;
         }
 
         $replace['@DOCREV@'] = 'DRAFT';
         $replace['@DOCSTATUS@'] = hsc($this->getLang('dw2pdf_working'));
+        $replace['@DOCHEADERMETA@'] = hsc(
+            '-- REV: DRAFT (' . $this->getLang('dw2pdf_working') . ')'
+        );
 
         $previous = WorkflowRecord::latestPublished($pid, (int)$record->get('revision'));
         if ($previous) {

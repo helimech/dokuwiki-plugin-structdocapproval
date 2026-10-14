@@ -25,9 +25,11 @@ Rules are processed top-to-bottom. A pattern can be:
 - a namespace wildcard, e.g. `policy:**`
 - a full regular expression
 
-Each include rule has Reviewer, Training, and Publisher fields. Later matching nonblank values override earlier ones; blank fields inherit. An exclude rule removes matching pages from the workflow. A later include rule can re-include them.
+Each include rule has Reviewer, Training, Publisher, Notify, and Acknowledge fields. Later matching nonblank values override earlier ones; blank fields inherit. An exclude rule removes matching pages from the workflow. A later include rule can re-include them.
 
 Existing pages newly brought under control are initialized as Published. New pages created later inside a controlled area begin as Draft.
+
+`Notify` is an informational publication audience. `Acknowledge` is an authenticated user/group audience that receives an acknowledgement-required email and an acknowledgement box on the current Published revision. A user present in both audiences receives only the acknowledgement-required message.
 
 ## Page-level exclusion
 
@@ -112,6 +114,20 @@ Examples:
 - Uncontrolled page: `Title -- PAGE NOT SUBJECT TO REVISION CONTROL`
 
 The original individual DocApproval tokens remain available. On uncontrolled pages those individual fields continue to resolve blank so existing templates do not repeat the warning in every field.
+
+## Publication notification and acknowledgement
+
+When a normal workflow Publish action completes:
+
+- `Notify` recipients receive an informational email that a new document revision has been Published.
+- `Acknowledge` recipients receive an action-required email and must acknowledge the current Published revision on the page.
+- Acknowledge recipients are automatically considered notified; duplicate email is suppressed when the same person is also in Notify.
+- Acknowledgement evidence stores the formal publication-cycle revision, the actual Published content revision the user viewed, document version, user and timestamp.
+- Draft/Review/Training changes do not invalidate an acknowledgement while ordinary readers are still bound to the prior Published revision.
+- The Published minor-edit shortcut does not create a new acknowledgement requirement. Existing acknowledgement remains valid for that publication cycle.
+- Changing an Acknowledge rule can make the current Published revision due for newly included users immediately, but assignment changes do not mass-email users; publication/reminder tooling handles email delivery.
+
+Current compliance uses current group membership. Historical acknowledgement records are never deleted. A publication-time audience snapshot can be added later if audits require proof of the exact assigned population at the instant of publication.
 
 ## Notification email formatting
 

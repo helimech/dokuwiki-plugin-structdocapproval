@@ -39,24 +39,59 @@ class Assignments
         return $this->rules;
     }
 
-    public function addRule(bool $include, string $pattern, string $reviewer = '', string $training = '', string $publisher = ''): int
+    public function addRule(
+        bool $include,
+        string $pattern,
+        string $reviewer = '',
+        string $training = '',
+        string $publisher = '',
+        string $notify = '',
+        string $acknowledge = ''
+    ): int
     {
         $max = (int)$this->sqlite->queryValue('SELECT COALESCE(MAX(sort_order), 0) FROM struct_docapproval_rules');
         $order = $max + 10;
         $this->sqlite->query(
-            'INSERT INTO struct_docapproval_rules (sort_order, include_rule, pattern, reviewer, training, publisher) VALUES (?,?,?,?,?,?)',
-            [$order, $include ? 1 : 0, trim($pattern), trim($reviewer), trim($training), trim($publisher)]
+            'INSERT INTO struct_docapproval_rules (sort_order, include_rule, pattern, reviewer, training, publisher, notify, acknowledge) VALUES (?,?,?,?,?,?,?,?)',
+            [
+                $order,
+                $include ? 1 : 0,
+                trim($pattern),
+                trim($reviewer),
+                trim($training),
+                trim($publisher),
+                trim($notify),
+                trim($acknowledge),
+            ]
         );
         $id = (int)$this->sqlite->getPdo()->lastInsertId();
         $this->loadRules();
         return $id;
     }
 
-    public function updateRule(int $id, bool $include, string $pattern, string $reviewer = '', string $training = '', string $publisher = ''): bool
+    public function updateRule(
+        int $id,
+        bool $include,
+        string $pattern,
+        string $reviewer = '',
+        string $training = '',
+        string $publisher = '',
+        string $notify = '',
+        string $acknowledge = ''
+    ): bool
     {
         $ok = (bool)$this->sqlite->query(
-            'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, training=?, publisher=? WHERE id=?',
-            [$include ? 1 : 0, trim($pattern), trim($reviewer), trim($training), trim($publisher), $id]
+            'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, training=?, publisher=?, notify=?, acknowledge=? WHERE id=?',
+            [
+                $include ? 1 : 0,
+                trim($pattern),
+                trim($reviewer),
+                trim($training),
+                trim($publisher),
+                trim($notify),
+                trim($acknowledge),
+                $id,
+            ]
         );
         $this->loadRules();
         return $ok;
@@ -125,6 +160,8 @@ class Assignments
             Constants::ROLE_REVIEWER => '',
             Constants::ROLE_TRAINING => '',
             Constants::ROLE_PUBLISHER => '',
+            Constants::ROLE_NOTIFY => '',
+            Constants::ROLE_ACKNOWLEDGE => '',
             'matched_rules' => [],
             'excluded_by_directive' => false,
         ];
@@ -142,7 +179,7 @@ class Assignments
             }
 
             $resolved['controlled'] = true;
-            foreach ([Constants::ROLE_REVIEWER, Constants::ROLE_TRAINING, Constants::ROLE_PUBLISHER] as $role) {
+            foreach (Constants::assignmentRoles() as $role) {
                 if (trim((string)$rule[$role]) !== '') {
                     $resolved[$role] = trim((string)$rule[$role]);
                 }
@@ -197,13 +234,15 @@ class Assignments
         $pid = cleanID($pid);
         $resolved = $this->resolvePage($pid, $content);
         $this->sqlite->query(
-            'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, resolved_at) VALUES (?,?,?,?,?,?)',
+            'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) VALUES (?,?,?,?,?,?,?,?)',
             [
                 $pid,
                 $resolved['controlled'] ? 1 : 0,
                 $resolved[Constants::ROLE_REVIEWER],
                 $resolved[Constants::ROLE_TRAINING],
                 $resolved[Constants::ROLE_PUBLISHER],
+                $resolved[Constants::ROLE_NOTIFY],
+                $resolved[Constants::ROLE_ACKNOWLEDGE],
                 time(),
             ]
         );
@@ -224,7 +263,7 @@ class Assignments
 
     public function getRoleSpec(string $pid, string $role): string
     {
-        if (!in_array($role, [Constants::ROLE_REVIEWER, Constants::ROLE_TRAINING, Constants::ROLE_PUBLISHER], true)) return '';
+        if (!in_array($role, Constants::assignmentRoles(), true)) return '';
         $row = $this->getMaterialized($pid);
         return $row && (bool)$row['controlled'] ? (string)$row[$role] : '';
     }
@@ -242,7 +281,7 @@ class Assignments
 
     public function userHasAnyRole(string $pid, string $userId = '', array $groups = []): bool
     {
-        foreach ([Constants::ROLE_REVIEWER, Constants::ROLE_TRAINING, Constants::ROLE_PUBLISHER] as $role) {
+        foreach (Constants::workflowRoles() as $role) {
             if ($this->userHasRole($pid, $role, $userId, $groups)) return true;
         }
         return false;

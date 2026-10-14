@@ -12,10 +12,18 @@ class helper_plugin_structdocapproval_notify extends Plugin
     {
         if (!$this->getConf('email_enable')) return;
 
-        $specs = [];
         $pid = $record->getPid();
         $assignments = Assignments::getInstance();
 
+        // Publication has two audiences: informational Notify recipients and people
+        // who must Acknowledge the newly Published revision. Acknowledge implies an
+        // email; recipients present in both lists receive only the action-required mail.
+        if ($action === Constants::ACTION_PUBLISH) {
+            $this->sendPublicationAudience($record, $assignments);
+            return;
+        }
+
+        $specs = [];
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
                 if ($record->get('assigned_reviewer')) $specs[] = (string)$record->get('assigned_reviewer');
@@ -32,9 +40,6 @@ class helper_plugin_structdocapproval_notify extends Plugin
             case Constants::ACTION_TRAINING_REVIEWED:
                 $specs[] = $assignments->getRoleSpec($pid, Constants::ROLE_PUBLISHER);
                 break;
-            case Constants::ACTION_PUBLISH:
-                if (trim((string)$this->getConf('publish_notify')) !== '') $specs[] = (string)$this->getConf('publish_notify');
-                break;
             default:
                 return;
         }
@@ -50,7 +55,94 @@ class helper_plugin_structdocapproval_notify extends Plugin
         if (!$mailer->send()) throw new RuntimeException('DokuWiki Mailer reported that the message was not sent.');
     }
 
-    public function resolveRecipients(array $specs): array
+    protected function sendPublicationAudience(WorkflowRecord $record, Assignments $assignments): void
+    {
+        $pid = $record->getPid();
+        $ackSpec = $assignments->getRoleSpec($pid, Constants::ROLE_ACKNOWLEDGE);
+        $notifySpec = $assignments->getRoleSpec($pid, Constants::ROLE_NOTIFY);
+
+        // Acknowledge is an authenticated-user/group role. Literal email addresses are
+        // intentionally ignored here because there would be no account to record against.
+        $ackRecipients = $this->resolveRecipients([$ackSpec], false);
+
+        $notifySpecs = [$notifySpec];
+        if (trim((string)$this->getConf('publish_notify')) !== '') {
+            $notifySpecs[] = (string)$this->getConf('publish_notify');
+        }
+        $notifyRecipients = $this->resolveRecipients($notifySpecs, true);
+
+        $ackKeys = [];
+        foreach ($ackRecipients as $email) $ackKeys[strtolower($email)] = true;
+        $notifyRecipients = array_values(array_filter($notifyRecipients, static function ($email) use ($ackKeys) {
+            return !isset($ackKeys[strtolower($email)]);
+        }));
+
+        if ($ackRecipients) {
+            $this->sendPublicationMail($record, $ackRecipients, true);
+        }
+        if ($notifyRecipients) {
+            $this->sendPublicationMail($record, $notifyRecipients, false);
+        }
+    }
+
+    protected function sendPublicationMail(WorkflowRecord $record, array $recipients, bool $ackRequired): void
+    {
+        $pid = $record->getPid();
+        $title = trim((string)p_get_first_heading($pid));
+        if ($title === '') $title = $pid;
+        $version = Constants::formatVersion((string)$record->get('version'));
+        if ($version === '') $version = $this->getLang('version_unset');
+        $publishedAt = $this->formatDate((string)($record->get('published_at') ?: $record->get('datetime')));
+        $pageUrl = wl($pid, '', true, '&');
+
+        $subject = sprintf(
+            $ackRequired ? $this->getLang('email_ack_subject') : $this->getLang('email_notify_subject'),
+            $title,
+            $version
+        );
+        $intro = $ackRequired ? $this->getLang('email_ack_intro') : $this->getLang('email_notify_intro');
+
+        $text = [
+            $intro,
+            '',
+            $this->textField($this->getLang('email_page'), $title),
+            $this->textField($this->getLang('version'), $version),
+            $this->textField($this->getLang('ack_published'), $publishedAt),
+            $this->textField($this->getLang('email_view_page'), $pageUrl),
+            '',
+            $ackRequired ? $this->getLang('email_ack_instruction') : $this->getLang('email_notify_no_action'),
+        ];
+
+        if (trim((string)$record->get('comment')) !== '') {
+            $text[] = '';
+            $text[] = $this->textField($this->getLang('email_comment'), (string)$record->get('comment'));
+        }
+
+        $html = '<p>' . hsc($intro) . '</p><p>' .
+            $this->htmlField($this->getLang('email_page'), $title) .
+            $this->htmlField($this->getLang('version'), $version) .
+            $this->htmlField($this->getLang('ack_published'), $publishedAt) .
+            '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
+            '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a></p>';
+
+        $html .= '<p><strong>' . hsc(
+            $ackRequired ? $this->getLang('email_ack_instruction') : $this->getLang('email_notify_no_action')
+        ) . '</strong></p>';
+
+        if (trim((string)$record->get('comment')) !== '') {
+            $html .= '<p>' . $this->htmlField($this->getLang('email_comment'), (string)$record->get('comment')) . '</p>';
+        }
+
+        $mailer = new Mailer();
+        $mailer->bcc($recipients);
+        $mailer->subject($subject);
+        $mailer->setBody(implode("\n", $text) . "\n", null, null, $html);
+        if (!$mailer->send()) {
+            throw new RuntimeException('DokuWiki Mailer reported that the publication message was not sent.');
+        }
+    }
+
+    public function resolveRecipients(array $specs, bool $allowLiteralEmails = true): array
     {
         $tokens = [];
         foreach ($specs as $spec) {
@@ -65,7 +157,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
             if ($token[0] === '@') {
                 $this->resolveGroup($emails, substr($token, 1));
             } elseif (strpos($token, '@') !== false) {
-                $emails[$token] = true;
+                if ($allowLiteralEmails) $emails[$token] = true;
             } else {
                 $this->resolveUser($emails, $token);
             }
@@ -104,7 +196,6 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $actorName = $this->displayName((string)$record->get('actor'));
         $pageUrl = wl($pid, '', true, '&');
 
-        // Keep the plain-text alternative in the same visual order as the HTML email.
         $text = [
             $this->getLang('email_intro'),
             '',
@@ -117,8 +208,6 @@ class helper_plugin_structdocapproval_notify extends Plugin
         ];
 
         $html = '<p>' . hsc($this->getLang('email_intro')) . '</p>';
-
-        // Summary block: Page + Current status, then the direct page link.
         $html .= '<p>';
         $html .= $this->htmlFieldInline($this->getLang('email_page'), $title);
         $html .= '&nbsp;&nbsp;&nbsp;&nbsp;';
@@ -128,7 +217,6 @@ class helper_plugin_structdocapproval_notify extends Plugin
             '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a>';
         $html .= '</p>';
 
-        // Action details are intentionally separated from the current document summary.
         $html .= '<p>';
         $html .= $this->htmlField($this->getLang('email_action'), $actionLabel);
         $html .= $this->htmlField($this->getLang('email_actor'), $actorName);
@@ -162,7 +250,6 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $text[] = $this->getLang('email_view_diff') . ':';
             $text[] = $diff;
 
-            // Keep the long diff URL on its own line so Outlook can wrap it cleanly.
             $html .= '<p><strong>' . hsc($this->getLang('email_view_diff')) . ':</strong><br>' .
                 '<a href="' . hsc($diff) . '">' . hsc($diff) . '</a></p>';
         }
@@ -171,10 +258,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $text[] = $this->getLang('email_closing');
         $html .= '<p><em>' . hsc($this->getLang('email_closing')) . '</em></p>';
 
-        return [
-            'text' => implode("\n", $text) . "\n",
-            'html' => $html,
-        ];
+        return ['text' => implode("\n", $text) . "\n", 'html' => $html];
     }
 
     protected function htmlField(string $label, string $value): string
@@ -202,8 +286,13 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $data = $auth->getUserData($user);
             if ($data && !empty($data['name'])) return (string)$data['name'];
         }
-
         return $user;
     }
 
+    protected function formatDate(string $iso): string
+    {
+        if ($iso === '') return '';
+        $ts = strtotime($iso);
+        return $ts ? dformat($ts) : $iso;
+    }
 }

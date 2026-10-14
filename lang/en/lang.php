@@ -71,6 +71,8 @@ $lang['training_awareness'] = 'Awareness / notification only';
 $lang['pattern'] = 'Pattern';
 $lang['training'] = 'Training';
 $lang['publisher'] = 'Publisher';
+$lang['notify'] = 'Notify';
+$lang['acknowledge'] = 'Acknowledge';
 $lang['actions'] = 'Actions';
 $lang['add_rule'] = 'Add Rule';
 $lang['save_rules'] = 'Save Rules';
@@ -78,7 +80,7 @@ $lang['remove_rule'] = 'Remove Rule';
 $lang['move_up'] = 'Move rule up';
 $lang['move_down'] = 'Move rule down';
 $lang['sync_rule'] = 'Save & Sync';
-$lang['rules_help'] = 'Pattern may be an exact page ID, namespace wildcard (for example policy:**), or a full regular expression. Blank role cells inherit earlier matching values. Comma-separated users/@groups are allowed. For Review, groups are expanded to actual users when a page is submitted. One-off page exclusions may use ~~NOREVISIONCONTROL~~ on its own line; only an administrator or assigned Publisher may add or remove that directive.';
+$lang['rules_help'] = 'Pattern may be an exact page ID, namespace wildcard (for example policy:**), or a full regular expression. Blank role cells inherit earlier matching values. Comma-separated users/@groups are allowed. Notify may also contain literal email addresses. Acknowledge is for authenticated users/@groups because acknowledgements are recorded by user account. One-off page exclusions may use ~~NOREVISIONCONTROL~~ on its own line; only an administrator or assigned Publisher may add or remove that directive.';
 $lang['invalid_pattern'] = 'Invalid or empty assignment pattern';
 $lang['rule_added'] = 'Rule added. Sync the rule to initialize/update existing matching pages.';
 $lang['rules_saved'] = 'Rules saved. Sync affected rules or run Reconcile Existing Pages.';
@@ -128,6 +130,24 @@ $lang['email_training_note'] = 'Training note';
 $lang['email_view_page'] = 'View page';
 $lang['email_view_diff'] = 'View changes since the previous published revision';
 $lang['email_closing'] = 'Thank you,';
+$lang['email_ack_subject'] = '[DocApproval] Acknowledgement Required — %s Rev %s';
+$lang['email_notify_subject'] = '[DocApproval] Document Published — %s Rev %s';
+$lang['email_ack_intro'] = 'A controlled document has been published and requires your acknowledgement.';
+$lang['email_notify_intro'] = 'A controlled document has been published or updated.';
+$lang['email_ack_instruction'] = 'Please review the published revision and record your acknowledgement on the page.';
+$lang['email_notify_no_action'] = 'This message is informational only; no acknowledgement is required.';
+
+// end-user acknowledgement
+$lang['ack_required_title'] = 'Acknowledgement Required';
+$lang['ack_required_context'] = 'Published Revision %s on %s requires your acknowledgement.';
+$lang['ack_confirm_label'] = 'I confirm that I have read and understood this published revision.';
+$lang['ack_button'] = 'Acknowledge';
+$lang['ack_saved'] = 'Your acknowledgement has been recorded.';
+$lang['ack_confirm_required'] = 'Confirm that you have read and understood the published revision before acknowledging.';
+$lang['ack_complete_title'] = 'Acknowledged';
+$lang['ack_complete_context'] = 'You acknowledged Published Revision %s on %s.';
+$lang['ack_view_changes'] = 'View changes since your previous acknowledgement';
+$lang['ack_published'] = 'Published';
 
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';

@@ -39,7 +39,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                     $pattern,
                     (string)($rule['reviewer'] ?? ''),
                     (string)($rule['training'] ?? ''),
-                    (string)($rule['publisher'] ?? '')
+                    (string)($rule['publisher'] ?? ''),
+                    (string)($rule['notify'] ?? ''),
+                    (string)($rule['acknowledge'] ?? '')
                 );
                 msg($this->getLang('rule_added'), 1);
             } elseif ($action === 'save_rules') {
@@ -130,7 +132,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<input type="hidden" name="page" value="structdocapproval" />';
         echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<table class="inline plugin-structdocapproval-rules">';
-        echo '<tr><th>#</th><th>+/-</th><th>' . hsc($this->getLang('pattern')) . '</th><th>' . hsc($this->getLang('reviewer')) . '</th><th>' . hsc($this->getLang('training')) . '</th><th>' . hsc($this->getLang('publisher')) . '</th><th>' . hsc($this->getLang('actions')) . '</th></tr>';
+        echo '<tr><th>#</th><th>+/-</th><th>' . hsc($this->getLang('pattern')) . '</th><th>' . hsc($this->getLang('reviewer')) . '</th><th>' . hsc($this->getLang('training')) . '</th><th>' . hsc($this->getLang('publisher')) . '</th><th>' . hsc($this->getLang('notify')) . '</th><th>' . hsc($this->getLang('acknowledge')) . '</th><th>' . hsc($this->getLang('actions')) . '</th></tr>';
 
         foreach ($rules as $idx => $rule) {
             $id = (int)$rule['id'];
@@ -141,6 +143,8 @@ class admin_plugin_structdocapproval extends AdminPlugin
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][reviewer]" value="' . hsc($rule['reviewer']) . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][training]" value="' . hsc($rule['training']) . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][publisher]" value="' . hsc($rule['publisher']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][notify]" value="' . hsc($rule['notify'] ?? '') . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][acknowledge]" value="' . hsc($rule['acknowledge'] ?? '') . '" /></td>';
             echo '<td class="rule-actions">';
             echo '<button type="submit" name="action" value="move_up:' . $id . '" title="' . hsc($this->getLang('move_up')) . '">↑</button>';
             echo '<button type="submit" name="action" value="move_down:' . $id . '" title="' . hsc($this->getLang('move_down')) . '">↓</button>';
@@ -162,6 +166,8 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<td><input class="edit" type="text" name="newrule[reviewer]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[training]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[publisher]" placeholder="user or @group" /></td>';
+        echo '<td><input class="edit" type="text" name="newrule[notify]" placeholder="user, @group, or email" /></td>';
+        echo '<td><input class="edit" type="text" name="newrule[acknowledge]" placeholder="user or @group" /></td>';
         echo '<td><button type="submit" name="action" value="add_rule">' . hsc($this->getLang('add_rule')) . '</button></td>';
         echo '</tr></table></form>';
 

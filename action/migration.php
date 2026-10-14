@@ -58,7 +58,18 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
         $ok = (bool)$importer->build();
         if (!$ok) return false;
 
-        $sql = io_readFile(DOKU_PLUGIN . 'structdocapproval/db/update0001.sql', false);
+        return $this->runSqlMigration($sqlite, 1);
+    }
+
+    protected function migration2(SQLiteDB $sqlite): bool
+    {
+        return $this->runSqlMigration($sqlite, 2);
+    }
+
+    protected function runSqlMigration(SQLiteDB $sqlite, int $version): bool
+    {
+        $file = sprintf(DOKU_PLUGIN . 'structdocapproval/db/update%04d.sql', $version);
+        $sql = io_readFile($file, false);
         foreach (Tools::SQLstring2array($sql) as $statement) {
             if (!$sqlite->query($statement)) return false;
         }

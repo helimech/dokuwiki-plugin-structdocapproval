@@ -4,6 +4,19 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.11 acknowledgement alpha — 2026-10-14
+
+- Started acknowledgement work on the `feature/acknowledgements` branch.
+- Added ordered `Notify` and `Acknowledge` assignment fields alongside Reviewer/Training/Publisher.
+- Added database migration 2 and a dedicated acknowledgement evidence table.
+- Added a bottom-of-page acknowledgement box for assigned authenticated users on the current Published revision.
+- Acknowledging requires an explicit read/understood confirmation and records the publication cycle, actual viewed Published content revision, user, document version and timestamp.
+- Added a diff link from the user's prior acknowledged content revision to the current Published revision when available.
+- Publication sends separate deduplicated informational Notify and Acknowledgement Required audiences.
+- Existing global `publish_notify` remains an additional informational publication list.
+- Published-preserving Minor Edits do not create a new acknowledgement requirement.
+- Acknowledgement history follows page moves while destination assignment rules remain authoritative.
+
 ## 0.10 test build — 2026-10-02
 
 - Added page-local `~~NOREVISIONCONTROL~~` for one-off exclusions from DocApproval.

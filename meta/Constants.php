@@ -25,6 +25,8 @@ class Constants
     public const ROLE_REVIEWER = 'reviewer';
     public const ROLE_TRAINING = 'training';
     public const ROLE_PUBLISHER = 'publisher';
+    public const ROLE_NOTIFY = 'notify';
+    public const ROLE_ACKNOWLEDGE = 'acknowledge';
 
     public const TRAINING_NA = 'na';
     public const TRAINING_EXISTING = 'existing_adequate';
@@ -54,6 +56,26 @@ class Constants
             self::STATUS_AWAITING_TRAINING,
             self::STATUS_READY_TO_PUBLISH,
             self::STATUS_PUBLISHED,
+        ];
+    }
+
+    public static function assignmentRoles(): array
+    {
+        return [
+            self::ROLE_REVIEWER,
+            self::ROLE_TRAINING,
+            self::ROLE_PUBLISHER,
+            self::ROLE_NOTIFY,
+            self::ROLE_ACKNOWLEDGE,
+        ];
+    }
+
+    public static function workflowRoles(): array
+    {
+        return [
+            self::ROLE_REVIEWER,
+            self::ROLE_TRAINING,
+            self::ROLE_PUBLISHER,
         ];
     }
 

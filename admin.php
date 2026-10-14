@@ -54,7 +54,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                         $pattern,
                         (string)($rule['reviewer'] ?? ''),
                         (string)($rule['training'] ?? ''),
-                        (string)($rule['publisher'] ?? '')
+                        (string)($rule['publisher'] ?? ''),
+                        (string)($rule['notify'] ?? ''),
+                        (string)($rule['acknowledge'] ?? '')
                     );
                 }
                 msg($this->getLang('rules_saved'), 1);
@@ -88,7 +90,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                         $pattern,
                         (string)($rule['reviewer'] ?? ''),
                         (string)($rule['training'] ?? ''),
-                        (string)($rule['publisher'] ?? '')
+                        (string)($rule['publisher'] ?? ''),
+                        (string)($rule['notify'] ?? ''),
+                        (string)($rule['acknowledge'] ?? '')
                     );
                 }
                 $stats = $sync->syncRule($id, $actor, [(string)$old['pattern']]);

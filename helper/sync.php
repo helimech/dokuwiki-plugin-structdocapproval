@@ -78,7 +78,9 @@ class helper_plugin_structdocapproval_sync extends Plugin
                 (bool)$old['controlled'] !== (bool)$resolved['controlled'] ||
                 (string)($old['reviewer'] ?? '') !== (string)$resolved[Constants::ROLE_REVIEWER] ||
                 (string)($old['training'] ?? '') !== (string)$resolved[Constants::ROLE_TRAINING] ||
-                (string)($old['publisher'] ?? '') !== (string)$resolved[Constants::ROLE_PUBLISHER];
+                (string)($old['publisher'] ?? '') !== (string)$resolved[Constants::ROLE_PUBLISHER] ||
+                (string)($old['notify'] ?? '') !== (string)$resolved[Constants::ROLE_NOTIFY] ||
+                (string)($old['acknowledge'] ?? '') !== (string)$resolved[Constants::ROLE_ACKNOWLEDGE];
 
             $wasControlled = $old && (bool)$old['controlled'];
             $assignments->materializePage($pid);

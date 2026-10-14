@@ -227,3 +227,23 @@ In a namespace that is normally controlled by an assignment rule:
 5. Run Reconcile Existing Pages. Confirm the page remains excluded and the completion message reports it under "excluded by page directive".
 6. Remove the directive as an administrator or assigned Publisher. Confirm the page's normal namespace/page rules take effect again and the removal save enters Draft rather than silently publishing new controlled content.
 7. Mention `~~NOREVISIONCONTROL~~` in ordinary prose without placing it alone on a line. Confirm the page is not excluded.
+
+
+## 18. Notify / Acknowledge alpha
+
+Use a narrow controlled test namespace and configure distinct users/groups in Notify and Acknowledge.
+
+1. Upgrade from v0.10 and open a normal page. Confirm migration 2 adds Notify/Acknowledge fields without losing existing assignment rules.
+2. In Struct DocApproval admin, confirm the rule table is now `Reviewer | Training | Publisher | Notify | Acknowledge` and Save / Save & Sync retain all five values.
+3. Put one user only in Notify, one only in Acknowledge, and one in both. Publish a new revision with workflow email enabled.
+4. Confirm Notify-only receives an informational Published email, Acknowledge-only receives Acknowledgement Required, and the overlapping user receives only the Acknowledgement Required email.
+5. As the Acknowledge user, open the Published page. Confirm the acknowledgement box appears at the bottom of the page.
+6. Submit without checking the confirmation box. Confirm acknowledgement is rejected.
+7. Check the confirmation and Acknowledge. Confirm the box changes to a recorded confirmation with timestamp after redirect.
+8. Edit the page into Draft. As an ordinary reader, confirm the prior Published revision still displays and its acknowledgement remains current. As a workflow participant viewing the Draft, confirm no Draft acknowledgement box is offered.
+9. Publish the Draft as a new revision. Confirm the same assigned user is due again for the new formal publication cycle.
+10. Before acknowledging the new publication, confirm View changes since your previous acknowledgement compares the prior acknowledged content revision with the new Published content revision.
+11. Move the Published page to a namespace with different Notify/Acknowledge rules. Confirm acknowledgement evidence follows the page ID while current audience membership follows the destination rules.
+12. With Published minor-edit preservation enabled, make a permitted Minor Change after a user has acknowledged the current publication. Confirm that acknowledgement remains current and no new acknowledgement requirement is created.
+13. Add a new Acknowledge user after that minor edit. Confirm the new user can acknowledge the current displayed Published content while the requirement remains associated with the existing formal publication cycle.
+14. Put a literal email address in Notify and confirm it can receive the FYI publication email. Put a literal email address in Acknowledge and confirm it is not treated as an acknowledgement identity.

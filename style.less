@@ -122,3 +122,42 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+
+.plugin-structdocapproval-ack {
+    display: table;
+    border: 1px solid @ini_border;
+    background: @ini_background_alt;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0 0 0;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+    max-width: 46rem;
+
+    &.required {
+        border-left: 4px solid #b06a00;
+    }
+
+    &.done {
+        border-left: 4px solid #3b7a4a;
+    }
+
+    .ack-title {
+        font-size: 1.05em;
+        margin-bottom: 0.35rem;
+    }
+
+    p {
+        margin: 0.3rem 0;
+    }
+
+    .docapproval-ack-form {
+        margin-top: 0.8rem;
+    }
+
+    .docapproval-ack-form label {
+        display: block;
+        margin-bottom: 0.7rem;
+        font-weight: 600;
+    }
+}

@@ -291,3 +291,15 @@ Use a narrow controlled test page with at least three test accounts.
 10. Independently set **What the on-page acknowledgement report shows** to acknowledged users, pending users, and both. Confirm the page report changes without altering stored acknowledgement evidence.
 11. Confirm acknowledged users show their acknowledgement date/time and pending users show the correct outstanding accounts from the publication-time snapshot.
 12. While a newer Draft exists, open the prior Published revision as an ordinary reader with report permission. Confirm the report remains tied to the authoritative Published revision, not the Draft.
+
+
+## 21. Collapsed report and real names (v0.12.3)
+
+1. Publish a revision with several required acknowledgers whose login names differ from their DokuWiki full names.
+2. Open the Published page with an account permitted to see the on-page acknowledgement report.
+3. Confirm the report starts collapsed and its summary shows the revision, acknowledged/required count, and outstanding count.
+4. Expand the report and confirm acknowledged and pending users are shown by full name rather than login.
+5. Hover a displayed full name and confirm the underlying login is available as the tooltip.
+6. Confirm acknowledgement date/time remains visible next to completed users.
+7. In Admin → Struct DocApproval → Acknowledgement Status, expand an Outstanding count and confirm the listed users use full names.
+8. Test a user account with no full-name attribute and confirm the login is used as a safe fallback.

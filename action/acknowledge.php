@@ -139,16 +139,19 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
         $version = trim((string)$data['version']);
         if ($version === '') $version = $this->getLang('version_unset');
 
-        $html = '<div class="plugin-structdocapproval-ack-report">';
-        $html .= '<div class="ack-report-title"><strong>' . hsc($this->getLang('ack_report_title')) . '</strong></div>';
-        $html .= '<p>' . hsc(sprintf(
-            $this->getLang('ack_report_summary'),
-            $version,
-            $complete,
-            $required,
-            $outstanding
-        )) . '</p>';
+        // Keep potentially large reports out of the way by default. The summary
+        // remains visible and the user can expand the details when needed.
+        $html = '<details class="plugin-structdocapproval-ack-report">';
+        $html .= '<summary><strong>' . hsc($this->getLang('ack_report_title')) . '</strong> — ' .
+            hsc(sprintf(
+                $this->getLang('ack_report_summary'),
+                $version,
+                $complete,
+                $required,
+                $outstanding
+            )) . '</summary>';
 
+        $html .= '<div class="ack-report-body">';
         $html .= '<div class="ack-report-sections">';
 
         if ($mode === 'acknowledged' || $mode === 'both') {
@@ -159,7 +162,7 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
             } else {
                 $html .= '<ul>';
                 foreach ($data['acknowledged_users'] as $ackUser => $timestamp) {
-                    $html .= '<li>' . userlink($ackUser);
+                    $html .= '<li>' . $this->renderReportUser($publication, $ackUser);
                     if ($timestamp) $html .= ' — ' . hsc(dformat((int)$timestamp));
                     $html .= '</li>';
                 }
@@ -176,15 +179,23 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
             } else {
                 $html .= '<ul>';
                 foreach ($data['outstanding_users'] as $pendingUser) {
-                    $html .= '<li>' . userlink($pendingUser) . '</li>';
+                    $html .= '<li>' . $this->renderReportUser($publication, $pendingUser) . '</li>';
                 }
                 $html .= '</ul>';
             }
             $html .= '</div>';
         }
 
-        $html .= '</div></div>';
+        $html .= '</div></div></details>';
         return $html;
+    }
+
+    protected function renderReportUser(
+        helper_plugin_structdocapproval_publication $publication,
+        string $user
+    ): string {
+        $name = $publication->getUserDisplayName($user);
+        return '<span class="ack-report-user" title="' . hsc($user) . '">' . hsc($name) . '</span>';
     }
 
     protected function renderRequired(

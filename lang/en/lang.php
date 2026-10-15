@@ -153,6 +153,12 @@ $lang['ack_complete_title'] = 'Acknowledged';
 $lang['ack_complete_context'] = 'You acknowledged Published Revision %s on %s.';
 $lang['ack_view_changes'] = 'View changes since your previous acknowledgement';
 $lang['ack_published'] = 'Published';
+$lang['ack_status_heading'] = 'Acknowledgement Status';
+$lang['ack_status_intro'] = 'Current formal publications with their snapshotted acknowledgement audience. Outstanding users are based on the audience captured when that revision was Published.';
+$lang['ack_status_none'] = 'No current publication audience snapshots exist yet.';
+$lang['ack_required_count'] = 'Required';
+$lang['ack_complete_count'] = 'Acknowledged';
+$lang['ack_outstanding_count'] = 'Outstanding';
 
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';

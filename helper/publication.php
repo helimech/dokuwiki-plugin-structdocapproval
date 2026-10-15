@@ -211,6 +211,90 @@ class helper_plugin_structdocapproval_publication extends Plugin
         );
     }
 
+    public function getCurrentComplianceRows(): array
+    {
+        $db = $this->db();
+        if (!$db) return [];
+
+        $rows = $db->queryAll(
+            'SELECT DISTINCT pid FROM struct_docapproval_publications ORDER BY pid'
+        ) ?: [];
+        $out = [];
+
+        /** @var helper_plugin_structdocapproval_db $dbHelper */
+        $dbHelper = plugin_load('helper', 'structdocapproval_db');
+
+        foreach ($rows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if ($pid === '') continue;
+            if ($dbHelper && !$dbHelper->isControlled($pid)) continue;
+
+            $publicationRevision = $this->getCurrentPublicationRevision($pid);
+            if (!$publicationRevision) continue;
+            $snapshot = $this->getSnapshot($pid, $publicationRevision);
+            if (!$snapshot) continue;
+
+            $required = $this->getRequiredUsers($pid, $publicationRevision);
+            $ackRows = $db->queryAll(
+                'SELECT user,acknowledged_at FROM struct_docapproval_acknowledgements ' .
+                'WHERE pid=? AND publication_revision=? ORDER BY user',
+                [$pid, $publicationRevision]
+            ) ?: [];
+
+            $acknowledged = [];
+            foreach ($ackRows as $ack) {
+                $user = (string)($ack['user'] ?? '');
+                if ($user !== '') $acknowledged[$user] = (int)($ack['acknowledged_at'] ?? 0);
+            }
+
+            $requiredSet = array_fill_keys($required, true);
+            $completed = [];
+            foreach ($acknowledged as $user => $ts) {
+                if (isset($requiredSet[$user])) $completed[$user] = $ts;
+            }
+
+            $out[] = [
+                'pid' => $pid,
+                'publication_revision' => $publicationRevision,
+                'version' => (string)$snapshot['version'],
+                'published_at' => (int)$snapshot['published_at'],
+                'notify_spec' => (string)$snapshot['notify_spec'],
+                'acknowledge_spec' => (string)$snapshot['acknowledge_spec'],
+                'required_users' => $required,
+                'acknowledged_users' => $completed,
+                'outstanding_users' => array_values(array_diff($required, array_keys($completed))),
+            ];
+        }
+
+        return $out;
+    }
+
+    public function getPendingForUser(string $user): array
+    {
+        $user = trim($user);
+        if ($user === '') return [];
+
+        $db = $this->db();
+        if (!$db) return [];
+
+        $rows = $db->queryAll(
+            'SELECT r.pid,r.publication_revision,p.version,p.published_at ' .
+            'FROM struct_docapproval_requirements r ' .
+            'JOIN struct_docapproval_publications p ON p.pid=r.pid AND p.publication_revision=r.publication_revision ' .
+            'LEFT JOIN struct_docapproval_acknowledgements a ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
+            'WHERE r.user=? AND a.user IS NULL ORDER BY p.published_at DESC,r.pid',
+            [$user]
+        ) ?: [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = cleanID((string)$row['pid']);
+            if ($this->getCurrentPublicationRevision($pid) !== (int)$row['publication_revision']) continue;
+            $out[] = $row;
+        }
+        return $out;
+    }
+
     /**
      * Lightweight browser-autocomplete candidates for publication fields.
      */

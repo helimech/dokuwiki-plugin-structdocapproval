@@ -161,6 +161,11 @@ $lang['ack_complete_count'] = 'Acknowledged';
 $lang['ack_outstanding_count'] = 'Outstanding';
 $lang['release_notify'] = 'Notify Audience';
 $lang['release_acknowledge'] = 'Acknowledge Audience';
+$lang['ack_report_title'] = 'Acknowledgement Report';
+$lang['ack_report_summary'] = 'Published Revision %s: %d of %d required users have acknowledged; %d outstanding.';
+$lang['ack_report_acknowledged_heading'] = 'Users who have acknowledged';
+$lang['ack_report_pending_heading'] = 'Users who still need to acknowledge';
+$lang['ack_report_none'] = 'None';
 
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';

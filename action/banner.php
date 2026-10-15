@@ -202,12 +202,51 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         } elseif ($status === Constants::STATUS_READY_TO_PUBLISH && $this->db->canPublish($pid)) {
             $previous = WorkflowRecord::latestPublished($pid, (int)$record->get('revision'));
             $suggested = $previous ? Constants::nextVersion((string)$previous->get('version')) : '001';
+            $notifyDefault = $assignments->getRoleSpec($pid, Constants::ROLE_NOTIFY);
+            $ackDefault = $assignments->getRoleSpec($pid, Constants::ROLE_ACKNOWLEDGE);
+
+            /** @var helper_plugin_structdocapproval_publication $publication */
+            $publication = plugin_load('helper', 'structdocapproval_publication');
+            $suggestions = $publication ? $publication->getPrincipalSuggestions() : [];
+            $listId = 'docapproval-principal-suggestions';
+
             echo $this->formStart();
             echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" value="' . hsc($suggested) . '" /></label> ';
             echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+
+            echo '<fieldset class="docapproval-release-audience"><legend>' . hsc($this->getLang('release_audience')) . '</legend>';
+
+            echo '<div class="release-audience-row">';
+            echo '<label class="release-toggle"><input type="checkbox" name="structdocapproval[notify_enabled]" value="1"' .
+                ($notifyDefault !== '' ? ' checked' : '') . ' /> ' . hsc($this->getLang('notify_on_publish')) . '</label>';
+            echo '<input type="text" class="edit docapproval-audience" list="' . hsc($listId) . '" name="structdocapproval[notify_spec]" value="' .
+                hsc($notifyDefault) . '" placeholder="user, @group, or email" />';
+            echo '<span class="release-help">' . hsc($this->getLang('notify_publish_help')) . '</span>';
+            echo '</div>';
+
+            echo '<div class="release-audience-row">';
+            echo '<label class="release-toggle"><input type="checkbox" name="structdocapproval[acknowledge_enabled]" value="1"' .
+                ($ackDefault !== '' ? ' checked' : '') . ' /> ' . hsc($this->getLang('require_acknowledgement')) . '</label>';
+            echo '<input type="text" class="edit docapproval-audience" list="' . hsc($listId) . '" name="structdocapproval[acknowledge_spec]" value="' .
+                hsc($ackDefault) . '" placeholder="user or @group" />';
+            echo '<span class="release-help">' . hsc($this->getLang('ack_publish_help')) . '</span>';
+            echo '</div>';
+
+            if ($suggestions) {
+                echo '<datalist id="' . hsc($listId) . '">';
+                foreach ($suggestions as $candidate) {
+                    echo '<option value="' . hsc($candidate) . '"></option>';
+                }
+                echo '</datalist>';
+            }
+
+            echo '</fieldset>';
+
+            echo '<div class="docapproval-publish-buttons">';
             echo $this->actionButton(Constants::ACTION_PUBLISH);
             echo $this->actionButton(Constants::ACTION_RETURN_TRAINING, 'secondary');
             echo $this->actionButton(Constants::ACTION_RETURN_DRAFT, 'danger');
+            echo '</div>';
             echo '</form>';
         }
 

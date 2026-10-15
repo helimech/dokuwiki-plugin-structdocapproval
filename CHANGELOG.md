@@ -4,6 +4,13 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.3 acknowledgement test — 2026-10-15
+
+- On-page acknowledgement reports now start collapsed to keep long user lists out of the way.
+- The collapsed summary shows revision, acknowledged/required counts, and outstanding count.
+- Acknowledged and pending users are displayed using their DokuWiki full name instead of login name; the login remains available as a hover tooltip.
+- The Admin Acknowledgement Status outstanding-user expansion also uses full names.
+
 ## 0.12.2 acknowledgement test — 2026-10-15
 
 - Replaced the single-value browser datalist behavior with a multi-recipient token/chip autocomplete on the Ready to Publish release audience.

@@ -65,13 +65,13 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
 
         /** @var helper_plugin_structdocapproval_acknowledge $helper */
         $helper = plugin_load('helper', 'structdocapproval_acknowledge');
-        if (!$helper || !$helper->isAssigned($ID, $user, $USERINFO['grps'] ?? [])) return;
+        if (!$helper) return;
 
         $currentPublished = WorkflowRecord::latestPublished($ID);
         if (!$currentPublished) return;
         $publishedRevision = (int)$currentPublished->get('revision');
         $requirementRevision = $helper->getCurrentRequirementRevision($ID);
-        if (!$requirementRevision) return;
+        if (!$requirementRevision || !$helper->isRequired($ID, $requirementRevision, $user)) return;
 
         if ($REV) {
             if ((int)$REV !== $publishedRevision) return;

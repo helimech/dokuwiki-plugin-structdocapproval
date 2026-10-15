@@ -4,6 +4,15 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.2 acknowledgement test — 2026-10-15
+
+- Replaced the single-value browser datalist behavior with a multi-recipient token/chip autocomplete on the Ready to Publish release audience.
+- Selecting one user/group leaves the autocomplete ready for subsequent recipients; comma/Enter can also commit typed recipients.
+- Added independently configurable on-page acknowledgement report visibility and report content.
+- Report visibility choices include Off, Administrators, Managers + Administrators, assigned Publisher + Administrators, Editors/workflow participants + Administrators, and all logged-in users.
+- Report content can show acknowledged users, pending users, or both.
+- On-page reports are tied to the snapshotted current formal publication audience and show acknowledgement timestamps for completed users.
+
 ## 0.12.1 acknowledgement test — 2026-10-15
 
 - Fixed the missing `migration3()` handler that prevented database migration 3 from running after upgrading from the acknowledgement alpha.

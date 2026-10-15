@@ -115,6 +115,19 @@ Examples:
 
 The original individual DocApproval tokens remain available. On uncontrolled pages those individual fields continue to resolve blank so existing templates do not repeat the warning in every field.
 
+## Change Summary
+
+A working controlled revision has a separate **Change Summary** field in the workflow banner. It is intended to explain the revision in plain language for reviewers and release recipients; it is separate from per-action workflow Notes and from the Training Note.
+
+- A normal edit of a Published page starts a new Draft cycle with a blank Change Summary.
+- Further content edits within that same Draft/Review/Training/Ready-to-Publish cycle carry the summary forward.
+- Editors can maintain it during Draft. The assigned Reviewer, Training role, Publisher, and administrators can maintain it while they own the corresponding workflow stage.
+- Summary edits are retained in a dedicated audit history.
+- Workflow notification emails include the current Change Summary when one exists.
+- On normal Publish, the Change Summary is snapshotted with the publication and included in both informational Notify and Acknowledgement Required emails.
+- **The summary is required only when either Send publication notification or Require acknowledgement is selected.** A quiet grammar/administrative revision with neither release communication option selected may Publish with a blank summary.
+- Once Published, the publication snapshot is fixed. A new normal content edit starts the next summary cycle.
+
 ## Publication notification and acknowledgement
 
 The release audience is selected and snapshotted when a normal workflow **Publish** action occurs.

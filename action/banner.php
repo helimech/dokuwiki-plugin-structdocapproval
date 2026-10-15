@@ -50,6 +50,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
 
         $this->renderContext($ID, $shown);
         $this->renderStages($shown);
+        $this->renderChangeSummary($ID, $shown, $isCurrent);
 
         if ($shown->get('comment')) {
             echo '<div class="docapproval-return-note"><strong>' . hsc($this->getLang('return_note')) . ':</strong> ' . hsc($shown->get('comment')) . '</div>';
@@ -145,6 +146,66 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             if ($r->get('training_note')) echo ' — ' . hsc($r->get('training_note'));
             echo '</div>';
         }
+    }
+
+    protected function renderChangeSummary(string $pid, WorkflowRecord $record, bool $isCurrent): void
+    {
+        $status = (string)$record->get('status');
+
+        if ($status === Constants::STATUS_PUBLISHED) {
+            /** @var helper_plugin_structdocapproval_publication $publication */
+            $publication = plugin_load('helper', 'structdocapproval_publication');
+            $snapshot = $publication
+                ? $publication->getSnapshot($pid, (int)$record->get('revision'))
+                : null;
+            $summary = trim((string)($snapshot['change_summary'] ?? ''));
+            if ($summary === '') return;
+
+            echo '<div class="docapproval-change-summary published">';
+            echo '<strong>' . hsc($this->getLang('change_summary')) . ':</strong>';
+            echo '<div class="change-summary-text">' . nl2br(hsc($summary)) . '</div>';
+            echo '</div>';
+            return;
+        }
+
+        // The working summary is live state for the current workflow cycle. Do not
+        // project it backwards onto historical working revisions.
+        if (!$isCurrent) return;
+
+        /** @var helper_plugin_structdocapproval_change_summary $helper */
+        $helper = plugin_load('helper', 'structdocapproval_change_summary');
+        if (!$helper) return;
+
+        $data = $helper->get($pid);
+        $summary = (string)($data['summary'] ?? '');
+        $canEdit = $this->db->canEditChangeSummary(
+            $pid,
+            $status,
+            (string)$record->get('assigned_reviewer')
+        );
+
+        echo '<div class="docapproval-change-summary working">';
+        echo '<div class="change-summary-heading"><strong>' . hsc($this->getLang('change_summary')) . '</strong>';
+        echo ' <span class="change-summary-help">' . hsc($this->getLang('change_summary_help')) . '</span></div>';
+
+        if ($canEdit) {
+            echo '<form method="post" class="docapproval-change-summary-form">';
+            echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
+            echo '<input type="hidden" name="structdocapproval_summary[action]" value="save" />';
+            echo '<input type="hidden" name="structdocapproval_summary[working_revision]" value="' .
+                (int)$record->get('revision') . '" />';
+            echo '<textarea class="edit docapproval-change-summary-input" rows="3" ' .
+                'name="structdocapproval_summary[summary]" placeholder="' .
+                hsc($this->getLang('change_summary_placeholder')) . '">' . hsc($summary) . '</textarea>';
+            echo '<button type="submit">' . hsc($this->getLang('save_change_summary')) . '</button>';
+            echo '</form>';
+        } elseif (trim($summary) !== '') {
+            echo '<div class="change-summary-text">' . nl2br(hsc($summary)) . '</div>';
+        } else {
+            echo '<div class="change-summary-empty"><em>' . hsc($this->getLang('change_summary_empty')) . '</em></div>';
+        }
+
+        echo '</div>';
     }
 
     protected function stage(string $label, string $state, string $user = '', string $date = ''): void

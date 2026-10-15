@@ -3,5 +3,5 @@ author Andrew G
 email  
 date   2026-10-14
 name   Struct DocApproval
-desc   Controlled document review, training review, and publishing workflow backed by Struct
+desc   Controlled document review, training review, publishing, notification, and acknowledgement workflow backed by Struct
 url    https://www.dokuwiki.org/plugin:structdocapproval

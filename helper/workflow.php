@@ -33,6 +33,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         if (!$revision) $revision = (int)$current->get('revision');
         $next = $current->copyForRevision($revision)->stamp($action, $actor);
         $now = $next->get('datetime');
+        $publicationAudience = null;
 
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
@@ -101,6 +102,23 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 if (!$this->dbHelper->canPublish($pid)) throw new RuntimeException('You may not publish this page.');
                 $version = Constants::formatVersion((string)($params['version'] ?? ''));
                 if ($version === '') throw new RuntimeException('Enter the document version before publishing.');
+
+                /** @var helper_plugin_structdocapproval_publication $publication */
+                $publication = plugin_load('helper', 'structdocapproval_publication');
+                if (!$publication) throw new RuntimeException('Publication audience helper is unavailable.');
+
+                $notifySpec = !empty($params['notify_enabled'])
+                    ? trim((string)($params['notify_spec'] ?? ''))
+                    : '';
+                $acknowledgeSpec = !empty($params['acknowledge_enabled'])
+                    ? trim((string)($params['acknowledge_spec'] ?? ''))
+                    : '';
+
+                // Validate and resolve the acknowledgement audience before the workflow
+                // commits. This prevents a typo or unresolvable group from producing a
+                // Published revision with an incomplete compliance audience.
+                $publicationAudience = $publication->prepareAudience($notifySpec, $acknowledgeSpec);
+
                 $next->set('status', Constants::STATUS_PUBLISHED)
                     ->set('version', $version)
                     ->set('published_by', $actor)
@@ -149,6 +167,15 @@ class helper_plugin_structdocapproval_workflow extends Plugin
             /** @var helper_plugin_structdocapproval_publish $publish */
             $publish = plugin_load('helper', 'structdocapproval_publish');
             $publish->publishStructData($pid, (int)$next->get('revision'));
+
+            if ($action === Constants::ACTION_PUBLISH) {
+                /** @var helper_plugin_structdocapproval_publication $publication */
+                $publication = plugin_load('helper', 'structdocapproval_publication');
+                if (!$publication || $publicationAudience === null) {
+                    throw new RuntimeException('The document was Published but its release audience could not be recorded.');
+                }
+                $publication->persistAudience($next, $publicationAudience);
+            }
         }
 
         $eventData = ['pid' => $pid, 'action' => $action, 'record' => $next, 'previous' => $current];

@@ -116,8 +116,8 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                     ? trim((string)($params['acknowledge_spec'] ?? ''))
                     : '';
 
-                /** @var helper_plugin_structdocapproval_change_summary $changeSummary */
-                $changeSummary = plugin_load('helper', 'structdocapproval_change_summary');
+                /** @var helper_plugin_structdocapproval_changesummary $changeSummary */
+                $changeSummary = plugin_load('helper', 'structdocapproval_changesummary');
                 if (!$changeSummary) throw new RuntimeException('Change summary helper is unavailable.');
                 $summaryText = trim($changeSummary->getSummary($pid));
 

@@ -257,8 +257,8 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $html .= $this->htmlField($this->getLang('email_action'), $actionLabel);
         $html .= $this->htmlField($this->getLang('email_actor'), $actorName);
 
-        /** @var helper_plugin_structdocapproval_change_summary $changeSummaryHelper */
-        $changeSummaryHelper = plugin_load('helper', 'structdocapproval_change_summary');
+        /** @var helper_plugin_structdocapproval_changesummary $changeSummaryHelper */
+        $changeSummaryHelper = plugin_load('helper', 'structdocapproval_changesummary');
         $workingSummary = $changeSummaryHelper ? trim($changeSummaryHelper->getSummary($pid)) : '';
         if ($workingSummary !== '') {
             $text[] = '';

@@ -213,6 +213,52 @@ class helper_plugin_structdocapproval_publication extends Plugin
         );
     }
 
+    public function getComplianceForPage(string $pid, ?int $publicationRevision = null): ?array
+    {
+        $db = $this->db();
+        if (!$db) return null;
+
+        $pid = cleanID($pid);
+        if ($publicationRevision === null) {
+            $publicationRevision = $this->getCurrentPublicationRevision($pid);
+        }
+        if (!$publicationRevision) return null;
+
+        $snapshot = $this->getSnapshot($pid, $publicationRevision);
+        if (!$snapshot) return null;
+
+        $required = $this->getRequiredUsers($pid, $publicationRevision);
+        $ackRows = $db->queryAll(
+            'SELECT user,acknowledged_at FROM struct_docapproval_acknowledgements ' .
+            'WHERE pid=? AND publication_revision=? ORDER BY user',
+            [$pid, $publicationRevision]
+        ) ?: [];
+
+        $acknowledged = [];
+        foreach ($ackRows as $ack) {
+            $user = (string)($ack['user'] ?? '');
+            if ($user !== '') $acknowledged[$user] = (int)($ack['acknowledged_at'] ?? 0);
+        }
+
+        $requiredSet = array_fill_keys($required, true);
+        $completed = [];
+        foreach ($acknowledged as $user => $ts) {
+            if (isset($requiredSet[$user])) $completed[$user] = $ts;
+        }
+
+        return [
+            'pid' => $pid,
+            'publication_revision' => $publicationRevision,
+            'version' => (string)$snapshot['version'],
+            'published_at' => (int)$snapshot['published_at'],
+            'notify_spec' => (string)$snapshot['notify_spec'],
+            'acknowledge_spec' => (string)$snapshot['acknowledge_spec'],
+            'required_users' => $required,
+            'acknowledged_users' => $completed,
+            'outstanding_users' => array_values(array_diff($required, array_keys($completed))),
+        ];
+    }
+
     public function getCurrentComplianceRows(): array
     {
         $db = $this->db();
@@ -233,39 +279,8 @@ class helper_plugin_structdocapproval_publication extends Plugin
 
             $publicationRevision = $this->getCurrentPublicationRevision($pid);
             if (!$publicationRevision) continue;
-            $snapshot = $this->getSnapshot($pid, $publicationRevision);
-            if (!$snapshot) continue;
-
-            $required = $this->getRequiredUsers($pid, $publicationRevision);
-            $ackRows = $db->queryAll(
-                'SELECT user,acknowledged_at FROM struct_docapproval_acknowledgements ' .
-                'WHERE pid=? AND publication_revision=? ORDER BY user',
-                [$pid, $publicationRevision]
-            ) ?: [];
-
-            $acknowledged = [];
-            foreach ($ackRows as $ack) {
-                $user = (string)($ack['user'] ?? '');
-                if ($user !== '') $acknowledged[$user] = (int)($ack['acknowledged_at'] ?? 0);
-            }
-
-            $requiredSet = array_fill_keys($required, true);
-            $completed = [];
-            foreach ($acknowledged as $user => $ts) {
-                if (isset($requiredSet[$user])) $completed[$user] = $ts;
-            }
-
-            $out[] = [
-                'pid' => $pid,
-                'publication_revision' => $publicationRevision,
-                'version' => (string)$snapshot['version'],
-                'published_at' => (int)$snapshot['published_at'],
-                'notify_spec' => (string)$snapshot['notify_spec'],
-                'acknowledge_spec' => (string)$snapshot['acknowledge_spec'],
-                'required_users' => $required,
-                'acknowledged_users' => $completed,
-                'outstanding_users' => array_values(array_diff($required, array_keys($completed))),
-            ];
+            $compliance = $this->getComplianceForPage($pid, $publicationRevision);
+            if ($compliance) $out[] = $compliance;
         }
 
         return $out;

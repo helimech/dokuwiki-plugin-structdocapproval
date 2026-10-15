@@ -104,6 +104,11 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $publishedAt = $this->formatDate((string)($record->get('published_at') ?: $record->get('datetime')));
         $pageUrl = wl($pid, '', true, '&');
 
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        $snapshot = $publication ? $publication->getSnapshot($pid, (int)$record->get('revision')) : null;
+        $changeSummary = trim((string)($snapshot['change_summary'] ?? ''));
+
         $subject = sprintf(
             $ackRequired ? $this->getLang('email_ack_subject') : $this->getLang('email_notify_subject'),
             $title,
@@ -122,6 +127,12 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $ackRequired ? $this->getLang('email_ack_instruction') : $this->getLang('email_notify_no_action'),
         ];
 
+        if ($changeSummary !== '') {
+            $text[] = '';
+            $text[] = $this->getLang('email_change_summary') . ':';
+            $text[] = $changeSummary;
+        }
+
         if (trim((string)$record->get('comment')) !== '') {
             $text[] = '';
             $text[] = $this->textField($this->getLang('email_comment'), (string)$record->get('comment'));
@@ -133,6 +144,11 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $this->htmlField($this->getLang('ack_published'), $publishedAt) .
             '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
             '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a></p>';
+
+        if ($changeSummary !== '') {
+            $html .= '<p><strong>' . hsc($this->getLang('email_change_summary')) . ':</strong><br>' .
+                nl2br(hsc($changeSummary)) . '</p>';
+        }
 
         $html .= '<p><strong>' . hsc(
             $ackRequired ? $this->getLang('email_ack_instruction') : $this->getLang('email_notify_no_action')
@@ -239,6 +255,17 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $html .= '<p>';
         $html .= $this->htmlField($this->getLang('email_action'), $actionLabel);
         $html .= $this->htmlField($this->getLang('email_actor'), $actorName);
+
+        /** @var helper_plugin_structdocapproval_change_summary $changeSummaryHelper */
+        $changeSummaryHelper = plugin_load('helper', 'structdocapproval_change_summary');
+        $workingSummary = $changeSummaryHelper ? trim($changeSummaryHelper->getSummary($pid)) : '';
+        if ($workingSummary !== '') {
+            $text[] = '';
+            $text[] = $this->getLang('email_change_summary') . ':';
+            $text[] = $workingSummary;
+            $html .= '</p><p><strong>' . hsc($this->getLang('email_change_summary')) . ':</strong><br>' .
+                nl2br(hsc($workingSummary)) . '</p><p>';
+        }
 
         if (trim((string)$record->get('comment')) !== '') {
             $note = (string)$record->get('comment');

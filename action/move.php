@@ -175,13 +175,27 @@ class action_plugin_structdocapproval_move extends ActionPlugin
         $source = $sourceRows ? $sourceRows[0] : null;
         $wasControlled = $source && (bool)$source['controlled'];
 
-        // Publication audience snapshots, requirements, and acknowledgement evidence
-        // follow the page ID just like workflow history. Merge safely in case stale
-        // rows already exist at the destination.
+        // Change summaries, publication audience snapshots, requirements, and
+        // acknowledgement evidence follow the page ID just like workflow history.
+        $db->query(
+            'INSERT OR REPLACE INTO struct_docapproval_change_summary ' .
+            '(pid,working_revision,summary,updated_by,updated_at) ' .
+            'SELECT ?,working_revision,summary,updated_by,updated_at ' .
+            'FROM struct_docapproval_change_summary WHERE pid=?',
+            [$new, $old]
+        );
+        $db->query('DELETE FROM struct_docapproval_change_summary WHERE pid=?', [$old]);
+        $db->query(
+            'UPDATE struct_docapproval_change_summary_history SET pid=? WHERE pid=?',
+            [$new, $old]
+        );
+
+        // Merge immutable publication snapshots safely in case stale rows already
+        // exist at the destination.
         $db->query(
             'INSERT OR IGNORE INTO struct_docapproval_publications ' .
-            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,published_by,published_at) ' .
-            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,published_by,published_at ' .
+            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at) ' .
+            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at ' .
             'FROM struct_docapproval_publications WHERE pid=?',
             [$new, $old]
         );

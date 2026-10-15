@@ -58,14 +58,23 @@ class helper_plugin_structdocapproval_notify extends Plugin
     protected function sendPublicationAudience(WorkflowRecord $record, Assignments $assignments): void
     {
         $pid = $record->getPid();
-        $ackSpec = $assignments->getRoleSpec($pid, Constants::ROLE_ACKNOWLEDGE);
-        $notifySpec = $assignments->getRoleSpec($pid, Constants::ROLE_NOTIFY);
+        $publicationRevision = (int)$record->get('revision');
 
-        // Acknowledge is an authenticated-user/group role. Literal email addresses are
-        // intentionally ignored here because there would be no account to record against.
-        $ackRecipients = $this->resolveRecipients([$ackSpec], false);
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        $snapshot = $publication ? $publication->getSnapshot($pid, $publicationRevision) : null;
 
-        $notifySpecs = [$notifySpec];
+        // Acknowledge email recipients come from the exact user snapshot created at
+        // publication time, not from current group membership.
+        $requiredUsers = $publication
+            ? $publication->getRequiredUsers($pid, $publicationRevision)
+            : [];
+        $ackRecipients = $this->resolveRecipients($requiredUsers, false);
+
+        $notifySpecs = [];
+        if ($snapshot && trim((string)$snapshot['notify_spec']) !== '') {
+            $notifySpecs[] = (string)$snapshot['notify_spec'];
+        }
         if (trim((string)$this->getConf('publish_notify')) !== '') {
             $notifySpecs[] = (string)$this->getConf('publish_notify');
         }

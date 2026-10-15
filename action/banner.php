@@ -219,7 +219,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             echo '<div class="release-audience-row">';
             echo '<label class="release-toggle"><input type="checkbox" name="structdocapproval[notify_enabled]" value="1"' .
                 ($notifyDefault !== '' ? ' checked' : '') . ' /> ' . hsc($this->getLang('notify_on_publish')) . '</label>';
-            echo '<input type="text" class="edit docapproval-audience" list="' . hsc($listId) . '" name="structdocapproval[notify_spec]" value="' .
+            echo '<input type="text" class="edit docapproval-audience docapproval-token-source" data-allow-free-email="1" list="' . hsc($listId) . '" name="structdocapproval[notify_spec]" value="' .
                 hsc($notifyDefault) . '" placeholder="user, @group, or email" />';
             echo '<span class="release-help">' . hsc($this->getLang('notify_publish_help')) . '</span>';
             echo '</div>';
@@ -227,7 +227,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             echo '<div class="release-audience-row">';
             echo '<label class="release-toggle"><input type="checkbox" name="structdocapproval[acknowledge_enabled]" value="1"' .
                 ($ackDefault !== '' ? ' checked' : '') . ' /> ' . hsc($this->getLang('require_acknowledgement')) . '</label>';
-            echo '<input type="text" class="edit docapproval-audience" list="' . hsc($listId) . '" name="structdocapproval[acknowledge_spec]" value="' .
+            echo '<input type="text" class="edit docapproval-audience docapproval-token-source" data-allow-free-email="0" list="' . hsc($listId) . '" name="structdocapproval[acknowledge_spec]" value="' .
                 hsc($ackDefault) . '" placeholder="user or @group" />';
             echo '<span class="release-help">' . hsc($this->getLang('ack_publish_help')) . '</span>';
             echo '</div>';

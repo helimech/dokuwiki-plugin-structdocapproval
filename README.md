@@ -25,11 +25,11 @@ Rules are processed top-to-bottom. A pattern can be:
 - a namespace wildcard, e.g. `policy:**`
 - a full regular expression
 
-Each include rule has Reviewer, Training, Publisher, Notify, and Acknowledge fields. Later matching nonblank values override earlier ones; blank fields inherit. An exclude rule removes matching pages from the workflow. A later include rule can re-include them.
+Each include rule has Reviewer, Training, Publisher, Default Notify, and Default Acknowledge fields. Later matching nonblank values override earlier ones; blank fields inherit. An exclude rule removes matching pages from the workflow. A later include rule can re-include them.
 
 Existing pages newly brought under control are initialized as Published. New pages created later inside a controlled area begin as Draft.
 
-`Notify` is an informational publication audience. `Acknowledge` is an authenticated user/group audience that receives an acknowledgement-required email and an acknowledgement box on the current Published revision. A user present in both audiences receives only the acknowledgement-required message.
+Reviewer, Training, and Publisher are workflow-routing assignments. Default Notify and Default Acknowledge are only publication defaults: when a page reaches Ready to Publish, the Publisher sees those values prefilled and may change or disable either audience for that specific release.
 
 ## Page-level exclusion
 
@@ -52,7 +52,7 @@ The directive has final precedence over the ordered assignment rules and renders
 
 Workflow history follows the page when it is renamed or moved.
 
-- Published page → controlled destination: allowed; the destination's ordered Reviewer/Training/Publisher rules become authoritative.
+- Published page → controlled destination: allowed; the destination's ordered workflow/default rules become authoritative for future releases. Existing publication-audience snapshots and acknowledgement evidence follow the page unchanged.
 - Published page → uncontrolled destination: allowed; active DocApproval control is removed immediately, while all workflow history is retained.
 - Draft / Awaiting Review / Awaiting Training / Ready to Publish → controlled destination: allowed; the active workflow and history are preserved and destination routing rules apply to later stages.
 - Draft / Awaiting Review / Awaiting Training / Ready to Publish → uncontrolled destination: blocked before the move begins.
@@ -117,17 +117,30 @@ The original individual DocApproval tokens remain available. On uncontrolled pag
 
 ## Publication notification and acknowledgement
 
-When a normal workflow Publish action completes:
+The release audience is selected and snapshotted when a normal workflow **Publish** action occurs.
 
-- `Notify` recipients receive an informational email that a new document revision has been Published.
-- `Acknowledge` recipients receive an action-required email and must acknowledge the current Published revision on the page.
-- Acknowledge recipients are automatically considered notified; duplicate email is suppressed when the same person is also in Notify.
-- Acknowledgement evidence stores the formal publication-cycle revision, the actual Published content revision the user viewed, document version, user and timestamp.
-- Draft/Review/Training changes do not invalidate an acknowledgement while ordinary readers are still bound to the prior Published revision.
-- The Published minor-edit shortcut does not create a new acknowledgement requirement. Existing acknowledgement remains valid for that publication cycle.
-- Changing an Acknowledge rule can make the current Published revision due for newly included users immediately, but assignment changes do not mass-email users; publication/reminder tooling handles email delivery.
+At Ready to Publish the Publisher sees:
 
-Current compliance uses current group membership. Historical acknowledgement records are never deleted. A publication-time audience snapshot can be added later if audits require proof of the exact assigned population at the instant of publication.
+- **Send publication notification** — accepts DokuWiki users, `@groups`, and literal email addresses.
+- **Require acknowledgement** — accepts authenticated DokuWiki users and `@groups` only.
+- Both fields are prefilled from the page's Default Notify / Default Acknowledge assignment values, but the Publisher may change or disable them for that publication.
+
+On Publish:
+
+- the selected Notify/Acknowledge specs are stored with the publication;
+- every Acknowledge user/group is resolved to individual user accounts and snapshotted as the required audience for that publication;
+- Acknowledge recipients receive an action-required email and automatically count as notified;
+- Notify-only recipients receive an informational publication email;
+- overlap is deduplicated so a person receives only the acknowledgement-required message;
+- the acknowledgement box appears at the bottom of the Published page only for users in that publication's requirement snapshot.
+
+Acknowledgement evidence records the formal publication-cycle revision, the actual Published content revision viewed, document version, user and timestamp. Historical requirement/acknowledgement rows are retained.
+
+Changing Default Acknowledge or group membership after publication does **not** rewrite the audience for an already Published revision. The next Publish uses the then-current defaults and group membership. This preserves a defensible audit answer to "who was required to acknowledge this revision when it was released?"
+
+Draft/Review/Training changes do not invalidate acknowledgement of the prior Published revision. A Published-preserving Minor Change also does not create a new acknowledgement requirement; the formal publication cycle remains the same.
+
+Struct DocApproval Admin includes an **Acknowledgement Status** table for current formal publications showing Required, Acknowledged, Outstanding, and the stored release audience. Outstanding users can be expanded inline.
 
 ## Notification email formatting
 

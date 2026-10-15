@@ -19,7 +19,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
         // who must Acknowledge the newly Published revision. Acknowledge implies an
         // email; recipients present in both lists receive only the action-required mail.
         if ($action === Constants::ACTION_PUBLISH) {
-            $this->sendPublicationAudience($record, $assignments);
+            $this->sendPublicationAudience($record);
             return;
         }
 
@@ -55,7 +55,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
         if (!$mailer->send()) throw new RuntimeException('DokuWiki Mailer reported that the message was not sent.');
     }
 
-    protected function sendPublicationAudience(WorkflowRecord $record, Assignments $assignments): void
+    protected function sendPublicationAudience(WorkflowRecord $record): void
     {
         $pid = $record->getPid();
         $publicationRevision = (int)$record->get('revision');

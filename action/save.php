@@ -159,8 +159,8 @@ class action_plugin_structdocapproval_save extends ActionPlugin
         // Keep the human-readable Change Summary aligned with the working cycle.
         // A normal edit from Published starts a fresh summary; further edits within
         // an already-active Draft/Review/Training/Publication cycle carry it forward.
-        /** @var helper_plugin_structdocapproval_change_summary $changeSummary */
-        $changeSummary = plugin_load('helper', 'structdocapproval_change_summary');
+        /** @var helper_plugin_structdocapproval_changesummary $changeSummary */
+        $changeSummary = plugin_load('helper', 'structdocapproval_changesummary');
         if ($changeSummary) {
             if (!$previous || $previous->get('status') === Constants::STATUS_PUBLISHED) {
                 $changeSummary->startCycle($id, $newRevision, $actor);

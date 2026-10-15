@@ -4,6 +4,22 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12 acknowledgement test — 2026-10-14
+
+- Changed Notify/Acknowledge from live assignment roles to **publication defaults**.
+- Ready to Publish now includes explicit release-audience controls. The Publisher can enable/disable and edit Notify/Acknowledge for that specific release.
+- Added lightweight user/@group browser suggestions to the release fields.
+- Added database migration 3 with publication-audience snapshots and per-user acknowledgement requirement rows.
+- Acknowledge groups are resolved to individual users at Publish time so later group changes do not rewrite historical obligations.
+- Acknowledgement boxes now use the stored publication requirement snapshot rather than current rule/group membership.
+- Publication email routing now uses the stored release audience and deduplicates Acknowledge recipients from Notify.
+- Acknowledge accepts authenticated users/@groups only; invalid users or unresolved group backends block Publish before the workflow commits.
+- Notify continues to accept users, @groups, and literal email addresses.
+- Added an Admin Acknowledgement Status report with Required, Acknowledged, Outstanding, and release-audience columns.
+- Publication snapshots, requirements, and acknowledgement evidence follow page moves.
+- Existing Default Notify / Default Acknowledge values remain useful as prefilled release defaults, but changing them does not alter an already Published revision.
+- Published-preserving Minor Changes remain within the same acknowledgement cycle.
+
 ## 0.11 acknowledgement alpha — 2026-10-14
 
 - Started acknowledgement work on the `feature/acknowledgements` branch.

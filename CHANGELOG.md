@@ -4,6 +4,10 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.4.1 acknowledgement test — 2026-10-15
+
+- Fixed DokuWiki component loading for Change Summary by renaming the helper/action component from `change_summary` to loader-safe `changesummary`. DokuWiki legacy plugin component names cannot contain an additional underscore after the plugin name.
+
 ## 0.12.4 acknowledgement test — 2026-10-15
 
 - Added an editable workflow **Change Summary** that persists from Draft through Review, Training, and Ready to Publish.

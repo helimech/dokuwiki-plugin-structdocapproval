@@ -63,16 +63,13 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
         $db = plugin_load('helper', 'structdocapproval_db');
         if (!$db || !$db->isControlled($ID)) return;
 
-        /** @var helper_plugin_structdocapproval_acknowledge $helper */
-        $helper = plugin_load('helper', 'structdocapproval_acknowledge');
-        if (!$helper) return;
-
         $currentPublished = WorkflowRecord::latestPublished($ID);
         if (!$currentPublished) return;
         $publishedRevision = (int)$currentPublished->get('revision');
-        $requirementRevision = $helper->getCurrentRequirementRevision($ID);
-        if (!$requirementRevision || !$helper->isRequired($ID, $requirementRevision, $user)) return;
 
+        // Only append acknowledgement/report UI when the page being displayed is the
+        // authoritative current Published content. This also works for ordinary readers
+        // who have been forced to the last Published revision while a newer Draft exists.
         if ($REV) {
             if ((int)$REV !== $publishedRevision) return;
         } else {
@@ -81,10 +78,113 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
             if ((int)$latest->get('revision') !== $publishedRevision) return;
         }
 
-        $ack = $helper->getAcknowledgement($ID, $user, $requirementRevision);
-        $event->data .= $ack
-            ? $this->renderDone($currentPublished, $ack)
-            : $this->renderRequired($currentPublished, $requirementRevision, $helper, $user);
+        /** @var helper_plugin_structdocapproval_acknowledge $helper */
+        $helper = plugin_load('helper', 'structdocapproval_acknowledge');
+        if (!$helper) return;
+
+        $requirementRevision = $helper->getCurrentRequirementRevision($ID);
+        if (!$requirementRevision) return;
+
+        if ($helper->isRequired($ID, $requirementRevision, $user)) {
+            $ack = $helper->getAcknowledgement($ID, $user, $requirementRevision);
+            $event->data .= $ack
+                ? $this->renderDone($currentPublished, $ack)
+                : $this->renderRequired($currentPublished, $requirementRevision, $helper, $user);
+        }
+
+        if ($this->canViewReport($ID, $user, $db)) {
+            $report = $this->renderReport($ID, $requirementRevision);
+            if ($report !== '') $event->data .= $report;
+        }
+    }
+
+    protected function canViewReport(string $pid, string $user, helper_plugin_structdocapproval_db $db): bool
+    {
+        $mode = (string)$this->getConf('ack_report_visibility');
+        if ($mode === '') $mode = 'managers';
+
+        switch ($mode) {
+            case 'off':
+                return false;
+            case 'admins':
+                return auth_isadmin();
+            case 'managers':
+                return auth_ismanager();
+            case 'publishers':
+                return $db->canPublish($pid);
+            case 'workflow':
+                return $db->canViewWorking($pid);
+            case 'authenticated':
+                return $user !== '';
+            default:
+                return false;
+        }
+    }
+
+    protected function renderReport(string $pid, int $requirementRevision): string
+    {
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        if (!$publication) return '';
+
+        $data = $publication->getComplianceForPage($pid, $requirementRevision);
+        if (!$data || !count($data['required_users'])) return '';
+
+        $mode = (string)$this->getConf('ack_report_content');
+        if (!in_array($mode, ['acknowledged', 'pending', 'both'], true)) $mode = 'both';
+
+        $required = count($data['required_users']);
+        $complete = count($data['acknowledged_users']);
+        $outstanding = count($data['outstanding_users']);
+        $version = trim((string)$data['version']);
+        if ($version === '') $version = $this->getLang('version_unset');
+
+        $html = '<div class="plugin-structdocapproval-ack-report">';
+        $html .= '<div class="ack-report-title"><strong>' . hsc($this->getLang('ack_report_title')) . '</strong></div>';
+        $html .= '<p>' . hsc(sprintf(
+            $this->getLang('ack_report_summary'),
+            $version,
+            $complete,
+            $required,
+            $outstanding
+        )) . '</p>';
+
+        $html .= '<div class="ack-report-sections">';
+
+        if ($mode === 'acknowledged' || $mode === 'both') {
+            $html .= '<div class="ack-report-section acknowledged">';
+            $html .= '<strong>' . hsc($this->getLang('ack_report_acknowledged_heading')) . '</strong>';
+            if (!$data['acknowledged_users']) {
+                $html .= '<p><em>' . hsc($this->getLang('ack_report_none')) . '</em></p>';
+            } else {
+                $html .= '<ul>';
+                foreach ($data['acknowledged_users'] as $ackUser => $timestamp) {
+                    $html .= '<li>' . userlink($ackUser);
+                    if ($timestamp) $html .= ' — ' . hsc(dformat((int)$timestamp));
+                    $html .= '</li>';
+                }
+                $html .= '</ul>';
+            }
+            $html .= '</div>';
+        }
+
+        if ($mode === 'pending' || $mode === 'both') {
+            $html .= '<div class="ack-report-section pending">';
+            $html .= '<strong>' . hsc($this->getLang('ack_report_pending_heading')) . '</strong>';
+            if (!$data['outstanding_users']) {
+                $html .= '<p><em>' . hsc($this->getLang('ack_report_none')) . '</em></p>';
+            } else {
+                $html .= '<ul>';
+                foreach ($data['outstanding_users'] as $pendingUser) {
+                    $html .= '<li>' . userlink($pendingUser) . '</li>';
+                }
+                $html .= '</ul>';
+            }
+            $html .= '</div>';
+        }
+
+        $html .= '</div></div>';
+        return $html;
     }
 
     protected function renderRequired(

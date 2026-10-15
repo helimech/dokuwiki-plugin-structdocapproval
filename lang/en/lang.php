@@ -175,6 +175,24 @@ $lang['ack_report_acknowledged_heading'] = 'Users who have acknowledged';
 $lang['ack_report_pending_heading'] = 'Users who still need to acknowledge';
 $lang['ack_report_none'] = 'None';
 
+// personal task dashboard
+$lang['my_tasks_title'] = 'My DocApproval Tasks';
+$lang['my_login_required'] = 'You must be logged in to view your DocApproval tasks.';
+$lang['my_ack_required'] = 'Acknowledgements Required';
+$lang['my_reviews_required'] = 'Reviews Required';
+$lang['my_training_required'] = 'Training Reviews Required';
+$lang['my_publish_required'] = 'Ready to Publish';
+$lang['my_recent_acknowledgements'] = 'Recently Acknowledged';
+$lang['my_none_outstanding'] = 'None outstanding.';
+$lang['my_published'] = 'Published';
+$lang['my_waiting_since'] = 'Waiting Since';
+$lang['my_acknowledged_on'] = 'Acknowledged';
+$lang['my_open_ack'] = 'Review / acknowledge';
+$lang['my_open_review'] = 'Open review';
+$lang['my_open_training'] = 'Open training review';
+$lang['my_open_publish'] = 'Open publication';
+$lang['my_view'] = 'View';
+
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';
 $lang['dw2pdf_published'] = 'Published';

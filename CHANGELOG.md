@@ -4,6 +4,17 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.6 acknowledgement test — 2026-10-15
+
+- Added a personal `---- struct_docapproval_my ----` dashboard syntax that resolves the currently logged-in user server-side; no username/`%USER%` parameter is required or accepted.
+- The shared dashboard shows four current-action queues: Acknowledgements Required, assigned Reviews Required, Training Reviews Required, and Ready to Publish.
+- Training/Publisher task membership uses the same direct-user/@group assignment matching as the workflow; Review tasks use the reviewer frozen into the active review cycle.
+- Outstanding acknowledgement links open the actual current Published content revision, including Published-preserving Minor Changes within the same formal acknowledgement cycle.
+- Task tables show the current/published Change Summary and waiting/published timestamps.
+- Added a collapsed Recently Acknowledged list for the current user.
+- The dashboard is nocache and filters every item through the current user's page read ACL.
+- No database migration is required.
+
 ## 0.12.5.2 acknowledgement test — 2026-10-15
 
 - Replaced the workflow-carried Change Summary textarea with a real hidden input so theme/DokuWiki textarea CSS cannot expose it as a duplicate visible Change Summary box.

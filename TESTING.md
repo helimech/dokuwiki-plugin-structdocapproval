@@ -342,3 +342,28 @@ Use a narrow controlled test page with at least three test accounts.
 5. In Release Audience, confirm an authenticated user chip displays the configured full name, the login is available as the chip tooltip, and the submitted/stored value remains the login.
 6. Confirm autocomplete shows Full Name (username), matches searches by either part, and still displays @group unchanged.
 7. Confirm the Ready to Publish action row appears below Release Audience with **New Version** beside **Publish**, and the return **Note** beside **Return to Training / Return to Draft**. Narrow the browser and confirm the action groups wrap cleanly.
+
+## 25. My DocApproval Tasks dashboard (v0.12.6)
+
+Create a normal wiki page containing:
+
+```
+---- struct_docapproval_my ----
+----
+```
+
+Then test with accounts that have different DocApproval responsibilities.
+
+1. Open the page while logged out. Confirm it shows only the login-required message and no personal task data.
+2. Log in as a user with no current tasks. Confirm all four summary counts are zero and each current-action section says None outstanding.
+3. Publish a document requiring that user to acknowledge. Confirm **Acknowledgements Required** becomes 1 and the row shows page, document version, Published date, Change Summary, and **Review / acknowledge**.
+4. Click **Review / acknowledge** while a newer Draft exists. Confirm the link opens the authoritative Published revision and the acknowledgement control is available.
+5. Make a Published-preserving Minor Change within the same acknowledgement cycle. Confirm the dashboard link follows the actual current Published content revision without creating a new acknowledgement requirement.
+6. Assign the user as the selected Reviewer and submit a page for Review. Confirm it appears under **Reviews Required** and disappears after Approve or Return for Changes.
+7. Assign Training directly to the user, then through an `@group`; in both cases confirm an Awaiting Training Review page appears only for matching users and disappears after the Training review is completed/returned.
+8. Assign Publisher directly to the user, then through an `@group`; confirm a Ready to Publish page appears only for matching users and disappears after Publish/Return.
+9. Confirm workflow task rows show the current working Change Summary and the date/time that workflow state was entered.
+10. Complete an acknowledgement. Confirm it immediately leaves **Acknowledgements Required** and appears in the collapsed **Recently Acknowledged** list with its acknowledgement time.
+11. Remove the user's read ACL for a page that would otherwise be a task. Confirm the page is absent from the personal dashboard.
+12. Open the same dashboard page as two different users and confirm each sees only their own task queues.
+13. Confirm no syntax parameter can be used to select another username; the dashboard always derives the current authenticated account server-side.

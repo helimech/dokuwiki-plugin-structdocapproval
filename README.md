@@ -180,6 +180,15 @@ Current workflow / work queue:
 ----
 ```
 
+Personal **My DocApproval Tasks** dashboard:
+
+```
+---- struct_docapproval_my ----
+----
+```
+
+The personal dashboard always resolves the currently logged-in DokuWiki account server-side; no username or `%USER%` parameter is required. The same page can therefore be used by everyone. It shows the current user's outstanding publication acknowledgements, assigned reviews, Training reviews, and pages ready for that user to Publish, plus a collapsed list of recently completed acknowledgements. User/@group Training and Publisher assignments are resolved through the normal DocApproval assignment logic.
+
 Workflow history with a page selector:
 
 ```

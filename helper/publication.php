@@ -312,6 +312,21 @@ class helper_plugin_structdocapproval_publication extends Plugin
         return $out;
     }
 
+    public function getUserDisplayName(string $user): string
+    {
+        /** @var AuthPlugin $auth */
+        global $auth;
+        $user = trim($user);
+        if ($user === '') return '';
+        if ($auth) {
+            $data = $auth->getUserData($user);
+            if ($data && trim((string)($data['name'] ?? '')) !== '') {
+                return trim((string)$data['name']);
+            }
+        }
+        return $user;
+    }
+
     /**
      * Lightweight browser-autocomplete candidates for publication fields.
      */

@@ -123,8 +123,6 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $this->textField($this->getLang('version'), $version),
             $this->textField($this->getLang('ack_published'), $publishedAt),
             $this->textField($this->getLang('email_view_page'), $pageUrl),
-            '',
-            $ackRequired ? $this->getLang('email_ack_instruction') : $this->getLang('email_notify_no_action'),
         ];
 
         if ($changeSummary !== '') {
@@ -132,6 +130,9 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $text[] = $this->getLang('email_change_summary') . ':';
             $text[] = $changeSummary;
         }
+
+        $text[] = '';
+        $text[] = $ackRequired ? $this->getLang('email_ack_instruction') : $this->getLang('email_notify_no_action');
 
         if (trim((string)$record->get('comment')) !== '') {
             $text[] = '';

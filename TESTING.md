@@ -275,3 +275,19 @@ Use a narrow controlled test page with at least three test accounts.
 17. Move the Published page to a different controlled namespace. Confirm publication snapshot, requirement rows, acknowledgement evidence, and compliance counts follow the new page ID; destination defaults apply only to future Publish actions.
 18. Move the Published page to an uncontrolled namespace. Confirm DocApproval UI/acknowledgement box disappear while historical publication/acknowledgement evidence remains stored.
 19. Use Admin Override to Published on a revision that was not normally Published. Confirm it does not silently create a Notify/Acknowledge audience; acknowledgement requirements are only created by the normal Publish action.
+
+
+## 20. Multi-recipient picker and on-page acknowledgement report (v0.12.2)
+
+1. Bring a test page to Ready to Publish with Default Notify and Default Acknowledge populated.
+2. Confirm each release-audience field renders existing values as removable chips/tokens.
+3. Click into Notify, select a suggested user/group, then immediately type/select a second and third recipient. Confirm suggestions continue to appear after every selection.
+4. Type a literal email address in Notify and press comma or Enter. Confirm it becomes a token and Publish accepts it.
+5. In Acknowledge, add multiple users/@groups with the picker. Confirm all tokens are submitted and the publication snapshot resolves them correctly.
+6. Remove a chip with its × button and confirm the removed token is not included at Publish.
+7. Use Backspace in an empty token input and confirm the last token is removed.
+8. In Configuration Settings set **Who can see the on-page acknowledgement report** to Off. Confirm no report appears.
+9. Test Administrators only, Managers and administrators, assigned Publisher and administrators, Editors/workflow participants and administrators, and All logged-in users with appropriate accounts.
+10. Independently set **What the on-page acknowledgement report shows** to acknowledged users, pending users, and both. Confirm the page report changes without altering stored acknowledgement evidence.
+11. Confirm acknowledged users show their acknowledgement date/time and pending users show the correct outstanding accounts from the publication-time snapshot.
+12. While a newer Draft exists, open the prior Published revision as an ordinary reader with report permission. Confirm the report remains tied to the authoritative Published revision, not the Draft.

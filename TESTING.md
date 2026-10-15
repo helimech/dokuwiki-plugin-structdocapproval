@@ -247,3 +247,31 @@ Use a narrow controlled test namespace and configure distinct users/groups in No
 12. With Published minor-edit preservation enabled, make a permitted Minor Change after a user has acknowledged the current publication. Confirm that acknowledgement remains current and no new acknowledgement requirement is created.
 13. Add a new Acknowledge user after that minor edit. Confirm the new user can acknowledge the current displayed Published content while the requirement remains associated with the existing formal publication cycle.
 14. Put a literal email address in Notify and confirm it can receive the FYI publication email. Put a literal email address in Acknowledge and confirm it is not treated as an acknowledgement identity.
+
+
+## 19. Publication-time audience snapshot (v0.12)
+
+Use a narrow controlled test page with at least three test accounts.
+
+1. Upgrade from the v0.11 acknowledgement alpha. Confirm migration 3 completes and the existing workflow/history/acknowledgement evidence remains intact.
+2. In Struct DocApproval admin, confirm the assignment headers read `Default Notify` and `Default Acknowledge`. Save & Sync a rule and confirm both defaults persist.
+3. Put the page through Review and Training. At Ready to Publish confirm a **Release Audience** section appears with:
+   - Send publication notification
+   - Require acknowledgement
+   - prefilled values from the page defaults.
+4. Change both fields before publishing. Confirm the values entered at Publish—not later rule changes—become the release audience.
+5. In Acknowledge, use a direct user plus an `@group`. Publish and confirm the group is expanded to individual requirement rows.
+6. Put an unknown username or a literal email address in Acknowledge. Confirm Publish is rejected before a Published workflow transition is created.
+7. Put a literal email address in Notify. Confirm Publish succeeds and the address receives the FYI publication email when mail is enabled.
+8. Put one user in both Notify and Acknowledge. Confirm only the Acknowledgement Required email is sent to that address.
+9. After publishing, change Default Acknowledge and/or group membership. Confirm the existing publication's required-user snapshot does not change.
+10. As a snapshotted required user, open the current Published page. Confirm the bottom acknowledgement box appears. As a user not in the snapshot, confirm it does not.
+11. Acknowledge the publication. Confirm the box becomes Acknowledged and the Admin → Struct DocApproval Acknowledgement Status counts update.
+12. Expand Outstanding in the admin status table and confirm the expected usernames are shown.
+13. Edit the page into Draft. As an ordinary reader, confirm the prior Published revision and its acknowledgement state remain authoritative. As a workflow participant viewing Draft, confirm no Draft acknowledgement box is offered.
+14. Publish the Draft again with a different Acknowledge audience. Confirm a new independent requirement snapshot is created and prior acknowledgement evidence remains historical.
+15. Before acknowledging the new publication, confirm **View changes since your previous acknowledgement** compares the prior acknowledged Published content revision to the new Published content revision.
+16. Make an allowed Published-preserving Minor Change. Confirm users who acknowledged the publication remain complete and are not required to acknowledge again.
+17. Move the Published page to a different controlled namespace. Confirm publication snapshot, requirement rows, acknowledgement evidence, and compliance counts follow the new page ID; destination defaults apply only to future Publish actions.
+18. Move the Published page to an uncontrolled namespace. Confirm DocApproval UI/acknowledgement box disappear while historical publication/acknowledgement evidence remains stored.
+19. Use Admin Override to Published on a revision that was not normally Published. Confirm it does not silently create a Notify/Acknowledge audience; acknowledgement requirements are only created by the normal Publish action.

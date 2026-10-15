@@ -107,17 +107,32 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 $publication = plugin_load('helper', 'structdocapproval_publication');
                 if (!$publication) throw new RuntimeException('Publication audience helper is unavailable.');
 
-                $notifySpec = !empty($params['notify_enabled'])
+                $notifyEnabled = !empty($params['notify_enabled']);
+                $acknowledgeEnabled = !empty($params['acknowledge_enabled']);
+                $notifySpec = $notifyEnabled
                     ? trim((string)($params['notify_spec'] ?? ''))
                     : '';
-                $acknowledgeSpec = !empty($params['acknowledge_enabled'])
+                $acknowledgeSpec = $acknowledgeEnabled
                     ? trim((string)($params['acknowledge_spec'] ?? ''))
                     : '';
+
+                /** @var helper_plugin_structdocapproval_change_summary $changeSummary */
+                $changeSummary = plugin_load('helper', 'structdocapproval_change_summary');
+                if (!$changeSummary) throw new RuntimeException('Change summary helper is unavailable.');
+                $summaryText = trim($changeSummary->getSummary($pid));
+
+                // A release communication should never go out without a plain-language
+                // explanation. Grammar/admin-only releases can still Publish with an empty
+                // summary when neither Notify nor Acknowledge is selected.
+                if (($notifyEnabled || $acknowledgeEnabled) && $summaryText === '') {
+                    throw new RuntimeException($this->getLang('change_summary_required_for_release'));
+                }
 
                 // Validate and resolve the acknowledgement audience before the workflow
                 // commits. This prevents a typo or unresolvable group from producing a
                 // Published revision with an incomplete compliance audience.
                 $publicationAudience = $publication->prepareAudience($notifySpec, $acknowledgeSpec);
+                $publicationAudience['change_summary'] = $summaryText;
 
                 $next->set('status', Constants::STATUS_PUBLISHED)
                     ->set('version', $version)

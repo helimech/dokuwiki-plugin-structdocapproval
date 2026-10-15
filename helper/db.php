@@ -66,4 +66,20 @@ class helper_plugin_structdocapproval_db extends Plugin
     {
         return auth_isadmin() || $this->hasRole($pid, Constants::ROLE_PUBLISHER);
     }
+
+    public function canEditChangeSummary(string $pid, string $status, string $assignedReviewer = ''): bool
+    {
+        if (auth_isadmin() || auth_quickaclcheck($pid) >= AUTH_EDIT) return true;
+
+        switch ($status) {
+            case Constants::STATUS_AWAITING_REVIEW:
+                return $this->canReview($pid, $assignedReviewer);
+            case Constants::STATUS_AWAITING_TRAINING:
+                return $this->canTrain($pid);
+            case Constants::STATUS_READY_TO_PUBLISH:
+                return $this->canPublish($pid);
+            default:
+                return false;
+        }
+    }
 }

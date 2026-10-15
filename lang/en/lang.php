@@ -159,6 +159,8 @@ $lang['ack_status_none'] = 'No current publication audience snapshots exist yet.
 $lang['ack_required_count'] = 'Required';
 $lang['ack_complete_count'] = 'Acknowledged';
 $lang['ack_outstanding_count'] = 'Outstanding';
+$lang['release_notify'] = 'Notify Audience';
+$lang['release_acknowledge'] = 'Acknowledge Audience';
 
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';

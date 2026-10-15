@@ -203,7 +203,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
 
         echo '<table class="inline plugin-structdocapproval-ack-status">';
         echo '<thead><tr>';
-        foreach (['page','version','ack_published','ack_required_count','ack_complete_count','ack_outstanding_count','notify','acknowledge'] as $key) {
+        foreach (['page','version','ack_published','ack_required_count','ack_complete_count','ack_outstanding_count','release_notify','release_acknowledge'] as $key) {
             echo '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         echo '</tr></thead><tbody>';

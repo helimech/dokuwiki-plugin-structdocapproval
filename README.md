@@ -124,6 +124,7 @@ At Ready to Publish the Publisher sees:
 - **Send publication notification** — accepts DokuWiki users, `@groups`, and literal email addresses.
 - **Require acknowledgement** — accepts authenticated DokuWiki users and `@groups` only.
 - Both fields are prefilled from the page's Default Notify / Default Acknowledge assignment values, but the Publisher may change or disable them for that publication.
+- The publication fields use a token/chip autocomplete. After selecting one user/group the input remains available for the next recipient; comma or Enter also commits typed values.
 
 On Publish:
 
@@ -141,6 +142,13 @@ Changing Default Acknowledge or group membership after publication does **not** 
 Draft/Review/Training changes do not invalidate acknowledgement of the prior Published revision. A Published-preserving Minor Change also does not create a new acknowledgement requirement; the formal publication cycle remains the same.
 
 Struct DocApproval Admin includes an **Acknowledgement Status** table for current formal publications showing Required, Acknowledged, Outstanding, and the stored release audience. Outstanding users can be expanded inline.
+
+The Published page can also show an **Acknowledgement Report**. Configuration separates access from content:
+
+- **Who can see the on-page acknowledgement report:** Off, Administrators, Managers + Administrators, assigned Publisher + Administrators, Editors/workflow participants + Administrators, or all logged-in users.
+- **What the report shows:** acknowledged users, pending users, or both.
+
+The default is Managers + Administrators and Both.
 
 ## Notification email formatting
 

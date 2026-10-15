@@ -231,3 +231,138 @@
         font-weight: 600;
     }
 }
+
+
+.docapproval-token-source-hidden {
+    display: none !important;
+}
+
+.docapproval-token-picker {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+    min-height: 2.35rem;
+    padding: 0.25rem 0.35rem;
+    border: 1px solid @ini_border;
+    background: @ini_background;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.docapproval-token-chips {
+    display: contents;
+}
+
+.docapproval-token-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid @ini_border;
+    background: @ini_background_alt;
+    border-radius: 3px;
+    padding: 0.15rem 0.25rem 0.15rem 0.4rem;
+    max-width: 100%;
+}
+
+.docapproval-token-chip-text {
+    overflow-wrap: anywhere;
+}
+
+.docapproval-token-remove {
+    border: 0;
+    background: transparent;
+    padding: 0 0.15rem;
+    margin: 0;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 1.15em;
+}
+
+.docapproval-token-input {
+    flex: 1 1 12rem;
+    min-width: 10rem;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.docapproval-token-input:focus {
+    outline: none;
+}
+
+.docapproval-token-menu {
+    position: absolute;
+    z-index: 2000;
+    left: -1px;
+    right: -1px;
+    top: calc(100% + 2px);
+    max-height: 16rem;
+    overflow-y: auto;
+    border: 1px solid @ini_border;
+    background: @ini_background;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+.docapproval-token-menu[hidden] {
+    display: none;
+}
+
+.docapproval-token-option {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid @ini_border;
+    background: @ini_background;
+    text-align: left;
+    padding: 0.4rem 0.55rem;
+    cursor: pointer;
+}
+
+.docapproval-token-option:last-child {
+    border-bottom: 0;
+}
+
+.docapproval-token-option:hover,
+.docapproval-token-option.active {
+    background: @ini_background_alt;
+}
+
+.plugin-structdocapproval-ack-report {
+    border: 1px solid @ini_border;
+    background: @ini_background_alt;
+    padding: 0.9rem 1rem;
+    margin: 0.75rem 0 0 0;
+    border-radius: 4px;
+    max-width: 56rem;
+
+    .ack-report-title {
+        font-size: 1.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    > p {
+        margin: 0.3rem 0 0.7rem 0;
+    }
+
+    .ack-report-sections {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(14rem, 1fr));
+        gap: 1rem;
+    }
+
+    .ack-report-section ul {
+        margin: 0.35rem 0 0 1.3rem;
+    }
+
+    .ack-report-section p {
+        margin: 0.35rem 0 0 0;
+    }
+}
+
+@media (max-width: 700px) {
+    .plugin-structdocapproval-ack-report .ack-report-sections {
+        grid-template-columns: 1fr;
+    }
+}

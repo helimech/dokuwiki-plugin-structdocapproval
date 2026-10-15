@@ -165,10 +165,20 @@ class helper_plugin_structdocapproval_notify extends Plugin
             if ($token === '') continue;
             if ($token[0] === '@') {
                 $this->resolveGroup($emails, substr($token, 1));
-            } elseif (strpos($token, '@') !== false) {
-                if ($allowLiteralEmails) $emails[$token] = true;
-            } else {
-                $this->resolveUser($emails, $token);
+                continue;
+            }
+
+            // Prefer a real DokuWiki account when one exists, even if its login
+            // happens to look like an email address.
+            global $auth;
+            $userData = $auth ? $auth->getUserData($token) : false;
+            if ($userData) {
+                if (!empty($userData['mail'])) $emails[$userData['mail']] = true;
+                continue;
+            }
+
+            if (strpos($token, '@') !== false && $allowLiteralEmails) {
+                $emails[$token] = true;
             }
         }
         return array_keys($emails);

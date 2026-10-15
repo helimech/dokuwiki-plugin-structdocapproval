@@ -4,6 +4,10 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.1 acknowledgement test — 2026-10-15
+
+- Fixed the missing `migration3()` handler that prevented database migration 3 from running after upgrading from the acknowledgement alpha.
+
 ## 0.12 acknowledgement test — 2026-10-14
 
 - Changed Notify/Acknowledge from live assignment roles to **publication defaults**.

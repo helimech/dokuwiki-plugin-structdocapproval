@@ -1,7 +1,6 @@
 <?php
 
 use dokuwiki\Extension\Plugin;
-use dokuwiki\plugin\structdocapproval\meta\Assignments;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 use dokuwiki\plugin\structdocapproval\meta\WorkflowRecord;
 
@@ -14,41 +13,24 @@ class helper_plugin_structdocapproval_acknowledge extends Plugin
         return $helper ? $helper->getDB() : null;
     }
 
-    public function isAssigned(string $pid, string $user = '', array $groups = []): bool
-    {
-        $pid = cleanID($pid);
-        $assignments = Assignments::getInstance();
-        if (!$assignments->isControlled($pid)) return false;
-        return $assignments->userHasRole($pid, Constants::ROLE_ACKNOWLEDGE, $user, $groups);
-    }
-
-    /**
-     * Return the DokuWiki revision that created the current acknowledgement requirement.
-     *
-     * Normal Publish and initial baseline publication create a new requirement. A
-     * Published-preserving Minor Edit does not: the displayed content revision can move
-     * forward while the formal acknowledgement requirement remains tied to the same
-     * publication cycle.
-     */
     public function getCurrentRequirementRevision(string $pid): int
     {
-        $db = $this->db();
-        if (!$db) return 0;
-        $row = $db->queryAll(
-            'SELECT col5 AS revision FROM data_struct_docapproval ' .
-            'WHERE pid=? AND col1=? AND (col2=? OR col2=?) ' .
-            'ORDER BY rid DESC LIMIT 1',
-            [
-                cleanID($pid),
-                Constants::STATUS_PUBLISHED,
-                Constants::ACTION_PUBLISH,
-                Constants::ACTION_INITIALIZE,
-            ]
-        ) ?: [];
-        if ($row) return (int)$row[0]['revision'];
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        if (!$publication) return 0;
 
-        $published = WorkflowRecord::latestPublished($pid);
-        return $published ? (int)$published->get('revision') : 0;
+        $revision = $publication->getCurrentPublicationRevision($pid);
+        if (!$revision || !$publication->getSnapshot($pid, $revision)) return 0;
+        return $revision;
+    }
+
+    public function isRequired(string $pid, int $publicationRevision, string $user): bool
+    {
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        return $publication
+            ? $publication->isRequired($pid, $publicationRevision, $user)
+            : false;
     }
 
     public function getAcknowledgement(string $pid, string $user, int $publicationRevision): ?array
@@ -88,11 +70,10 @@ class helper_plugin_structdocapproval_acknowledge extends Plugin
         $pid = cleanID($pid);
         if ($user === '') throw new RuntimeException('You must be logged in to acknowledge a document.');
         if (auth_quickaclcheck($pid) < AUTH_READ) throw new RuntimeException('You may not read this page.');
-        if (!$this->isAssigned($pid, $user, $groups)) {
-            throw new RuntimeException('You are not assigned to acknowledge this document.');
-        }
-
         $currentRequirement = $this->getCurrentRequirementRevision($pid);
+        if (!$currentRequirement || !$this->isRequired($pid, $currentRequirement, $user)) {
+            throw new RuntimeException('You are not required to acknowledge this publication.');
+        }
         $currentPublished = WorkflowRecord::latestPublished($pid);
         if (
             !$currentRequirement ||

@@ -324,3 +324,11 @@ Use a narrow controlled test page with at least three test accounts.
 15. Move a working controlled page to another controlled namespace. Confirm the current Change Summary follows the page.
 16. Move a Published page. Confirm its snapshotted Change Summary follows the publication record.
 17. Review `struct_docapproval_change_summary_history` and confirm actual summary edits retain page, working revision, actor, text, and timestamp.
+
+
+## 23. Change Summary component loading (v0.12.4.1)
+
+1. Upgrade over v0.12.4.
+2. Open a controlled Draft page and confirm the Change Summary box renders without "Change summary helper is unavailable."
+3. Save a summary and confirm the action is handled and the value persists after redirect.
+4. Advance through Review/Training/Ready to Publish and confirm the same component remains available at each stage.

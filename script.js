@@ -24,7 +24,10 @@
         if (dataList) {
             Array.prototype.forEach.call(dataList.querySelectorAll('option'), function (option) {
                 var value = (option.value || '').trim();
-                if (value) suggestions.push(value);
+                if (!value) return;
+                var display = (option.getAttribute('data-display-name') || value).trim();
+                var label = (option.getAttribute('label') || value).trim();
+                suggestions.push({ value: value, display: display || value, label: label || value });
             });
         }
 
@@ -64,20 +67,45 @@
             return tokens.some(function (token) { return token.toLowerCase() === needle; });
         }
 
+        function findSuggestion(value) {
+            var needle = (value || '').trim().toLowerCase();
+            if (!needle) return null;
+            for (var i = 0; i < suggestions.length; i++) {
+                var item = suggestions[i];
+                if (item.value.toLowerCase() === needle ||
+                    item.display.toLowerCase() === needle ||
+                    item.label.toLowerCase() === needle) return item;
+            }
+            return null;
+        }
+
+        function canonicalToken(raw) {
+            var value = canonicalToken(raw);
+            var matched = findSuggestion(value);
+            return matched ? matched.value : value;
+        }
+
+        function tokenDisplay(value) {
+            var matched = findSuggestion(value);
+            return matched ? matched.display : value;
+        }
+
         function renderChips() {
             chips.innerHTML = '';
             tokens.forEach(function (token, index) {
+                var display = tokenDisplay(token);
                 var chip = document.createElement('span');
                 chip.className = 'docapproval-token-chip';
+                if (display !== token) chip.title = token;
 
                 var text = document.createElement('span');
                 text.className = 'docapproval-token-chip-text';
-                text.textContent = token;
+                text.textContent = display;
 
                 var remove = document.createElement('button');
                 remove.type = 'button';
                 remove.className = 'docapproval-token-remove';
-                remove.setAttribute('aria-label', 'Remove ' + token);
+                remove.setAttribute('aria-label', 'Remove ' + display);
                 remove.textContent = '×';
                 remove.addEventListener('click', function () {
                     tokens.splice(index, 1);
@@ -109,15 +137,22 @@
             var q = query.toLowerCase();
             return suggestions
                 .filter(function (item) {
-                    return !hasToken(item) && (!q || item.toLowerCase().indexOf(q) !== -1);
+                    if (hasToken(item.value)) return false;
+                    return !q || item.value.toLowerCase().indexOf(q) !== -1 ||
+                        item.display.toLowerCase().indexOf(q) !== -1 ||
+                        item.label.toLowerCase().indexOf(q) !== -1;
                 })
                 .sort(function (a, b) {
-                    var al = a.toLowerCase();
-                    var bl = b.toLowerCase();
-                    var as = q && al.indexOf(q) === 0 ? 0 : 1;
-                    var bs = q && bl.indexOf(q) === 0 ? 0 : 1;
+                    function score(item) {
+                        if (!q) return 1;
+                        if (item.display.toLowerCase().indexOf(q) === 0) return 0;
+                        if (item.value.toLowerCase().indexOf(q) === 0) return 0;
+                        return 1;
+                    }
+                    var as = score(a);
+                    var bs = score(b);
                     if (as !== bs) return as - bs;
-                    return al.localeCompare(bl);
+                    return a.label.toLowerCase().localeCompare(b.label.toLowerCase());
                 })
                 .slice(0, 12);
         }
@@ -133,17 +168,17 @@
             visibleSuggestions = rankedSuggestions(query);
             menu.innerHTML = '';
 
-            visibleSuggestions.forEach(function (value, index) {
+            visibleSuggestions.forEach(function (item, index) {
                 var option = document.createElement('button');
                 option.type = 'button';
                 option.className = 'docapproval-token-option';
                 option.setAttribute('role', 'option');
-                option.textContent = value;
+                option.textContent = item.label;
                 option.addEventListener('mousedown', function (event) {
                     event.preventDefault();
                 });
                 option.addEventListener('click', function () {
-                    addToken(value);
+                    addToken(item.value);
                     input.focus();
                 });
                 menu.appendChild(option);
@@ -175,7 +210,7 @@
             if (event.key === 'Enter') {
                 if (visibleSuggestions.length && activeIndex >= 0 && menu.hidden === false) {
                     event.preventDefault();
-                    addToken(visibleSuggestions[activeIndex]);
+                    addToken(visibleSuggestions[activeIndex].value);
                     return;
                 }
                 if (input.value.trim()) {
@@ -224,11 +259,25 @@
         syncSource();
     }
 
+    function bindTransitionSummarySave() {
+        var summaryInput = document.querySelector('.docapproval-change-summary-input');
+        if (!summaryInput) return;
+
+        Array.prototype.forEach.call(document.querySelectorAll('form.docapproval-action-form'), function (form) {
+            var carried = form.querySelector('.docapproval-transition-summary');
+            if (!carried) return;
+            form.addEventListener('submit', function () {
+                carried.value = summaryInput.value;
+            });
+        });
+    }
+
     function init() {
         Array.prototype.forEach.call(
             document.querySelectorAll('.docapproval-token-source'),
             enhanceTokenPicker
         );
+        bindTransitionSummarySave();
     }
 
     if (document.readyState === 'loading') {

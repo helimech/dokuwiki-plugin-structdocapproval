@@ -332,3 +332,13 @@ Use a narrow controlled test page with at least three test accounts.
 2. Open a controlled Draft page and confirm the Change Summary box renders without "Change summary helper is unavailable."
 3. Save a summary and confirm the action is handled and the value persists after redirect.
 4. Advance through Review/Training/Ready to Publish and confirm the same component remains available at each stage.
+
+## 24. Workflow-summary save and release-audience display (v0.12.5)
+
+1. On any active workflow stage, edit **Change Summary** and click the stage/action button without first clicking **Save Summary**. Reload the page and confirm the edited summary was saved.
+2. Confirm the standalone **Save Summary** button still saves without changing workflow state.
+3. From Ready to Publish with Notify or Acknowledge enabled, edit the summary and click **Publish** directly. Confirm the new text is the publication snapshot and is used by release email content.
+4. Load a stale workflow page after another content revision is created and confirm a transition refuses to carry the stale Change Summary forward.
+5. In Release Audience, confirm an authenticated user chip displays the configured full name, the login is available as the chip tooltip, and the submitted/stored value remains the login.
+6. Confirm autocomplete shows Full Name (username), matches searches by either part, and still displays @group unchanged.
+7. Confirm the Ready to Publish action row appears below Release Audience with **New Version** beside **Publish**, and the return **Note** beside **Return to Training / Return to Draft**. Narrow the browser and confirm the action groups wrap cleanly.

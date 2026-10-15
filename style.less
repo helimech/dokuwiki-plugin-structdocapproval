@@ -200,9 +200,42 @@
         }
     }
 
-    .docapproval-publish-buttons {
+    .docapproval-publish-actionbar {
         flex-basis: 100%;
-        margin-top: 0.35rem;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem 1.25rem;
+        align-items: center;
+        margin-top: 0.45rem;
+    }
+
+    .docapproval-publish-primary,
+    .docapproval-publish-return {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+    }
+
+    .docapproval-publish-primary {
+        flex: 0 0 auto;
+    }
+
+    .docapproval-publish-return {
+        flex: 1 1 38rem;
+    }
+
+    .docapproval-publish-return label {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex: 1 1 24rem;
+    }
+
+    .docapproval-publish-return input.docapproval-comment {
+        flex: 1 1 20rem;
+        min-width: 16rem;
     }
 }
 
@@ -213,6 +246,16 @@
 
     .plugin-structdocapproval-banner .docapproval-release-audience .release-help {
         grid-column: 1;
+    }
+
+    .plugin-structdocapproval-banner .docapproval-publish-actionbar,
+    .plugin-structdocapproval-banner .docapproval-publish-primary,
+    .plugin-structdocapproval-banner .docapproval-publish-return {
+        align-items: stretch;
+    }
+
+    .plugin-structdocapproval-banner .docapproval-publish-return {
+        flex-basis: 100%;
     }
 }
 

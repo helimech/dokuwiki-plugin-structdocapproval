@@ -223,6 +223,18 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
     {
         $status = $record->get('status');
         $assignments = Assignments::getInstance();
+
+        // Normal workflow transitions also carry the current Change Summary so a
+        // user can edit the summary and immediately click the stage/action button
+        // without first pressing the separate Save Summary button.
+        $changeSummaryText = null;
+        $workingRevision = (int)$record->get('revision');
+        if ($status !== Constants::STATUS_PUBLISHED) {
+            /** @var helper_plugin_structdocapproval_changesummary $changeSummary */
+            $changeSummary = plugin_load('helper', 'structdocapproval_changesummary');
+            if ($changeSummary) $changeSummaryText = (string)$changeSummary->get($pid)['summary'];
+        }
+
         echo '<div class="docapproval-actions">';
 
         if ($status === Constants::STATUS_DRAFT && $this->db->canSubmit($pid)) {
@@ -230,7 +242,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             if (!$reviewers) {
                 echo '<p class="docapproval-warning">' . hsc($this->getLang('no_reviewer')) . '</p>';
             } else {
-                echo $this->formStart();
+                echo $this->formStart($changeSummaryText, $workingRevision);
                 if (count($reviewers) > 1) {
                     echo '<label>' . hsc($this->getLang('reviewer')) . ' <select name="structdocapproval[reviewer]">';
                     foreach ($reviewers as $reviewer) echo '<option value="' . hsc($reviewer) . '">' . hsc(userlink($reviewer, true)) . '</option>';
@@ -244,13 +256,13 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
                 echo '</form>';
             }
         } elseif ($status === Constants::STATUS_AWAITING_REVIEW && $this->db->canReview($pid, (string)$record->get('assigned_reviewer'))) {
-            echo $this->formStart();
+            echo $this->formStart($changeSummaryText, $workingRevision);
             echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_REVIEW_APPROVED);
             echo $this->actionButton(Constants::ACTION_REVIEW_RETURNED, 'danger');
             echo '</form>';
         } elseif ($status === Constants::STATUS_AWAITING_TRAINING && $this->db->canTrain($pid)) {
-            echo $this->formStart();
+            echo $this->formStart($changeSummaryText, $workingRevision);
             echo '<label>' . hsc($this->getLang('training_impact')) . ' <select name="structdocapproval[training_disposition]">';
             foreach (Constants::trainingDispositions() as $d) {
                 echo '<option value="' . hsc($d) . '">' . hsc($this->getLang('training_' . $d)) . '</option>';
@@ -271,10 +283,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             $suggestions = $publication ? $publication->getPrincipalSuggestions() : [];
             $listId = 'docapproval-principal-suggestions';
 
-            echo $this->formStart();
-            echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" value="' . hsc($suggested) . '" /></label> ';
-            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
-
+            echo $this->formStart($changeSummaryText, $workingRevision);
             echo '<fieldset class="docapproval-release-audience"><legend>' . hsc($this->getLang('release_audience')) . '</legend>';
 
             echo '<div class="release-audience-row">';
@@ -296,17 +305,32 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             if ($suggestions) {
                 echo '<datalist id="' . hsc($listId) . '">';
                 foreach ($suggestions as $candidate) {
-                    echo '<option value="' . hsc($candidate) . '"></option>';
+                    $display = $candidate;
+                    if ($candidate !== '' && $candidate[0] !== '@') {
+                        $display = $publication->getUserDisplayName($candidate);
+                    }
+                    $menuLabel = ($display !== $candidate)
+                        ? $display . ' (' . $candidate . ')'
+                        : $candidate;
+                    echo '<option value="' . hsc($candidate) . '" data-display-name="' . hsc($display) .
+                        '" label="' . hsc($menuLabel) . '"></option>';
                 }
                 echo '</datalist>';
             }
 
             echo '</fieldset>';
 
-            echo '<div class="docapproval-publish-buttons">';
+            // Keep release-specific action fields next to the buttons they affect.
+            echo '<div class="docapproval-publish-actionbar">';
+            echo '<div class="docapproval-publish-primary">';
+            echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" value="' . hsc($suggested) . '" /></label> ';
             echo $this->actionButton(Constants::ACTION_PUBLISH);
+            echo '</div>';
+            echo '<div class="docapproval-publish-return">';
+            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_RETURN_TRAINING, 'secondary');
             echo $this->actionButton(Constants::ACTION_RETURN_DRAFT, 'danger');
+            echo '</div>';
             echo '</div>';
             echo '</form>';
         }
@@ -325,10 +349,24 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         echo '</div>';
     }
 
-    protected function formStart(): string
+    protected function formStart(?string $changeSummary = null, int $workingRevision = 0): string
     {
-        return '<form class="docapproval-action-form" method="post">' .
+        $html = '<form class="docapproval-action-form" method="post">' .
             '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
+
+        if ($changeSummary !== null && $workingRevision > 0) {
+            // Carry the summary in a true hidden form control. Using a hidden
+            // textarea here is not reliable because some DokuWiki/theme textarea
+            // rules can override the HTML hidden attribute and make it visible.
+            // script.js refreshes this value from the visible Change Summary
+            // immediately before any normal workflow transition is submitted.
+            $html .= '<input type="hidden" class="docapproval-transition-summary" ' .
+                'name="structdocapproval[change_summary]" value="' . hsc($changeSummary) . '" />' .
+                '<input type="hidden" name="structdocapproval[change_summary_revision]" value="' .
+                $workingRevision . '" />';
+        }
+
+        return $html;
     }
 
     protected function actionButton(string $action, string $class = ''): string

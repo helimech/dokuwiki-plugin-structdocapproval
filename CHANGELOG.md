@@ -4,6 +4,24 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.5.2 acknowledgement test — 2026-10-15
+
+- Replaced the workflow-carried Change Summary textarea with a real hidden input so theme/DokuWiki textarea CSS cannot expose it as a duplicate visible Change Summary box.
+- Workflow transitions still copy the live visible Change Summary into that hidden field immediately before submit.
+
+## 0.12.5.1 acknowledgement test — 2026-10-15
+
+- Fixed the workflow-carried Change Summary field appearing as a second visible textarea on themes whose textarea styling overrides the HTML hidden attribute.
+- The transition copy remains in the form for workflow submission and is hidden from the visible interface.
+
+## 0.12.5 acknowledgement test — 2026-10-15
+
+- Release Audience user chips now display the user's configured full name while retaining the login name as the stored value and hover tooltip.
+- Release Audience autocomplete now shows Full Name (username) and can be searched by either full name or username; groups remain displayed as @group.
+- Clicking a normal workflow transition button now saves the current Change Summary before the transition is processed, while the standalone Save Summary button remains available.
+- Change Summary transition saves keep the working-revision stale-page check and the same workflow-stage edit permissions as the standalone save action.
+- On Ready to Publish, New Version and the return Note were moved below Release Audience and grouped beside the Publish/Return buttons they apply to.
+
 ## 0.12.4.1 acknowledgement test — 2026-10-15
 
 - Fixed DokuWiki component loading for Change Summary by renaming the helper/action component from `change_summary` to loader-safe `changesummary`. DokuWiki legacy plugin component names cannot contain an additional underscore after the plugin name.

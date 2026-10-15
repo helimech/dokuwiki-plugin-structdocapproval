@@ -29,6 +29,11 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         $current = WorkflowRecord::latest($pid);
         if (!$current) throw new RuntimeException('No workflow record exists for this page.');
 
+        // Save the visible Change Summary before processing the workflow transition.
+        // This makes the stage/action buttons behave like Save Summary + transition,
+        // while the standalone Save Summary button remains available for interim edits.
+        $this->savePostedChangeSummary($pid, $current, $params, $actor);
+
         $revision = (int)@filemtime(wikiFN($pid));
         if (!$revision) $revision = (int)$current->get('revision');
         $next = $current->copyForRevision($revision)->stamp($action, $actor);
@@ -196,6 +201,44 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         $eventData = ['pid' => $pid, 'action' => $action, 'record' => $next, 'previous' => $current];
         Event::createAndTrigger('STRUCTDOCAPPROVAL_TRANSITION', $eventData);
         return $next;
+    }
+
+    protected function savePostedChangeSummary(
+        string $pid,
+        WorkflowRecord $current,
+        array $params,
+        string $actor
+    ): void {
+        if (!array_key_exists('change_summary', $params)) return;
+
+        if ($current->get('status') === Constants::STATUS_PUBLISHED) {
+            throw new RuntimeException('A Published change summary is fixed. Edit the page to begin a new Draft cycle.');
+        }
+
+        if (!$this->dbHelper->canEditChangeSummary(
+            $pid,
+            (string)$current->get('status'),
+            (string)$current->get('assigned_reviewer')
+        )) {
+            throw new RuntimeException('You may not edit the change summary at this workflow stage.');
+        }
+
+        $postedRevision = (int)($params['change_summary_revision'] ?? 0);
+        $currentRevision = (int)$current->get('revision');
+        if (!$postedRevision || $postedRevision !== $currentRevision) {
+            throw new RuntimeException('The working revision changed. Reload the page before continuing the workflow.');
+        }
+
+        /** @var helper_plugin_structdocapproval_changesummary $summary */
+        $summary = plugin_load('helper', 'structdocapproval_changesummary');
+        if (!$summary) throw new RuntimeException('Change summary helper is unavailable.');
+
+        $summary->save(
+            $pid,
+            (string)($params['change_summary'] ?? ''),
+            $actor,
+            $currentRevision
+        );
     }
 
     protected function requireStatus(WorkflowRecord $record, string $status): void

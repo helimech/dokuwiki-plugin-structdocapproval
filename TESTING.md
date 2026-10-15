@@ -303,3 +303,24 @@ Use a narrow controlled test page with at least three test accounts.
 6. Confirm acknowledgement date/time remains visible next to completed users.
 7. In Admin → Struct DocApproval → Acknowledgement Status, expand an Outstanding count and confirm the listed users use full names.
 8. Test a user account with no full-name attribute and confirm the login is used as a safe fallback.
+
+
+## 22. Change Summary release communication (v0.12.4)
+
+1. Upgrade from v0.12.3 and confirm migration 4 completes without affecting existing workflow, publication audience, or acknowledgement data.
+2. Edit a Published controlled page normally. Confirm the new Draft banner contains a blank **Change Summary** box.
+3. Enter a multi-line summary and click **Save Summary**. Reload and confirm it persists.
+4. Edit the page content again while it is still in the same working cycle. Confirm the saved Change Summary carries forward to the new DokuWiki revision.
+5. Submit for Review. Confirm the assigned Reviewer can edit/save the summary and the review-notification email includes it.
+6. Approve Review. Confirm the Training role can edit/save the same summary and its workflow notification email includes the current value.
+7. Complete Training Review. Confirm the Publisher can still edit/save the summary at Ready to Publish.
+8. With **Send publication notification** checked, clear the Change Summary and attempt Publish. Confirm Publish is rejected and no Published workflow row is created.
+9. Repeat with Notify off and **Require acknowledgement** checked. Confirm blank Change Summary is rejected.
+10. Turn both release-communication checkboxes off and leave Change Summary blank. Confirm Publish succeeds; this is the quiet grammar/administrative-release case.
+11. Publish a revision with Notify and/or Acknowledge selected and a populated Change Summary. Confirm the summary appears prominently in the resulting release email.
+12. Confirm the full workflow-user Published banner shows the snapshotted Change Summary after publication.
+13. Edit that Published page again. Confirm the new Draft cycle starts with a blank Change Summary rather than carrying the prior release summary into the next revision.
+14. Make a Published-preserving Minor Change. Confirm it does not start a new Change Summary/release cycle or alter the prior publication snapshot.
+15. Move a working controlled page to another controlled namespace. Confirm the current Change Summary follows the page.
+16. Move a Published page. Confirm its snapshotted Change Summary follows the publication record.
+17. Review `struct_docapproval_change_summary_history` and confirm actual summary edits retain page, working revision, actor, text, and timestamp.

@@ -161,3 +161,57 @@
         font-weight: 600;
     }
 }
+
+
+.plugin-structdocapproval-banner {
+    .docapproval-release-audience {
+        flex-basis: 100%;
+        width: 100%;
+        margin: 0.45rem 0 0.2rem 0;
+        padding: 0.65rem 0.8rem;
+        border: 1px solid @ini_border;
+
+        legend {
+            font-weight: 600;
+            padding: 0 0.3rem;
+        }
+
+        .release-audience-row {
+            display: grid;
+            grid-template-columns: minmax(14rem, 18rem) minmax(20rem, 1fr);
+            gap: 0.3rem 0.75rem;
+            align-items: center;
+            margin: 0.4rem 0;
+        }
+
+        .release-toggle {
+            font-weight: 600;
+        }
+
+        input.docapproval-audience {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .release-help {
+            grid-column: 2;
+            font-size: 0.88em;
+            opacity: 0.75;
+        }
+    }
+
+    .docapproval-publish-buttons {
+        flex-basis: 100%;
+        margin-top: 0.35rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .plugin-structdocapproval-banner .docapproval-release-audience .release-audience-row {
+        grid-template-columns: 1fr;
+    }
+
+    .plugin-structdocapproval-banner .docapproval-release-audience .release-help {
+        grid-column: 1;
+    }
+}

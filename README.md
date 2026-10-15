@@ -143,7 +143,7 @@ Draft/Review/Training changes do not invalidate acknowledgement of the prior Pub
 
 Struct DocApproval Admin includes an **Acknowledgement Status** table for current formal publications showing Required, Acknowledged, Outstanding, and the stored release audience. Outstanding users can be expanded inline.
 
-The Published page can also show an **Acknowledgement Report**. Configuration separates access from content:
+The Published page can also show a **collapsed Acknowledgement Report**. Its summary shows the revision/completion counts; expand it to see the user lists. Report users are displayed by their DokuWiki full name, with the login retained as a hover tooltip. Configuration separates access from content:
 
 - **Who can see the on-page acknowledgement report:** Off, Administrators, Managers + Administrators, assigned Publisher + Administrators, Editors/workflow participants + Administrators, or all logged-in users.
 - **What the report shows:** acknowledged users, pending users, or both.

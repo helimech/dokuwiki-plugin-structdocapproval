@@ -222,8 +222,12 @@ class admin_plugin_structdocapproval extends AdminPlugin
             echo '<td>' . $complete . '</td>';
             echo '<td>';
             if ($outstanding) {
+                $names = [];
+                foreach ($row['outstanding_users'] as $outstandingUser) {
+                    $names[] = $publication->getUserDisplayName((string)$outstandingUser);
+                }
                 echo '<details><summary>' . $outstanding . '</summary>' .
-                    hsc(implode(', ', $row['outstanding_users'])) . '</details>';
+                    hsc(implode(', ', $names)) . '</details>';
             } else {
                 echo '0';
             }

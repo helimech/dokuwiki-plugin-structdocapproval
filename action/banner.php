@@ -172,8 +172,8 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         // project it backwards onto historical working revisions.
         if (!$isCurrent) return;
 
-        /** @var helper_plugin_structdocapproval_change_summary $helper */
-        $helper = plugin_load('helper', 'structdocapproval_change_summary');
+        /** @var helper_plugin_structdocapproval_changesummary $helper */
+        $helper = plugin_load('helper', 'structdocapproval_changesummary');
         if (!$helper) return;
 
         $data = $helper->get($pid);

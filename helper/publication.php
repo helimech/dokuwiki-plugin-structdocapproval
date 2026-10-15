@@ -71,17 +71,19 @@ class helper_plugin_structdocapproval_publication extends Plugin
                 continue;
             }
 
+            $data = $auth->getUserData($token);
+            if ($data) {
+                $users[$token] = true;
+                continue;
+            }
+
             if (strpos($token, '@') !== false) {
                 throw new RuntimeException(
                     'Acknowledge accepts DokuWiki users and @groups only, not literal email addresses: ' . $token
                 );
             }
 
-            $data = $auth->getUserData($token);
-            if (!$data) {
-                throw new RuntimeException('Unknown acknowledgement user: ' . $token);
-            }
-            $users[$token] = true;
+            throw new RuntimeException('Unknown acknowledgement user: ' . $token);
         }
 
         ksort($users, SORT_NATURAL | SORT_FLAG_CASE);

@@ -4,6 +4,18 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.4 acknowledgement test — 2026-10-15
+
+- Added an editable workflow **Change Summary** that persists from Draft through Review, Training, and Ready to Publish.
+- Change Summary is separate from workflow Notes and Training Notes.
+- Editors/current-stage workflow owners can update the summary; changes are retained in a dedicated audit-history table.
+- A normal edit after Published starts a fresh blank summary; later edits in the same working cycle carry the summary forward.
+- Workflow emails include the current summary when present.
+- Normal Publish snapshots the summary with the release and includes it in Notify and Acknowledgement Required emails.
+- Change Summary is a hard requirement only when **Send publication notification** or **Require acknowledgement** is selected. Quiet publications with neither selected may publish without one.
+- Published summaries are immutable snapshots and follow the page through Move operations.
+- Added database migration 4 for current/audit Change Summary storage and the publication snapshot field.
+
 ## 0.12.3 acknowledgement test — 2026-10-15
 
 - On-page acknowledgement reports now start collapsed to keep long user lists out of the way.

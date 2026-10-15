@@ -66,6 +66,11 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
         return $this->runSqlMigration($sqlite, 2);
     }
 
+    protected function migration3(SQLiteDB $sqlite): bool
+    {
+        return $this->runSqlMigration($sqlite, 3);
+    }
+
     protected function runSqlMigration(SQLiteDB $sqlite, int $version): bool
     {
         $file = sprintf(DOKU_PLUGIN . 'structdocapproval/db/update%04d.sql', $version);

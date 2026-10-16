@@ -189,6 +189,15 @@ Personal **My DocApproval Tasks** dashboard:
 
 The personal dashboard always resolves the currently logged-in DokuWiki account server-side; no username or `%USER%` parameter is required. The same page can therefore be used by everyone. It shows the current user's outstanding publication acknowledgements, assigned reviews, Training reviews, and pages ready for that user to Publish, plus a collapsed list of recently completed acknowledgements. User/@group Training and Publisher assignments are resolved through the normal DocApproval assignment logic.
 
+Manager/administrator **Compliance** dashboard:
+
+```
+---- struct_docapproval_compliance ----
+----
+```
+
+The compliance dashboard is restricted to DokuWiki managers/administrators. It defaults to the current formal publication for each controlled page and can switch to all historical publication snapshots. Filters include page/namespace, required user, compliance state, and Published date range. It shows aggregate Required/Acknowledged/Outstanding counts, per-publication completion and user details, and a per-user compliance rollup. Historical publication evidence remains reportable even when a page is later moved out of DocApproval control.
+
 Workflow history with a page selector:
 
 ```

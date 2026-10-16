@@ -4,6 +4,18 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.7 acknowledgement test — 2026-10-16
+
+- Added manager/administrator `---- struct_docapproval_compliance ----` reporting syntax.
+- The report defaults to current controlled publication cycles and can switch to all historical publication snapshots.
+- Added filters for page/namespace, required user, compliance status, and Published date range.
+- Added publication-level Required / Acknowledged / Outstanding / Completion reporting with expandable full-name user details and snapshotted Acknowledge audience.
+- Added aggregate compliance cards and a per-user compliance rollup across the filtered report set.
+- Current publication rows follow the actual latest Published content revision after a Published-preserving Minor Change while retaining the original formal publication cycle.
+- Historical publication evidence remains available in All Publication History even if the page is later removed from DocApproval control.
+- Report data is ACL-filtered and the dashboard is nocache.
+- No database migration is required.
+
 ## 0.12.6 acknowledgement test — 2026-10-15
 
 - Added a personal `---- struct_docapproval_my ----` dashboard syntax that resolves the currently logged-in user server-side; no username/`%USER%` parameter is required or accepted.

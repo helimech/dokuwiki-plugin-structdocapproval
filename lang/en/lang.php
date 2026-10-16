@@ -193,6 +193,40 @@ $lang['my_open_training'] = 'Open training review';
 $lang['my_open_publish'] = 'Open publication';
 $lang['my_view'] = 'View';
 
+// management compliance reporting
+$lang['compliance_title'] = 'DocApproval Compliance';
+$lang['compliance_intro'] = 'Publication acknowledgement compliance based on the audience snapshotted when each revision was Published.';
+$lang['compliance_denied'] = 'Only managers and administrators may view DocApproval compliance reporting.';
+$lang['compliance_scope'] = 'Report scope';
+$lang['compliance_scope_current'] = 'Current publications';
+$lang['compliance_scope_all'] = 'All publication history';
+$lang['compliance_page_filter'] = 'Page / namespace';
+$lang['compliance_page_placeholder'] = 'e.g. policy: or supply:procedures';
+$lang['compliance_user_filter'] = 'Required user';
+$lang['compliance_user_placeholder'] = 'user login';
+$lang['compliance_status_filter'] = 'Compliance status';
+$lang['compliance_status_all'] = 'All';
+$lang['compliance_status_outstanding'] = 'Outstanding';
+$lang['compliance_status_complete'] = 'Complete';
+$lang['compliance_status_not_required'] = 'No acknowledgement required';
+$lang['compliance_from'] = 'Published from';
+$lang['compliance_to'] = 'Published to';
+$lang['compliance_apply'] = 'Apply Filters';
+$lang['compliance_reset'] = 'Reset';
+$lang['compliance_publications'] = 'Publications';
+$lang['compliance_users'] = 'Required Users';
+$lang['compliance_completion'] = 'Completion';
+$lang['compliance_publication_table'] = 'Publication Compliance';
+$lang['compliance_user_table'] = 'User Compliance';
+$lang['compliance_published'] = 'Published';
+$lang['compliance_details'] = 'Details';
+$lang['compliance_show_details'] = 'Show';
+$lang['compliance_published_by'] = 'Published by';
+$lang['compliance_current_badge'] = 'Current';
+$lang['compliance_user'] = 'User';
+$lang['compliance_none'] = 'No publications match the selected filters.';
+$lang['compliance_no_users'] = 'No required users match the selected filters.';
+
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';
 $lang['dw2pdf_published'] = 'Published';

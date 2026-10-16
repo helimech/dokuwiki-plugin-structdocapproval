@@ -367,3 +367,28 @@ Then test with accounts that have different DocApproval responsibilities.
 11. Remove the user's read ACL for a page that would otherwise be a task. Confirm the page is absent from the personal dashboard.
 12. Open the same dashboard page as two different users and confirm each sees only their own task queues.
 13. Confirm no syntax parameter can be used to select another username; the dashboard always derives the current authenticated account server-side.
+
+## 26. Management compliance dashboard (v0.12.7)
+
+Create a management/report page containing:
+
+```
+---- struct_docapproval_compliance ----
+----
+```
+
+1. Open the page as a normal authenticated user who is neither manager nor administrator. Confirm no compliance data is shown and access is denied.
+2. Open it as a manager/administrator. Confirm the default scope is **Current publications** and the summary cards match the visible publication rows.
+3. Confirm each publication row shows Page, Version, Published date, Required, Acknowledged, Outstanding, Completion percentage, Change Summary, and expandable Details.
+4. Expand Details. Confirm the snapshotted Acknowledge Audience is shown, users display by full name with login on hover, acknowledged users include timestamps, and outstanding users are listed separately.
+5. Complete an acknowledgement from another account, reload the compliance page, and confirm the publication counts, total cards, and User Compliance row update.
+6. Make a Published-preserving Minor Change. Confirm the Current publication remains the same formal acknowledgement cycle and its page link opens the actual latest Published content revision.
+7. Publish the page again as a new formal revision. Confirm Current scope shows only the new cycle and **All publication history** shows both publication snapshots.
+8. Move a previously Published page out of DocApproval control. Confirm it disappears from Current scope but remains visible in All publication history.
+9. Filter by a namespace fragment such as `supply:` and confirm only matching page IDs remain.
+10. Select/type a Required User and confirm only releases requiring that login remain; with Outstanding/Complete selected, confirm the status applies to that user's requirement.
+11. Without a user filter, test Outstanding, Complete, and No acknowledgement required. Confirm the filter applies to the publication-level compliance state.
+12. Test Published From/To dates and confirm boundaries are inclusive for the selected local calendar dates.
+13. Confirm the User Compliance table aggregates Required, Acknowledged, Outstanding and Completion across only the currently filtered publication set.
+14. Remove the manager's read ACL for a page represented in historical compliance data. Confirm that page is not exposed in the report.
+15. Switch between two managers/admins and confirm the report does not cache another user's ACL-filtered result.

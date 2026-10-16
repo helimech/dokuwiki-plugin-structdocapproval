@@ -272,12 +272,256 @@
         });
     }
 
+    function debounce(fn, wait) {
+        var timer = null;
+        return function () {
+            var args = arguments;
+            var self = this;
+            window.clearTimeout(timer);
+            timer = window.setTimeout(function () {
+                fn.apply(self, args);
+            }, wait);
+        };
+    }
+
+    function enhanceDashboardDocumentTable(table) {
+        if (!table || table.dataset.docapprovalLiveTable === '1') return;
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.dataTable) return;
+
+        var root = table.closest('.docapproval-dashboard-documents');
+        if (!root) return;
+        table.dataset.docapprovalLiveTable = '1';
+
+        var $ = window.jQuery;
+        var pageInput = root.querySelector('.docapproval-dashboard-page-filter');
+        var statusSelect = root.querySelector('.docapproval-dashboard-status-filter');
+        var assigneeInput = root.querySelector('.docapproval-dashboard-assignee-filter');
+        var ackSelect = root.querySelector('.docapproval-dashboard-ack-filter');
+        var lengthSelect = root.querySelector('.docapproval-dashboard-page-length');
+        var resetButton = root.querySelector('.docapproval-dashboard-reset');
+
+        function value(node) {
+            return node ? String(node.value || '').trim().toLowerCase() : '';
+        }
+
+        function rowMatches(row, ignore) {
+            if (!row) return false;
+
+            var pageNeedle = value(pageInput);
+            if (ignore !== 'page' && pageNeedle &&
+                String(row.dataset.docapprovalPage || '').indexOf(pageNeedle) === -1) {
+                return false;
+            }
+
+            var status = value(statusSelect) || 'all';
+            if (ignore !== 'status' && status !== 'all' &&
+                String(row.dataset.docapprovalStatus || '').toLowerCase() !== status) {
+                return false;
+            }
+
+            var assignee = value(assigneeInput);
+            if (ignore !== 'assignee' && assignee &&
+                String(row.dataset.docapprovalAssignees || '').indexOf(assignee) === -1) {
+                return false;
+            }
+
+            var ack = value(ackSelect) || 'all';
+            var rowAck = String(row.dataset.docapprovalAck || '').toLowerCase();
+            if (ignore !== 'ack' && ack !== 'all') {
+                if (ack === 'none_required') {
+                    if (rowAck !== 'none' && rowAck !== 'not_required') return false;
+                } else if (rowAck !== ack) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        var liveFilter = function (settings, data, dataIndex) {
+            if (settings.nTable !== table) return true;
+            var row = settings.aoData && settings.aoData[dataIndex]
+                ? settings.aoData[dataIndex].nTr
+                : null;
+            return rowMatches(row, '');
+        };
+        $.fn.dataTable.ext.search.push(liveFilter);
+
+        function setupDataTable() {
+            var dt;
+            if ($.fn.dataTable.isDataTable(table)) {
+                dt = $(table).DataTable();
+            } else {
+                dt = $(table).DataTable({
+                    pageLength: 50,
+                    lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']],
+                    order: [[1, 'asc'], [3, 'asc']],
+                    autoWidth: false,
+                    dom: 'rt<"docapproval-dashboard-dt-footer"ip>'
+                });
+            }
+
+            var container = dt.table().container();
+            if (container) container.classList.add('docapproval-dashboard-dt-wrapper');
+
+            // The dashboard owns its search and page-length controls. Clear any
+            // generic DataTables search state, use an operational default sort,
+            // and begin at 50 rows per page.
+            dt.search('');
+            dt.columns().search('');
+            dt.page.len(50);
+            dt.order([[1, 'asc'], [3, 'asc']]);
+
+            function allRows() {
+                return dt.rows().nodes();
+            }
+
+            function updateCards() {
+                var counts = {
+                    draft: 0,
+                    awaiting_review: 0,
+                    awaiting_training: 0,
+                    ready_to_publish: 0,
+                    published: 0,
+                    ack_outstanding: 0
+                };
+                var rows = allRows();
+
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    var status = String(row.dataset.docapprovalStatus || '');
+
+                    // Workflow cards are faceted: page/assignee/ack filters apply,
+                    // but the current workflow filter is ignored so all workflow
+                    // buckets remain useful as one-click switches.
+                    if (rowMatches(row, 'status') &&
+                        Object.prototype.hasOwnProperty.call(counts, status)) {
+                        counts[status]++;
+                    }
+
+                    // Outstanding acknowledgements are similarly faceted against
+                    // all active filters except the acknowledgement-state filter.
+                    if (rowMatches(row, 'ack')) {
+                        counts.ack_outstanding += parseInt(
+                            row.dataset.docapprovalAckOutstanding || '0',
+                            10
+                        ) || 0;
+                    }
+                }
+
+                Object.keys(counts).forEach(function (key) {
+                    var node = root.querySelector('[data-docapproval-count="' + key + '"]');
+                    if (node) node.textContent = String(counts[key]);
+                });
+
+                Array.prototype.forEach.call(
+                    root.querySelectorAll('[data-docapproval-status-card]'),
+                    function (button) {
+                        button.classList.toggle(
+                            'active',
+                            value(statusSelect) === button.dataset.docapprovalStatusCard
+                        );
+                    }
+                );
+
+                Array.prototype.forEach.call(
+                    root.querySelectorAll('[data-docapproval-ack-card]'),
+                    function (button) {
+                        button.classList.toggle(
+                            'active',
+                            value(ackSelect) === button.dataset.docapprovalAckCard
+                        );
+                    }
+                );
+            }
+
+            function redraw() {
+                dt.page('first');
+                dt.draw();
+            }
+
+            var redrawDebounced = debounce(redraw, 160);
+
+            if (pageInput) pageInput.addEventListener('input', redrawDebounced);
+            if (assigneeInput) assigneeInput.addEventListener('input', redrawDebounced);
+            if (statusSelect) statusSelect.addEventListener('change', redraw);
+            if (ackSelect) ackSelect.addEventListener('change', redraw);
+
+            if (lengthSelect) {
+                lengthSelect.value = '50';
+                lengthSelect.addEventListener('change', function () {
+                    var length = parseInt(lengthSelect.value, 10);
+                    if (![25, 50, 100, -1].includes(length)) length = 50;
+                    dt.page.len(length).draw();
+                });
+            }
+
+            if (resetButton) {
+                resetButton.addEventListener('click', function () {
+                    if (pageInput) pageInput.value = '';
+                    if (statusSelect) statusSelect.value = 'all';
+                    if (assigneeInput) assigneeInput.value = '';
+                    if (ackSelect) ackSelect.value = 'all';
+                    if (lengthSelect) lengthSelect.value = '50';
+                    dt.search('');
+                    dt.columns().search('');
+                    dt.page.len(50);
+                    dt.order([[1, 'asc'], [3, 'asc']]);
+                    redraw();
+                });
+            }
+
+            Array.prototype.forEach.call(
+                root.querySelectorAll('[data-docapproval-status-card]'),
+                function (button) {
+                    button.addEventListener('click', function () {
+                        if (!statusSelect) return;
+                        var next = button.dataset.docapprovalStatusCard || 'all';
+                        statusSelect.value = value(statusSelect) === next ? 'all' : next;
+                        redraw();
+                    });
+                }
+            );
+
+            Array.prototype.forEach.call(
+                root.querySelectorAll('[data-docapproval-ack-card]'),
+                function (button) {
+                    button.addEventListener('click', function () {
+                        if (!ackSelect) return;
+                        var next = button.dataset.docapprovalAckCard || 'all';
+                        ackSelect.value = value(ackSelect) === next ? 'all' : next;
+                        redraw();
+                    });
+                }
+            );
+
+            $(table).off('draw.dt.docapprovalDashboard')
+                .on('draw.dt.docapprovalDashboard', updateCards);
+
+            dt.draw();
+            updateCards();
+        }
+
+        // Give the site's DataTables plugin its normal ready callback first. If it
+        // has already initialized this table we attach to that instance; otherwise
+        // we initialize the same library ourselves as a safe fallback.
+        window.setTimeout(setupDataTable, 100);
+    }
+
+    function initDashboardDocumentTables() {
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.docapproval-dashboard-documents-table'),
+            enhanceDashboardDocumentTable
+        );
+    }
+
     function init() {
         Array.prototype.forEach.call(
             document.querySelectorAll('.docapproval-token-source'),
             enhanceTokenPicker
         );
         bindTransitionSummarySave();
+        initDashboardDocumentTables();
     }
 
     if (document.readyState === 'loading') {

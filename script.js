@@ -451,7 +451,7 @@
                 lengthSelect.value = '50';
                 lengthSelect.addEventListener('change', function () {
                     var length = parseInt(lengthSelect.value, 10);
-                    if (![25, 50, 100, -1].includes(length)) length = 50;
+                    if ([25, 50, 100, -1].indexOf(length) === -1) length = 50;
                     dt.page.len(length).draw();
                 });
             }

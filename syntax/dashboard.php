@@ -142,18 +142,10 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
                 hsc($this->getLang('dashboard_component_unavailable')) . '</p>';
         }
 
-        global $INPUT;
-
-        $filters = [
-            'page' => $INPUT->str('docapproval_dash_page'),
-            'status' => $INPUT->str('docapproval_dash_status'),
-            'assignee' => $INPUT->str('docapproval_dash_assignee'),
-            'ack' => $INPUT->str('docapproval_dash_ack'),
-        ];
-        if ($filters['status'] === '') $filters['status'] = 'all';
-        if ($filters['ack'] === '') $filters['ack'] = 'all';
-
-        $report = $helper->getDocuments($filters);
+        // Render the complete ACL-filtered current document set once. The browser
+        // then performs the operational filters, sorting and paging live via
+        // DataTables without another PHP/page request.
+        $report = $helper->getDocuments([]);
         $assignees = $helper->getAssigneeSuggestions();
 
         $html = '<div class="docapproval-dashboard-documents">';
@@ -169,28 +161,24 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
 
     protected function renderDocumentFilters(string $pageId, array $filters, array $assignees): string
     {
-        $html = '<form method="get" action="' . hsc(DOKU_BASE . DOKU_SCRIPT) .
-            '" class="docapproval-dashboard-filters">';
-        $html .= '<input type="hidden" name="id" value="' . hsc($pageId) . '" />';
-        $html .= '<input type="hidden" name="docapproval_dash_view" value="documents" />';
+        $html = '<div class="docapproval-dashboard-filters" data-docapproval-live-filters="1">';
 
         $html .= '<label>' . hsc($this->getLang('compliance_page_filter')) .
-            '<input class="edit" type="text" name="docapproval_dash_page" value="' .
-            hsc((string)$filters['page']) . '" placeholder="' .
-            hsc($this->getLang('compliance_page_placeholder')) . '" /></label>';
+            '<input class="edit docapproval-dashboard-page-filter" type="search" ' .
+            'placeholder="' . hsc($this->getLang('compliance_page_placeholder')) . '" autocomplete="off" /></label>';
 
         $html .= '<label>' . hsc($this->getLang('dashboard_workflow_filter'));
-        $html .= '<select name="docapproval_dash_status">';
-        $html .= $this->option('all', $this->getLang('dashboard_all_statuses'), $filters['status']);
+        $html .= '<select class="docapproval-dashboard-status-filter">';
+        $html .= $this->option('all', $this->getLang('dashboard_all_statuses'), 'all');
         foreach (Constants::statuses() as $status) {
-            $html .= $this->option($status, $this->getLang('status_' . $status), $filters['status']);
+            $html .= $this->option($status, $this->getLang('status_' . $status), 'all');
         }
         $html .= '</select></label>';
 
         $html .= '<label>' . hsc($this->getLang('dashboard_assignee_filter')) .
-            '<input class="edit" type="text" name="docapproval_dash_assignee" ' .
-            'list="docapproval-dashboard-assignees" value="' . hsc((string)$filters['assignee']) .
-            '" placeholder="' . hsc($this->getLang('dashboard_assignee_placeholder')) . '" /></label>';
+            '<input class="edit docapproval-dashboard-assignee-filter" type="search" ' .
+            'list="docapproval-dashboard-assignees" placeholder="' .
+            hsc($this->getLang('dashboard_assignee_placeholder')) . '" autocomplete="off" /></label>';
         $html .= '<datalist id="docapproval-dashboard-assignees">';
         foreach ($assignees as $assignee) {
             $login = (string)$assignee['user'];
@@ -201,19 +189,26 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         $html .= '</datalist>';
 
         $html .= '<label>' . hsc($this->getLang('dashboard_ack_filter'));
-        $html .= '<select name="docapproval_dash_ack">';
-        $html .= $this->option('all', $this->getLang('compliance_status_all'), $filters['ack']);
-        $html .= $this->option('outstanding', $this->getLang('compliance_status_outstanding'), $filters['ack']);
-        $html .= $this->option('complete', $this->getLang('compliance_status_complete'), $filters['ack']);
-        $html .= $this->option('none_required', $this->getLang('dashboard_ack_none'), $filters['ack']);
+        $html .= '<select class="docapproval-dashboard-ack-filter">';
+        $html .= $this->option('all', $this->getLang('compliance_status_all'), 'all');
+        $html .= $this->option('outstanding', $this->getLang('compliance_status_outstanding'), 'all');
+        $html .= $this->option('complete', $this->getLang('compliance_status_complete'), 'all');
+        $html .= $this->option('none_required', $this->getLang('dashboard_ack_none'), 'all');
+        $html .= '</select></label>';
+
+        $html .= '<label>' . hsc($this->getLang('dashboard_rows_per_page'));
+        $html .= '<select class="docapproval-dashboard-page-length">';
+        foreach ([25, 50, 100, -1] as $length) {
+            $label = $length === -1 ? $this->getLang('dashboard_rows_all') : (string)$length;
+            $selected = $length === 50 ? ' selected' : '';
+            $html .= '<option value="' . $length . '"' . $selected . '>' . hsc($label) . '</option>';
+        }
         $html .= '</select></label>';
 
         $html .= '<div class="docapproval-dashboard-filter-actions">';
-        $html .= '<button type="submit">' . hsc($this->getLang('compliance_apply')) . '</button>';
-        $html .= '<a class="button" href="' .
-            hsc(wl($pageId, ['docapproval_dash_view' => 'documents'])) . '">' .
-            hsc($this->getLang('compliance_reset')) . '</a>';
-        $html .= '</div></form>';
+        $html .= '<button type="button" class="docapproval-dashboard-reset">' .
+            hsc($this->getLang('compliance_reset')) . '</button>';
+        $html .= '</div></div>';
 
         return $html;
     }
@@ -232,14 +227,22 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             Constants::STATUS_AWAITING_TRAINING => $this->getLang('status_awaiting_training'),
             Constants::STATUS_READY_TO_PUBLISH => $this->getLang('status_ready_to_publish'),
             Constants::STATUS_PUBLISHED => $this->getLang('status_published'),
-            'ack_outstanding' => $this->getLang('dashboard_ack_outstanding'),
         ];
 
         $html = '<div class="docapproval-dashboard-counts">';
         foreach ($cards as $key => $label) {
-            $html .= '<div class="docapproval-dashboard-count"><strong>' .
-                (int)($counts[$key] ?? 0) . '</strong><span>' . hsc($label) . '</span></div>';
+            $html .= '<button type="button" class="docapproval-dashboard-count" ' .
+                'data-docapproval-status-card="' . hsc($key) . '">' .
+                '<strong data-docapproval-count="' . hsc($key) . '">' .
+                (int)($counts[$key] ?? 0) . '</strong><span>' . hsc($label) . '</span></button>';
         }
+
+        $html .= '<button type="button" class="docapproval-dashboard-count" ' .
+            'data-docapproval-ack-card="outstanding">' .
+            '<strong data-docapproval-count="ack_outstanding">' .
+            (int)($counts['ack_outstanding'] ?? 0) . '</strong><span>' .
+            hsc($this->getLang('dashboard_ack_outstanding')) . '</span></button>';
+
         return $html . '</div>';
     }
 
@@ -253,7 +256,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         /** @var helper_plugin_structdocapproval_publication $publication */
         $publication = plugin_load('helper', 'structdocapproval_publication');
 
-        $html = '<div class="docapproval-dashboard-tablewrap"><table class="inline">';
+        $html = '<div class="docapproval-dashboard-tablewrap"><table class="inline docapproval-dashboard-documents-table">';
         $html .= '<thead><tr>';
         foreach ([
             'page',
@@ -271,11 +274,19 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
 
         foreach ($rows as $row) {
             $pid = (string)$row['pid'];
-            $html .= '<tr>';
+            $status = (string)$row['status'];
+            $updatedTs = strtotime((string)$row['updated']) ?: 0;
+            $html .= '<tr data-docapproval-page="' . hsc(strtolower($pid)) . '"' .
+                ' data-docapproval-status="' . hsc($status) . '"' .
+                ' data-docapproval-ack="' . hsc((string)$row['ack_state']) . '"' .
+                ' data-docapproval-assignees="' . hsc(strtolower((string)($row['assigned_search'] ?? ''))) . '"' .
+                ' data-docapproval-ack-outstanding="' . (int)$row['ack_outstanding'] . '">';
             $html .= '<td><a href="' . hsc(wl($pid)) . '">' . hsc($pid) . '</a></td>';
-            $html .= '<td>' . hsc($this->getLang('status_' . $row['status'])) . '</td>';
+            $html .= '<td data-order="' . $this->statusPriority($status) . '">' .
+                hsc($this->getLang('status_' . $status)) . '</td>';
             $html .= '<td>' . $this->renderAssignment((string)$row['assigned_spec'], $publication) . '</td>';
-            $html .= '<td>' . hsc($this->formatIsoDate((string)$row['updated'])) . '</td>';
+            $html .= '<td data-order="' . $updatedTs . '">' .
+                hsc($this->formatIsoDate((string)$row['updated'])) . '</td>';
             $html .= '<td>' . hsc($row['published_version'] !== '' ? (string)$row['published_version'] : '—') . '</td>';
             $html .= '<td>' . $this->renderAckStatus($row) . '</td>';
             $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
@@ -422,6 +433,24 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         return $summary === ''
             ? '<span class="docapproval-dashboard-none">—</span>'
             : nl2br(hsc($summary));
+    }
+
+    protected function statusPriority(string $status): int
+    {
+        switch ($status) {
+            case Constants::STATUS_AWAITING_REVIEW:
+                return 1;
+            case Constants::STATUS_AWAITING_TRAINING:
+                return 2;
+            case Constants::STATUS_READY_TO_PUBLISH:
+                return 3;
+            case Constants::STATUS_DRAFT:
+                return 4;
+            case Constants::STATUS_PUBLISHED:
+                return 5;
+            default:
+                return 99;
+        }
     }
 
     protected function formatIsoDate(string $iso): string

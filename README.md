@@ -173,6 +173,17 @@ The generic workflow Note is recorded on successful actions as well as returns. 
 
 ## Dashboard syntax
 
+The recommended one-stop interface is the unified dashboard:
+
+```
+---- struct_docapproval_dashboard ----
+----
+```
+
+Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement state and Change Summary into one filterable operational table.
+
+The individual report syntaxes remain supported for small embedded/special-purpose pages.
+
 Current workflow / work queue:
 
 ```

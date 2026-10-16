@@ -46,8 +46,9 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
             'publish' => count($tasks['publish']),
         ];
 
-        $html = '<div class="plugin-structdocapproval-my">';
-        $html .= '<h2>' . hsc($this->getLang('my_tasks_title')) . '</h2>';
+        $embedded = is_array($data) && !empty($data['embedded']);
+        $html = '<div class="plugin-structdocapproval-my' . ($embedded ? ' embedded' : '') . '">';
+        if (!$embedded) $html .= '<h2>' . hsc($this->getLang('my_tasks_title')) . '</h2>';
         $html .= '<div class="docapproval-my-counts">';
         $html .= $this->countCard('docapproval-my-ack', $counts['ack'], $this->getLang('my_ack_required'));
         $html .= $this->countCard('docapproval-my-review', $counts['review'], $this->getLang('my_reviews_required'));

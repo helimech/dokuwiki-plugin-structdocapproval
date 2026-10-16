@@ -112,12 +112,27 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
                 ? trim((string)($snapshot['change_summary'] ?? ''))
                 : trim((string)($row['working_summary'] ?? ''));
 
+            // Keep the visible assignment compact, but expose resolved users as
+            // row metadata so the browser can live-filter an @group assignment by
+            // either a member's login or configured full name.
+            $assignedSearchParts = [];
+            if ($assignedSpec !== '') {
+                $assignedSearchParts[] = $assignedSpec;
+                foreach ($assignments->resolveUsers($assignedSpec) as $assignedUser) {
+                    $assignedSearchParts[] = $assignedUser;
+                    $assignedName = $publication->getUserDisplayName($assignedUser);
+                    if ($assignedName !== $assignedUser) $assignedSearchParts[] = $assignedName;
+                }
+            }
+            $assignedSearch = implode(' ', array_values(array_unique($assignedSearchParts)));
+
             $out[] = [
                 'pid' => $pid,
                 'status' => $status,
                 'updated' => (string)($row['col4'] ?? ''),
                 'revision' => (int)($row['col5'] ?? 0),
                 'assigned_spec' => $assignedSpec,
+                'assigned_search' => $assignedSearch,
                 'submitted_by' => (string)($row['col7'] ?? ''),
                 'submitted_at' => (string)($row['col8'] ?? ''),
                 'assigned_reviewer' => (string)($row['col9'] ?? ''),

@@ -418,3 +418,24 @@ Create a normal wiki page containing:
 14. Make a Published-preserving Minor Change. Confirm Documents continues to show the same formal acknowledgement obligation while the page itself remains Published.
 15. Open the same dashboard as two different users/managers and confirm nocache/ACL filtering prevents one account's task or page visibility from leaking to another.
 16. Confirm all previous standalone syntaxes still render independently after the unified dashboard is installed.
+
+## 28. Live Documents table / DataTables integration (v0.12.9)
+
+Use the unified dashboard Documents tab with a realistic controlled-document set.
+
+1. Confirm the Documents tab initially shows 50 rows per page and DataTables pagination/info are present without a page reload.
+2. Type part of a page ID/namespace into **Page / namespace**. Confirm rows update while typing and the browser URL/page does not reload.
+3. Change **Workflow status** and **Acknowledgement state**. Confirm each redraw is immediate.
+4. Type a direct user's login in **Assigned user** and confirm matching direct assignments remain.
+5. Type/select a user who is assigned only through an `@group`. Confirm that row still matches. Repeat by typing part of the user's configured full name.
+6. Change **Rows** through 25, 50, 100 and All. Confirm pagination and the DataTables info line update correctly.
+7. Click each workflow summary card. Confirm it becomes the active workflow filter; click the same card again to clear it.
+8. Click **Ack Outstanding**. Confirm only documents with an outstanding acknowledgement obligation remain; click it again to clear.
+9. Combine page/namespace, assignee and acknowledgement filters. Confirm the workflow-card counts update to show the workflow distribution within that filtered set rather than collapsing every non-selected workflow bucket to zero.
+10. Apply a Workflow filter and confirm Ack Outstanding reflects that workflow subset while ignoring only the acknowledgement-state facet.
+11. Click **Reset**. Confirm all filters clear, 50 rows/page is restored, and the default operational sort returns.
+12. Confirm the default ordering prioritizes Awaiting Review, Awaiting Training Review, Ready to Publish, Draft, then Published, with older waiting items first within the stage.
+13. Click table headers and confirm normal DataTables column sorting still works.
+14. Confirm the Documents table does not show a duplicate generic DataTables search box or page-length selector in addition to the DocApproval controls.
+15. Confirm the column heading reads **Acknowledgement**, not **Default Acknowledge**.
+16. Confirm My Tasks, Compliance, History, publication acknowledgement controls and all standalone dashboard syntaxes still behave as before.

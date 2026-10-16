@@ -4,6 +4,21 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.9 live dashboard table test — 2026-10-16
+
+- Converted the unified Dashboard → Documents controls to live client-side DataTables filtering; changing filters no longer reloads the wiki page.
+- Page/namespace and Assigned User filters update while typing with a short debounce; Workflow and Acknowledgement dropdowns redraw immediately.
+- Added a dashboard Rows selector with 25 / 50 / 100 / All and a 50-row default.
+- Existing DataTables pagination/info are reused when the site's DataTables plugin has already initialized the table; the DocApproval plugin initializes the same library only as a fallback.
+- Workflow summary cards are now clickable filters. Clicking the active card again clears that workflow filter.
+- Ack Outstanding is also a clickable filter.
+- Summary-card counts update live as the other filters change while remaining faceted so alternate workflow buckets stay visible.
+- Assigned User live search includes resolved @group members by both login and configured full name.
+- Added operational default sorting: workflow-action stages first, then oldest waiting item.
+- Hid the generic DataTables global search/page-length controls for this table because the dashboard now supplies purpose-built controls.
+- Renamed the Documents acknowledgement column from the inherited "Default Acknowledge" label to "Acknowledgement".
+- No database migration is required.
+
 ## 0.12.8 unified dashboard test — 2026-10-16
 
 - Added the recommended one-stop `---- struct_docapproval_dashboard ----` interface.

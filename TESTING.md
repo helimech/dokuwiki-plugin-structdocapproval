@@ -392,3 +392,29 @@ Create a management/report page containing:
 13. Confirm the User Compliance table aggregates Required, Acknowledged, Outstanding and Completion across only the currently filtered publication set.
 14. Remove the manager's read ACL for a page represented in historical compliance data. Confirm that page is not exposed in the report.
 15. Switch between two managers/admins and confirm the report does not cache another user's ACL-filtered result.
+
+## 27. Unified DocApproval dashboard (v0.12.8)
+
+Create a normal wiki page containing:
+
+```
+---- struct_docapproval_dashboard ----
+----
+```
+
+1. Open the page while logged out. Confirm it shows the dashboard heading plus the login-required message and no task/document data.
+2. Open it as a normal authenticated user. Confirm only **My Tasks** is available and its acknowledgement/review/training/publish queues behave exactly like the standalone `struct_docapproval_my` report.
+3. Open it as a DokuWiki manager/administrator. Confirm tabs appear for **My Tasks**, **Documents**, **Compliance**, and **History**.
+4. Confirm the My Tasks tab count equals the sum of that account's current acknowledgement, review, training-review and publication tasks.
+5. Open **Documents**. Confirm summary cards show Draft, Awaiting Review, Awaiting Training Review, Ready to Publish, Published, and total outstanding acknowledgements for the currently filtered document set.
+6. Confirm each document row shows Page, Workflow, Assigned To, Waiting Since, latest Published Rev, Acknowledgement state, Change Summary, and Details.
+7. Put pages into each workflow stage. Confirm Review shows the reviewer frozen into that cycle while Training/Ready to Publish show their current direct-user/@group assignment specs.
+8. Filter Documents by page/namespace fragment, workflow status, assigned user and acknowledgement state. Confirm Apply and Reset retain the Documents tab.
+9. For an assigned-user filter, test both a direct user assignment and an `@group` assignment. Confirm a member of the group matches.
+10. Expand Details for an active page. Confirm current workflow status/date, workflow actors/training information/note where present, current Published revision metadata, and acknowledgement summary are shown.
+11. From Details click **History**. Confirm the dashboard switches to History with that page already selected.
+12. In History select another page and submit. Confirm the dashboard remains on the History tab.
+13. Open Compliance, change filters and submit/reset. Confirm the dashboard remains on the Compliance tab and the existing v0.12.7 compliance report still behaves the same.
+14. Make a Published-preserving Minor Change. Confirm Documents continues to show the same formal acknowledgement obligation while the page itself remains Published.
+15. Open the same dashboard as two different users/managers and confirm nocache/ACL filtering prevents one account's task or page visibility from leaking to another.
+16. Confirm all previous standalone syntaxes still render independently after the unified dashboard is installed.

@@ -723,3 +723,207 @@
         grid-template-columns: 1fr;
     }
 }
+
+.plugin-structdocapproval-dashboard {
+    margin: 0.5rem 0 1.5rem 0;
+
+    .docapproval-dashboard-head {
+        margin-bottom: 0.8rem;
+    }
+
+    .docapproval-dashboard-head h2 {
+        margin-bottom: 0.15rem;
+    }
+
+    .docapproval-dashboard-head p,
+    .docapproval-dashboard-section-intro {
+        margin-top: 0;
+        opacity: 0.82;
+    }
+
+    .docapproval-dashboard-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        border-bottom: 1px solid @ini_border;
+        margin: 0 0 1rem 0;
+    }
+
+    .docapproval-dashboard-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid @ini_border;
+        border-bottom: 0;
+        background: @ini_background_alt;
+        text-decoration: none;
+        margin-bottom: -1px;
+    }
+
+    .docapproval-dashboard-tab strong {
+        min-width: 1.4em;
+        text-align: center;
+        border-radius: 1em;
+        padding: 0.05em 0.35em;
+        background: rgba(80, 120, 160, 0.12);
+        font-size: 0.9em;
+    }
+
+    .docapproval-dashboard-tab.active {
+        background: @ini_background;
+        font-weight: 600;
+        border-bottom: 1px solid @ini_background;
+    }
+
+    .docapproval-dashboard-filters {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(12rem, 1fr));
+        gap: 0.65rem 0.8rem;
+        align-items: end;
+        padding: 0.8rem;
+        margin: 0.85rem 0 1rem 0;
+        border: 1px solid @ini_border;
+        background: @ini_background_alt;
+    }
+
+    .docapproval-dashboard-filters label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-weight: 600;
+    }
+
+    .docapproval-dashboard-filters input,
+    .docapproval-dashboard-filters select {
+        width: 100%;
+        box-sizing: border-box;
+        font-weight: normal;
+    }
+
+    .docapproval-dashboard-filter-actions {
+        display: flex;
+        gap: 0.45rem;
+        align-items: center;
+    }
+
+    .docapproval-dashboard-filter-actions .button {
+        display: inline-block;
+        padding: 0.35em 0.7em;
+        border: 1px solid @ini_border;
+        background: @ini_background;
+        text-decoration: none;
+    }
+
+    .docapproval-dashboard-counts {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(8rem, 1fr));
+        gap: 0.6rem;
+        margin: 0.85rem 0 1rem 0;
+    }
+
+    .docapproval-dashboard-count {
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+        border: 1px solid @ini_border;
+        background: @ini_background_alt;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .docapproval-dashboard-count strong {
+        font-size: 1.45em;
+        line-height: 1;
+    }
+
+    .docapproval-dashboard-tablewrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .docapproval-dashboard-tablewrap table {
+        width: 100%;
+    }
+
+    .docapproval-dashboard-tablewrap th,
+    .docapproval-dashboard-tablewrap td {
+        vertical-align: top;
+        padding-right: 0.75rem;
+    }
+
+    .docapproval-dashboard-none {
+        opacity: 0.72;
+    }
+
+    .docapproval-dashboard-ack {
+        white-space: nowrap;
+    }
+
+    .docapproval-dashboard-ack.complete,
+    .docapproval-dashboard-ack.outstanding {
+        font-weight: 600;
+    }
+
+    .docapproval-dashboard-details > summary {
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .docapproval-dashboard-detail-body {
+        min-width: 34rem;
+        padding-top: 0.45rem;
+    }
+
+    .docapproval-dashboard-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(14rem, 1fr));
+        gap: 1rem;
+    }
+
+    .docapproval-dashboard-detail-grid dl {
+        display: grid;
+        grid-template-columns: minmax(8rem, auto) minmax(10rem, 1fr);
+        gap: 0.2rem 0.6rem;
+        margin: 0.35rem 0;
+    }
+
+    .docapproval-dashboard-detail-grid dt {
+        font-weight: 600;
+    }
+
+    .docapproval-dashboard-detail-grid dd {
+        margin: 0;
+    }
+
+    .docapproval-dashboard-detail-links {
+        margin: 0.65rem 0 0 0;
+    }
+
+    .plugin-structdocapproval-my.embedded,
+    .plugin-structdocapproval-compliance.embedded,
+    .plugin-structdocapproval-history.embedded {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 1100px) {
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-counts {
+        grid-template-columns: repeat(3, minmax(8rem, 1fr));
+    }
+
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-filters {
+        grid-template-columns: repeat(2, minmax(12rem, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-counts,
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-filters,
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-detail-body {
+        min-width: 0;
+    }
+}

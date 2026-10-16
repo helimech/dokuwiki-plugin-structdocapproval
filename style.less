@@ -778,7 +778,7 @@
 
     .docapproval-dashboard-filters {
         display: grid;
-        grid-template-columns: repeat(4, minmax(12rem, 1fr));
+        grid-template-columns: minmax(16rem, 1.3fr) repeat(3, minmax(12rem, 1fr)) minmax(6rem, 0.55fr) auto;
         gap: 0.65rem 0.8rem;
         align-items: end;
         padding: 0.8rem;
@@ -826,9 +826,24 @@
         display: flex;
         flex-direction: column;
         gap: 0.12rem;
+        width: 100%;
         border: 1px solid @ini_border;
         background: @ini_background_alt;
         padding: 0.65rem 0.75rem;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .docapproval-dashboard-count:hover,
+    .docapproval-dashboard-count:focus-visible {
+        background: @ini_background;
+    }
+
+    .docapproval-dashboard-count.active {
+        font-weight: 600;
+        box-shadow: inset 0 -3px 0 currentColor;
     }
 
     .docapproval-dashboard-count strong {
@@ -899,6 +914,25 @@
         margin: 0.65rem 0 0 0;
     }
 
+    .docapproval-dashboard-dt-wrapper .dataTables_filter,
+    .docapproval-dashboard-dt-wrapper .dataTables_length {
+        display: none !important;
+    }
+
+    .docapproval-dashboard-dt-wrapper .docapproval-dashboard-dt-footer,
+    .docapproval-dashboard-dt-wrapper .dataTables_info,
+    .docapproval-dashboard-dt-wrapper .dataTables_paginate {
+        margin-top: 0.6rem;
+    }
+
+    .docapproval-dashboard-dt-wrapper .docapproval-dashboard-dt-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
     .plugin-structdocapproval-my.embedded,
     .plugin-structdocapproval-compliance.embedded,
     .plugin-structdocapproval-history.embedded {
@@ -913,6 +947,10 @@
 
     .plugin-structdocapproval-dashboard .docapproval-dashboard-filters {
         grid-template-columns: repeat(2, minmax(12rem, 1fr));
+    }
+
+    .plugin-structdocapproval-dashboard .docapproval-dashboard-filter-actions {
+        align-self: end;
     }
 }
 

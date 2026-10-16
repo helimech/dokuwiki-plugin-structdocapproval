@@ -4,6 +4,19 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.8 unified dashboard test — 2026-10-16
+
+- Added the recommended one-stop `---- struct_docapproval_dashboard ----` interface.
+- All authenticated users receive a **My Tasks** tab using the existing personal acknowledgement/review/training/publish queues.
+- Managers/administrators additionally receive **Documents**, **Compliance**, and **History** tabs in the same interface.
+- Added a unified Controlled Documents view combining current workflow state, current assignee, waiting date, latest Published revision, current acknowledgement state, Change Summary, and expandable workflow/publication details.
+- Added Documents filters for page/namespace, workflow status, assigned user, and acknowledgement state.
+- Added workflow-state summary cards plus a current outstanding-acknowledgement count.
+- Document details link directly to the page and to that page's workflow History tab.
+- Existing Compliance and History filter forms now preserve their active unified-dashboard tab when embedded.
+- Existing `struct_docapproval`, `struct_docapprovalhistory`, `struct_docapproval_my`, and `struct_docapproval_compliance` syntaxes remain supported as standalone/special-purpose reports.
+- No database migration is required.
+
 ## 0.12.7 acknowledgement test — 2026-10-16
 
 - Added manager/administrator `---- struct_docapproval_compliance ----` reporting syntax.

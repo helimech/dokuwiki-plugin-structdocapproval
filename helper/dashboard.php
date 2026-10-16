@@ -36,6 +36,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
 
         $assignments = Assignments::getInstance();
         $assigneeGroups = $filters['assignee'] !== '' ? $this->userGroups($filters['assignee']) : [];
+        $assignedSearchCache = [];
         $out = [];
 
         foreach ($rows as $row) {
@@ -115,16 +116,22 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             // Keep the visible assignment compact, but expose resolved users as
             // row metadata so the browser can live-filter an @group assignment by
             // either a member's login or configured full name.
-            $assignedSearchParts = [];
-            if ($assignedSpec !== '') {
-                $assignedSearchParts[] = $assignedSpec;
-                foreach ($assignments->resolveUsers($assignedSpec) as $assignedUser) {
-                    $assignedSearchParts[] = $assignedUser;
-                    $assignedName = $publication->getUserDisplayName($assignedUser);
-                    if ($assignedName !== $assignedUser) $assignedSearchParts[] = $assignedName;
+            if (!array_key_exists($assignedSpec, $assignedSearchCache)) {
+                $assignedSearchParts = [];
+                if ($assignedSpec !== '') {
+                    $assignedSearchParts[] = $assignedSpec;
+                    foreach ($assignments->resolveUsers($assignedSpec) as $assignedUser) {
+                        $assignedSearchParts[] = $assignedUser;
+                        $assignedName = $publication->getUserDisplayName($assignedUser);
+                        if ($assignedName !== $assignedUser) $assignedSearchParts[] = $assignedName;
+                    }
                 }
+                $assignedSearchCache[$assignedSpec] = implode(
+                    ' ',
+                    array_values(array_unique($assignedSearchParts))
+                );
             }
-            $assignedSearch = implode(' ', array_values(array_unique($assignedSearchParts)));
+            $assignedSearch = $assignedSearchCache[$assignedSpec];
 
             $out[] = [
                 'pid' => $pid,

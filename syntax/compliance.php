@@ -56,8 +56,9 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $report = $helper->getReport($filters);
         $users = $helper->getUserSuggestions();
 
-        $html = '<div class="plugin-structdocapproval-compliance">';
-        $html .= '<h2>' . hsc($this->getLang('compliance_title')) . '</h2>';
+        $embedded = is_array($data) && !empty($data['embedded']);
+        $html = '<div class="plugin-structdocapproval-compliance' . ($embedded ? ' embedded' : '') . '">';
+        if (!$embedded) $html .= '<h2>' . hsc($this->getLang('compliance_title')) . '</h2>';
         $html .= '<p class="docapproval-compliance-intro">' . hsc($this->getLang('compliance_intro')) . '</p>';
         $html .= $this->renderFilters($ID, $report['filters'], $users);
         $html .= $this->renderTotals($report['totals']);
@@ -71,8 +72,14 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
     protected function renderFilters(string $pageId, array $filters, array $users): string
     {
+        global $INPUT;
+        $dashboardView = $INPUT->str('docapproval_dash_view');
+
         $html = '<form method="get" action="' . hsc(DOKU_BASE . DOKU_SCRIPT) . '" class="docapproval-compliance-filters">';
         $html .= '<input type="hidden" name="id" value="' . hsc($pageId) . '" />';
+        if ($dashboardView === 'compliance') {
+            $html .= '<input type="hidden" name="docapproval_dash_view" value="compliance" />';
+        }
 
         $html .= '<label>' . hsc($this->getLang('compliance_scope'));
         $html .= '<select name="docapproval_comp_scope">';
@@ -111,7 +118,11 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
         $html .= '<div class="docapproval-compliance-filter-actions">';
         $html .= '<button type="submit">' . hsc($this->getLang('compliance_apply')) . '</button>';
-        $html .= '<a class="button" href="' . hsc(wl($pageId)) . '">' . hsc($this->getLang('compliance_reset')) . '</a>';
+        $resetParams = $dashboardView === 'compliance'
+            ? ['docapproval_dash_view' => 'compliance']
+            : [];
+        $html .= '<a class="button" href="' . hsc(wl($pageId, $resetParams)) . '">' .
+            hsc($this->getLang('compliance_reset')) . '</a>';
         $html .= '</div></form>';
 
         return $html;

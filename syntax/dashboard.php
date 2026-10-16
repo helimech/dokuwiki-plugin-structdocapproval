@@ -264,7 +264,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             'assigned_to',
             'dashboard_waiting_since',
             'dashboard_published_rev',
-            'acknowledge',
+            'dashboard_acknowledgement',
             'change_summary',
             'compliance_details'
         ] as $key) {

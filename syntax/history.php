@@ -31,9 +31,14 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         $pages = $db->queryAll('SELECT DISTINCT pid FROM data_struct_docapproval ORDER BY pid') ?: [];
         $selected = cleanID($INPUT->str('docapproval_history_page'));
 
-        $html = '<div id="docapproval-history" class="plugin-structdocapproval-history">';
+        $embedded = is_array($data) && !empty($data['embedded']);
+        $html = '<div id="docapproval-history" class="plugin-structdocapproval-history' .
+            ($embedded ? ' embedded' : '') . '">';
         $html .= '<form method="get" action="' . hsc(DOKU_BASE . DOKU_SCRIPT) . '">';
         $html .= '<input type="hidden" name="id" value="' . hsc($ID) . '" />';
+        if ($INPUT->str('docapproval_dash_view') === 'history') {
+            $html .= '<input type="hidden" name="docapproval_dash_view" value="history" />';
+        }
         $html .= '<label>' . hsc($this->getLang('select_page')) . ' <select name="docapproval_history_page">';
         $html .= '<option value="">' . hsc($this->getLang('select_page_prompt')) . '</option>';
         foreach ($pages as $row) {

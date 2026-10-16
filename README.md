@@ -180,7 +180,7 @@ The recommended one-stop interface is the unified dashboard:
 ----
 ```
 
-Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement state and Change Summary into one filterable operational table.
+Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement state and Change Summary into one operational table. Its page/namespace, workflow, assigned-user, and acknowledgement filters are live DataTables filters (no page reload), the workflow/acknowledgement summary cards are clickable filters, and the table supports sorting plus 25 / 50 / 100 / All row paging with 50 rows by default.
 
 The individual report syntaxes remain supported for small embedded/special-purpose pages.
 

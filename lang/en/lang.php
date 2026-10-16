@@ -227,6 +227,33 @@ $lang['compliance_user'] = 'User';
 $lang['compliance_none'] = 'No publications match the selected filters.';
 $lang['compliance_no_users'] = 'No required users match the selected filters.';
 
+// unified dashboard
+$lang['dashboard_title'] = 'DocApproval Dashboard';
+$lang['dashboard_intro'] = 'One place for your DocApproval work, current controlled documents, acknowledgement compliance, and workflow history.';
+$lang['dashboard_tab_my'] = 'My Tasks';
+$lang['dashboard_tab_documents'] = 'Documents';
+$lang['dashboard_tab_compliance'] = 'Compliance';
+$lang['dashboard_tab_history'] = 'History';
+$lang['dashboard_component_unavailable'] = 'The requested DocApproval dashboard component is unavailable.';
+$lang['dashboard_documents_title'] = 'Controlled Documents';
+$lang['dashboard_documents_intro'] = 'Current workflow, publication and acknowledgement state for controlled documents.';
+$lang['dashboard_workflow_filter'] = 'Workflow status';
+$lang['dashboard_all_statuses'] = 'All workflow states';
+$lang['dashboard_assignee_filter'] = 'Assigned user';
+$lang['dashboard_assignee_placeholder'] = 'user login';
+$lang['dashboard_ack_filter'] = 'Acknowledgement state';
+$lang['dashboard_ack_none'] = 'None required / no audience';
+$lang['dashboard_ack_outstanding'] = 'Ack Outstanding';
+$lang['dashboard_workflow'] = 'Workflow';
+$lang['dashboard_waiting_since'] = 'Waiting Since';
+$lang['dashboard_published_rev'] = 'Published Rev';
+$lang['dashboard_no_documents'] = 'No controlled documents match the selected filters.';
+$lang['dashboard_ack_not_required'] = 'Not required';
+$lang['dashboard_outstanding_short'] = 'outstanding';
+$lang['dashboard_current_workflow'] = 'Current workflow';
+$lang['dashboard_current_publication'] = 'Current publication';
+$lang['dashboard_no_published'] = 'No Published baseline is available.';
+
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';
 $lang['dw2pdf_published'] = 'Published';

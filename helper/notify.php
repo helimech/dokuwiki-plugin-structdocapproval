@@ -55,6 +55,103 @@ class helper_plugin_structdocapproval_notify extends Plugin
         if (!$mailer->send()) throw new RuntimeException('DokuWiki Mailer reported that the message was not sent.');
     }
 
+    public function sendWorkflowStatusReminder(string $pid, string $status): int
+    {
+        if (!$this->getConf('email_enable')) {
+            throw new RuntimeException($this->getLang('reminder_email_disabled'));
+        }
+
+        $pid = cleanID($pid);
+        $allowed = [
+            Constants::STATUS_AWAITING_REVIEW,
+            Constants::STATUS_AWAITING_TRAINING,
+            Constants::STATUS_READY_TO_PUBLISH,
+        ];
+        if (!in_array($status, $allowed, true)) {
+            throw new RuntimeException($this->getLang('workflow_reminder_invalid'));
+        }
+
+        $record = WorkflowRecord::latest($pid);
+        if (!$record || (string)$record->get('status') !== $status) {
+            throw new RuntimeException($this->getLang('workflow_reminder_stale'));
+        }
+
+        $assignments = Assignments::getInstance();
+        $specs = [];
+        switch ($status) {
+            case Constants::STATUS_AWAITING_REVIEW:
+                if ($record->get('assigned_reviewer')) {
+                    $specs[] = (string)$record->get('assigned_reviewer');
+                }
+                if (trim((string)$this->getConf('review_queue_cc')) !== '') {
+                    $specs[] = (string)$this->getConf('review_queue_cc');
+                }
+                break;
+            case Constants::STATUS_AWAITING_TRAINING:
+                $specs[] = $assignments->getRoleSpec($pid, Constants::ROLE_TRAINING);
+                break;
+            case Constants::STATUS_READY_TO_PUBLISH:
+                $specs[] = $assignments->getRoleSpec($pid, Constants::ROLE_PUBLISHER);
+                break;
+        }
+
+        $recipients = $this->resolveRecipients($specs, true);
+        if (!$recipients) {
+            throw new RuntimeException($this->getLang('workflow_reminder_no_recipients'));
+        }
+
+        $title = trim((string)p_get_first_heading($pid));
+        if ($title === '') $title = $pid;
+        $statusLabel = $this->getLang('status_' . $status);
+        $pageUrl = wl($pid, '', true, '&');
+        $waitingSince = $this->formatDate((string)$record->get('datetime'));
+
+        /** @var helper_plugin_structdocapproval_changesummary $summaryHelper */
+        $summaryHelper = plugin_load('helper', 'structdocapproval_changesummary');
+        $changeSummary = $summaryHelper ? $summaryHelper->getSummary($pid) : '';
+
+        $subject = sprintf(
+            $this->getLang('email_workflow_reminder_subject'),
+            $statusLabel,
+            $title
+        );
+
+        $text = [
+            $this->getLang('email_workflow_reminder_intro'),
+            '',
+            $this->textField($this->getLang('email_page'), $title),
+            $this->textField($this->getLang('email_status'), $statusLabel),
+            $this->textField($this->getLang('my_waiting_since'), $waitingSince),
+            $this->textField($this->getLang('email_view_page'), $pageUrl),
+        ];
+        if ($changeSummary !== '') {
+            $text[] = '';
+            $text[] = $this->getLang('email_change_summary') . ':';
+            $text[] = $changeSummary;
+        }
+
+        $html = '<p>' . hsc($this->getLang('email_workflow_reminder_intro')) . '</p><p>' .
+            $this->htmlField($this->getLang('email_page'), $title) .
+            $this->htmlField($this->getLang('email_status'), $statusLabel) .
+            $this->htmlField($this->getLang('my_waiting_since'), $waitingSince) .
+            '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
+            '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a></p>';
+        if ($changeSummary !== '') {
+            $html .= '<p><strong>' . hsc($this->getLang('email_change_summary')) . ':</strong><br>' .
+                nl2br(hsc($changeSummary)) . '</p>';
+        }
+
+        $mailer = new Mailer();
+        $mailer->bcc($recipients);
+        $mailer->subject($subject);
+        $mailer->setBody(implode("\n", $text) . "\n", null, null, $html);
+        if (!$mailer->send()) {
+            throw new RuntimeException('DokuWiki Mailer reported that the workflow reminder was not sent.');
+        }
+
+        return count($recipients);
+    }
+
     protected function sendPublicationAudience(WorkflowRecord $record): void
     {
         $pid = $record->getPid();
@@ -184,7 +281,8 @@ class helper_plugin_structdocapproval_notify extends Plugin
     public function sendAcknowledgementReminder(
         string $pid,
         int $publicationRevision,
-        array $users
+        array $users,
+        ?string $ccSpec = null
     ): array {
         if (!$this->getConf('email_enable')) {
             throw new RuntimeException($this->getLang('reminder_email_disabled'));
@@ -210,6 +308,15 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $emails[$email] = true;
         }
         if (!$emails) throw new RuntimeException($this->getLang('reminder_no_email'));
+
+        if ($ccSpec === null) $ccSpec = (string)$this->getConf('ack_reminder_cc');
+        $ccSpec = trim($ccSpec);
+        $ccRecipients = $ccSpec !== '' ? $this->resolveRecipients([$ccSpec], true) : [];
+        $recipientKeys = [];
+        foreach (array_keys($emails) as $email) $recipientKeys[strtolower($email)] = true;
+        $ccRecipients = array_values(array_filter($ccRecipients, static function ($email) use ($recipientKeys) {
+            return !isset($recipientKeys[strtolower($email)]);
+        }));
 
         $title = trim((string)p_get_first_heading($pid));
         if ($title === '') $title = $pid;
@@ -261,6 +368,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
 
         $mailer = new Mailer();
         $mailer->bcc(array_keys($emails));
+        if ($ccRecipients) $mailer->cc($ccRecipients);
         $mailer->subject($subject);
         $mailer->setBody(implode("\n", $text) . "\n", null, null, $html);
         if (!$mailer->send()) {

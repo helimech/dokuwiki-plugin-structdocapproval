@@ -444,19 +444,27 @@ class helper_plugin_structdocapproval_publication extends Plugin
             $compliance = $this->getComplianceForPage($pid, $publicationRevision);
             if (!$compliance || empty($compliance['outstanding_users'])) continue;
 
-            $lastAuto = (int)$db->queryValue(
+            // Any reminder sent after the due date resets the automatic cadence.
+            // A manual reminder before the due date does not suppress the first
+            // automatic reminder on the first overdue day.
+            $lastOverdueReminder = (int)$db->queryValue(
                 'SELECT COALESCE(MAX(sent_at),0) FROM struct_docapproval_reminders ' .
-                'WHERE pid=? AND publication_revision=? AND reminder_type=?',
-                [$pid, $publicationRevision, 'auto']
+                'WHERE pid=? AND publication_revision=? AND sent_at>?',
+                [$pid, $publicationRevision, (int)$row['ack_due_at']]
             );
-            if ($lastAuto > 0 && ($now - $lastAuto) < $intervalSeconds) continue;
+            if (
+                $lastOverdueReminder > 0 &&
+                ($now - $lastOverdueReminder) < $intervalSeconds
+            ) {
+                continue;
+            }
 
             $out[] = [
                 'pid' => $pid,
                 'publication_revision' => $publicationRevision,
                 'ack_due_at' => (int)$row['ack_due_at'],
                 'outstanding_users' => (array)$compliance['outstanding_users'],
-                'last_auto_reminder_at' => $lastAuto,
+                'last_overdue_reminder_at' => $lastOverdueReminder,
             ];
         }
 

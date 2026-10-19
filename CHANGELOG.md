@@ -4,6 +4,22 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.13.1 pre-test hardening — 2026-10-19
+
+- Reviewed the acknowledgement/publication/dashboard/reminder paths before destructive testing and tightened several failure/race cases.
+- SQL migrations 2+ now commit their schema changes and DocApproval version marker in the same transaction; multi-statement migration SQL is also atomic.
+- Automatic reminder sweeps now run only during normal GET page views, never during workflow/reminder POST actions, preventing a manual reminder POST from also triggering an automatic reminder in the same request.
+- Automatic reminder failures are isolated from the page request, and a sweep left stuck in `running` for more than 30 minutes may be safely reclaimed.
+- Acknowledgement writes are now idempotent under concurrent/double-submit requests using the existing publication/user primary key.
+- Publication validation now rejects an acknowledgement `@group` that resolves to zero users instead of silently publishing a release with an empty required audience.
+- Acknowledgement reminder delivery revalidates both the current controlled publication and the still-outstanding user set immediately before mail construction.
+- Dashboard tab counts no longer build the entire Documents dataset just to render badges; ACL visibility is reused between overview counts.
+- Reused already-loaded publication snapshots in Documents, Compliance, and automatic-reminder calculations to remove duplicate snapshot reads.
+- My Tasks now joins acknowledgement requirements directly to the current formal publication instead of re-querying workflow history once for each historical requirement.
+- Compliance report generation caches per-page controlled state during a request.
+- Stale/typoed direct user IDs are no longer returned as actionable assignees when the auth backend can verify that the account does not exist.
+- No database migration is required beyond v0.12.13's existing migration 6.
+
 ## 0.12.13 management notifications and automatic reminders test — 2026-10-19
 
 - Added **Not Published** to Dashboard → Documents Workflow status. It live-filters every controlled page whose current workflow state is anything except Published.

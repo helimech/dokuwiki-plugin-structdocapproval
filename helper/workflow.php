@@ -148,6 +148,9 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                         }
                         $dueAt = strtotime($dueDate . ' 23:59:59');
                         if (!$dueAt) throw new RuntimeException('Enter a valid acknowledgement due date.');
+                        if ($dueAt < strtotime(date('Y-m-d') . ' 00:00:00')) {
+                            throw new RuntimeException($this->getLang('ack_due_past'));
+                        }
                     }
                 }
                 $publicationAudience['ack_due_at'] = $dueAt;

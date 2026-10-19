@@ -19,7 +19,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
      * - scope: current|all
      * - page: case-insensitive page/namespace substring
      * - user: exact DokuWiki login that was required for the release
-     * - status: all|outstanding|complete|not_required
+     * - status: all|outstanding|overdue|complete|not_required
      * - date_from/date_to: YYYY-MM-DD, inclusive
      */
     public function getReport(array $filters = []): array
@@ -35,6 +35,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 'required' => 0,
                 'acknowledged' => 0,
                 'outstanding' => 0,
+                'overdue' => 0,
             ],
         ];
 
@@ -52,6 +53,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
         $currentRevisionCache = [];
         $latestPublishedCache = [];
         $titleCache = [];
+        $reminderMap = $this->loadReminderSummaries($db);
         $out = [];
 
         foreach ($rows as $snapshot) {
@@ -96,17 +98,21 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             $requiredUsers = (array)$compliance['required_users'];
             $acknowledgedUsers = (array)$compliance['acknowledged_users'];
             $outstandingUsers = (array)$compliance['outstanding_users'];
+            $dueAt = (int)($snapshot['ack_due_at'] ?? 0);
+            $isOverdue = $dueAt > 0 && time() > $dueAt && count($outstandingUsers) > 0;
 
             if ($filters['user'] !== '') {
                 if (!in_array($filters['user'], $requiredUsers, true)) continue;
                 $userComplete = array_key_exists($filters['user'], $acknowledgedUsers);
                 if ($filters['status'] === 'outstanding' && $userComplete) continue;
+                if ($filters['status'] === 'overdue' && ($userComplete || !$isOverdue)) continue;
                 if ($filters['status'] === 'complete' && !$userComplete) continue;
                 if ($filters['status'] === 'not_required') continue;
             } else {
                 $requiredCount = count($requiredUsers);
                 $outstandingCount = count($outstandingUsers);
                 if ($filters['status'] === 'outstanding' && $outstandingCount === 0) continue;
+                if ($filters['status'] === 'overdue' && !$isOverdue) continue;
                 if ($filters['status'] === 'complete' && ($requiredCount === 0 || $outstandingCount !== 0)) continue;
                 if ($filters['status'] === 'not_required' && $requiredCount !== 0) continue;
             }
@@ -129,6 +135,8 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 'version' => (string)($snapshot['version'] ?? ''),
                 'published_by' => (string)($snapshot['published_by'] ?? ''),
                 'published_at' => $publishedAt,
+                'ack_due_at' => $dueAt,
+                'is_overdue' => $isOverdue,
                 'notify_spec' => (string)($snapshot['notify_spec'] ?? ''),
                 'acknowledge_spec' => (string)($snapshot['acknowledge_spec'] ?? ''),
                 'change_summary' => (string)($snapshot['change_summary'] ?? ''),
@@ -136,6 +144,8 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 'required_users' => $requiredUsers,
                 'acknowledged_users' => $acknowledgedUsers,
                 'outstanding_users' => $outstandingUsers,
+                'reminder' => $reminderMap[$pid . '|' . $publicationRevision] ??
+                    ['batches' => 0, 'deliveries' => 0, 'last_sent_at' => 0, 'last_sent_by' => ''],
             ];
         }
 
@@ -148,6 +158,38 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             'users' => $users,
             'totals' => $totals,
         ];
+    }
+
+    protected function loadReminderSummaries($db): array
+    {
+        $rows = $db->queryAll(
+            'SELECT id,batch_id,pid,publication_revision,sent_by,sent_at ' .
+            'FROM struct_docapproval_reminders ORDER BY sent_at DESC,id DESC'
+        ) ?: [];
+
+        $out = [];
+        $batchSets = [];
+        foreach ($rows as $row) {
+            $key = (string)$row['pid'] . '|' . (int)$row['publication_revision'];
+            if (!isset($out[$key])) {
+                $out[$key] = [
+                    'batches' => 0,
+                    'deliveries' => 0,
+                    'last_sent_at' => (int)$row['sent_at'],
+                    'last_sent_by' => (string)$row['sent_by'],
+                ];
+                $batchSets[$key] = [];
+            }
+            $out[$key]['deliveries']++;
+            $batchSets[$key][(string)$row['batch_id']] = true;
+        }
+
+        foreach ($out as $key => &$summary) {
+            $summary['batches'] = count($batchSets[$key]);
+        }
+        unset($summary);
+
+        return $out;
     }
 
     protected function pageTitle(string $pid): string
@@ -188,7 +230,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
         if (!in_array($scope, ['current', 'all'], true)) $scope = 'current';
 
         $status = (string)($filters['status'] ?? 'all');
-        if (!in_array($status, ['all', 'outstanding', 'complete', 'not_required'], true)) {
+        if (!in_array($status, ['all', 'outstanding', 'overdue', 'complete', 'not_required'], true)) {
             $status = 'all';
         }
 
@@ -234,6 +276,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                         'required' => 0,
                         'acknowledged' => 0,
                         'outstanding' => 0,
+                        'overdue' => 0,
                     ];
                 }
                 $stats[$user]['required']++;
@@ -241,6 +284,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                     $stats[$user]['acknowledged']++;
                 } else {
                     $stats[$user]['outstanding']++;
+                    if (!empty($row['is_overdue'])) $stats[$user]['overdue']++;
                 }
             }
         }
@@ -262,6 +306,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
         $required = 0;
         $acknowledged = 0;
         $outstanding = 0;
+        $overdue = 0;
 
         foreach ($publications as $row) {
             if ($onlyUser !== '') {
@@ -271,6 +316,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                     $acknowledged++;
                 } else {
                     $outstanding++;
+                    if (!empty($row['is_overdue'])) $overdue++;
                 }
                 continue;
             }
@@ -278,6 +324,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             $required += count($row['required_users']);
             $acknowledged += count($row['acknowledged_users']);
             $outstanding += count($row['outstanding_users']);
+            if (!empty($row['is_overdue'])) $overdue += count($row['outstanding_users']);
         }
 
         return [
@@ -286,6 +333,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             'required' => $required,
             'acknowledged' => $acknowledged,
             'outstanding' => $outstanding,
+            'overdue' => $overdue,
         ];
     }
 }

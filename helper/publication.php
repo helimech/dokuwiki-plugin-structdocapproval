@@ -467,17 +467,31 @@ class helper_plugin_structdocapproval_publication extends Plugin
     {
         $db = $this->db();
         if (!$db || !$publicationRevision) {
-            return ['batches' => 0, 'deliveries' => 0, 'last_sent_at' => 0, 'last_sent_by' => ''];
+            return [
+                'batches' => 0,
+                'deliveries' => 0,
+                'last_sent_at' => 0,
+                'last_sent_by' => '',
+                'last_type' => '',
+                'last_cc_spec' => '',
+            ];
         }
 
         $rows = $db->queryAll(
-            'SELECT batch_id,sent_by,sent_at FROM struct_docapproval_reminders ' .
+            'SELECT batch_id,sent_by,sent_at,reminder_type,cc_spec FROM struct_docapproval_reminders ' .
             'WHERE pid=? AND publication_revision=? ORDER BY sent_at DESC,id DESC',
             [cleanID($pid), $publicationRevision]
         ) ?: [];
 
         if (!$rows) {
-            return ['batches' => 0, 'deliveries' => 0, 'last_sent_at' => 0, 'last_sent_by' => ''];
+            return [
+                'batches' => 0,
+                'deliveries' => 0,
+                'last_sent_at' => 0,
+                'last_sent_by' => '',
+                'last_type' => '',
+                'last_cc_spec' => '',
+            ];
         }
 
         $batches = [];
@@ -488,6 +502,8 @@ class helper_plugin_structdocapproval_publication extends Plugin
             'deliveries' => count($rows),
             'last_sent_at' => (int)$rows[0]['sent_at'],
             'last_sent_by' => (string)$rows[0]['sent_by'],
+            'last_type' => (string)($rows[0]['reminder_type'] ?? ''),
+            'last_cc_spec' => (string)($rows[0]['cc_spec'] ?? ''),
         ];
     }
 

@@ -269,6 +269,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
         if (
             !empty($row['is_current']) &&
+            !empty($row['is_controlled']) &&
             !empty($row['outstanding_users']) &&
             $this->getConf('email_enable')
         ) {

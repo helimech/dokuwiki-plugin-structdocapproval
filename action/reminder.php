@@ -63,15 +63,24 @@ class action_plugin_structdocapproval_reminder extends ActionPlugin
             $notify = plugin_load('helper', 'structdocapproval_notify');
             if (!$notify) throw new RuntimeException('Notification helper is unavailable.');
 
+            $ccSpec = trim((string)$this->getConf('ack_reminder_cc'));
             $deliveries = $notify->sendAcknowledgementReminder(
                 $pid,
                 $publicationRevision,
-                $outstanding
+                $outstanding,
+                $ccSpec
             );
 
             $actor = $INPUT->server->str('REMOTE_USER');
             if ($actor === '') $actor = 'unknown';
-            $publication->recordReminder($pid, $publicationRevision, $deliveries, $actor);
+            $publication->recordReminder(
+                $pid,
+                $publicationRevision,
+                $deliveries,
+                $actor,
+                'manual',
+                $ccSpec
+            );
 
             msg(sprintf(
                 $this->getLang('reminder_sent'),

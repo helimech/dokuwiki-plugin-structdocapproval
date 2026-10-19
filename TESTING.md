@@ -475,3 +475,33 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 11. Use an existing page that was brought under DocApproval by Sync/Reconcile and therefore has an initialized Published baseline with no explicit document version. Edit it through a new workflow cycle and confirm the first subsequent suggested document revision remains **001**, not 000.
 12. Confirm manually entered numeric versions continue to normalize to three digits and non-simple version labels continue to behave as before.
 13. Re-run the v0.12.9 Documents live filtering tests and the v0.12.10 Compliance CSV export tests to confirm no regression.
+
+## 31. Acknowledgement due dates, reminders and compact publication history (v0.12.12)
+
+1. Upgrade from v0.12.11.1 and confirm database migration 5 completes. Verify existing publication rows remain intact, their acknowledgement due date is blank, and no reminder evidence is fabricated.
+2. In Configuration Settings confirm **Default acknowledgement due period in days** defaults to 14 and accepts 0 to disable the default due date.
+3. Bring a page to Ready to Publish with Require acknowledgement unchecked. Confirm the due-date control is disabled.
+4. Enable Require acknowledgement. Confirm the due-date control becomes active and is prefilled from the configured default period.
+5. Change the due date for that release and Publish. Confirm the stored Compliance due date matches the selected date and does not change if the configuration default is later changed.
+6. Attempt to Publish with a due date in the past. Confirm Publish is rejected without creating a publication snapshot.
+7. Confirm the initial acknowledgement-required email includes the due date when one is set and behaves as before when the due date is blank.
+8. Log in as a required user. Confirm My Tasks shows the Due column and the Published page acknowledgement box shows the same due date.
+9. Test a future due date, a due date of today, and an overdue date (by using a short test date / database-safe test setup). Confirm the UI shows **Due in N days**, **Due today**, and **Overdue N days** appropriately.
+10. In Documents confirm an overdue acknowledgement appears in both **Ack Outstanding** and **Overdue** counts. Click the Overdue card and use the Acknowledgement state dropdown to confirm live filtering works without a page reload.
+11. In Compliance confirm the new Overdue summary count and **Overdue** status filter reflect outstanding user obligations whose snapshotted due date has passed.
+12. In the User Compliance table confirm each user has an Overdue count and overdue users sort ahead of non-overdue outstanding users.
+13. Expand a current publication with outstanding acknowledgements in Compliance. Confirm **Send Reminder (N)** appears only when workflow email is enabled.
+14. Click Send Reminder and cancel the confirmation. Confirm no email is sent and no audit row is created.
+15. Confirm the reminder and send it. Verify only currently outstanding users with DokuWiki email addresses receive the reminder; already acknowledged users do not.
+16. Confirm the success message reports delivered users versus total outstanding users. Test an outstanding user without an email address and confirm the delivery count reflects that.
+17. Confirm the reminder email identifies the document/revision, includes due date and Change Summary when available, and links to the Published page.
+18. Reload Compliance Details. Confirm Last reminder, sender and reminder-batch count are shown.
+19. Inspect `struct_docapproval_reminders` and confirm each delivered user has immutable evidence containing batch ID, page ID, formal publication revision, user, actual email address, sender and timestamp.
+20. Attempt a reminder for a historical publication or a page that has subsequently been removed from DocApproval control. Confirm the reminder action is unavailable/rejected.
+21. Move a controlled Published page after sending a reminder. Confirm publication snapshots, requirements, acknowledgements, due date and reminder evidence all follow the new page ID.
+22. Export Compliance CSV. Confirm it now includes Acknowledgement Due, Reminder Batches, Last Reminder At and Last Reminder By, and overdue outstanding requirements are exported with status **Overdue**.
+23. Open Documents → Details for a page with several formal publications. Confirm **Recent publication history** shows up to five releases with clickable version, Published time, acknowledgement completion and due date.
+24. For an old release that was fully acknowledged after its due date, confirm compact history displays the due date without incorrectly labelling the completed historical release as currently overdue.
+25. Confirm Published-preserving Minor Changes remain within the same formal acknowledgement cycle and do not reset the due date or reminder history.
+26. Re-run normal Publish/Notify without Require acknowledgement and confirm no acknowledgement due requirement/reminder UI is introduced.
+27. Re-run the v0.12.11 History autocomplete / Rev 000 tests and v0.12.10 Compliance CSV tests to confirm no regression.

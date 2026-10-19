@@ -505,3 +505,32 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 25. Confirm Published-preserving Minor Changes remain within the same formal acknowledgement cycle and do not reset the due date or reminder history.
 26. Re-run normal Publish/Notify without Require acknowledgement and confirm no acknowledgement due requirement/reminder UI is introduced.
 27. Re-run the v0.12.11 History autocomplete / Rev 000 tests and v0.12.10 Compliance CSV tests to confirm no regression.
+
+## 32. Documents Not Published, workflow reminders and automatic acknowledgement reminders (v0.12.13)
+
+1. Upgrade from v0.12.12 and confirm database migration 6 completes without altering existing publication, acknowledgement, due-date or reminder evidence.
+2. Open Dashboard → Documents and confirm **Not Published** appears in Workflow status above the individual workflow states.
+3. Select Not Published. Confirm Draft, Awaiting Review, Awaiting Training Review and Ready to Publish rows remain while Published rows disappear immediately without a page reload.
+4. Combine Not Published with page/title, Assigned user and acknowledgement filters. Confirm faceted summary-card counts and DataTables paging/sorting still behave correctly.
+5. Expand Details for a document in **Awaiting Review** with email enabled. Confirm **Email Reviewer** appears. Send it and verify the current frozen reviewer receives a reminder email; configured Review Queue CC behavior remains consistent with normal review submission mail.
+6. Expand Awaiting Training Review and Ready to Publish rows. Confirm **Email Training** and **Email Publisher** respectively resolve the current assignment rule users/@groups and send to those recipients.
+7. Change a workflow state in another browser/session before submitting a stale Documents reminder form. Confirm the reminder is rejected rather than emailed to the old stage owner.
+8. Confirm workflow reminder messages include document title, current workflow status, state/waiting timestamp, page link and current Change Summary when present.
+9. Confirm workflow reminder controls are not shown when workflow email is disabled and crafted reminder requests are restricted to managers/administrators with page read access.
+10. In Configuration Settings confirm automatic acknowledgement reminders are disabled by default, repeat interval defaults to 7 days, and Reminder CC accepts users, @groups or literal email addresses.
+11. Enable automatic reminders and use a test publication whose acknowledgement due date has passed. On the first normal wiki request of the first overdue day, confirm one automatic reminder batch is sent to users still outstanding.
+12. Confirm a second request the same day does not send another automatic batch. Inspect `struct_docapproval_auto_reminder_runs` and confirm the calendar day was claimed once.
+13. Leave the acknowledgement outstanding and advance/test beyond the configured N-day interval. Confirm another automatic reminder is sent only after the interval has elapsed.
+14. Send a manual reminder after the due date. Confirm that manual send resets the automatic cadence and prevents an immediate automatic duplicate until N days after that manual reminder.
+15. Send a manual reminder before the due date. Confirm it does not suppress the first automatic reminder once the release becomes overdue.
+16. Acknowledge as one required user between reminder cycles. Confirm later automatic reminders contain only users who are still outstanding.
+17. Configure Reminder CC with a direct user, @group and/or literal email. Confirm those recipients are CC'd on both manual and automatic acknowledgement reminders and are not duplicated when the same address is also an outstanding user's recipient address.
+18. Confirm reminder audit rows identify `manual` versus `auto` and store the configured CC spec with each delivered-user row.
+19. In Compliance Details confirm Last reminder identifies Manual/Automatic and shows Reminder CC when configured.
+20. Export Compliance CSV and confirm Last Reminder Type and Last Reminder CC columns are present.
+21. Disable automatic reminders while leaving email enabled. Confirm no automatic daily-run row or emails are created.
+22. Disable workflow email entirely. Confirm neither manual nor automatic acknowledgement reminder sends occur.
+23. Verify an existing overdue publication with no due date (pre-v0.12.12 migrated data) does not become an automatic reminder candidate.
+24. Confirm an uncontrolled historical document never receives an automatic reminder even if its old snapshot has an overdue date and outstanding users.
+25. Verify the traffic-driven scheduler behavior: if no wiki request occurs on a due day, the next normal request runs that day's current sweep and sends any then-eligible reminder rather than requiring cron.
+26. Re-run v0.12.12 due-date/manual reminder tests and v0.12.9 live Documents filtering tests to confirm no regression.

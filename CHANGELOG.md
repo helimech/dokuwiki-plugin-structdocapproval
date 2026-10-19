@@ -12,6 +12,8 @@ Repository established as the authoritative source for Struct DocApproval.
 - Automatic reminder failures are isolated from the page request, and a sweep left stuck in `running` for more than 30 minutes may be safely reclaimed.
 - Acknowledgement writes are now idempotent under concurrent/double-submit requests using the existing publication/user primary key.
 - Publication validation now rejects an acknowledgement `@group` that resolves to zero users instead of silently publishing a release with an empty required audience.
+- Normal Publish now stages the immutable publication/audience snapshot before the Published workflow row is committed; if the workflow save fails, the staged snapshot is removed. This prevents an audience/database failure from leaving a document Published without its compliance boundary.
+- Workflow transitions recheck the current workflow record immediately before commit, catching ordinary double-click/two-tab stale transitions before they create duplicate audit events.
 - Acknowledgement reminder delivery revalidates both the current controlled publication and the still-outstanding user set immediately before mail construction.
 - Dashboard tab counts no longer build the entire Documents dataset just to render badges; ACL visibility is reused between overview counts.
 - Reused already-loaded publication snapshots in Documents, Compliance, and automatic-reminder calculations to remove duplicate snapshot reads.

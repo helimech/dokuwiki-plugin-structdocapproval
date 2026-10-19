@@ -291,6 +291,8 @@ class helper_plugin_structdocapproval_compliance extends Plugin
 
         $out = array_values($stats);
         usort($out, static function (array $a, array $b): int {
+            $cmp = ((int)($b['overdue'] ?? 0)) <=> ((int)($a['overdue'] ?? 0));
+            if ($cmp !== 0) return $cmp;
             $cmp = ((int)$b['outstanding']) <=> ((int)$a['outstanding']);
             if ($cmp !== 0) return $cmp;
             $cmp = ((int)$b['required']) <=> ((int)$a['required']);

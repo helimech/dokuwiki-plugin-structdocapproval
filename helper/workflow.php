@@ -139,6 +139,19 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 $publicationAudience = $publication->prepareAudience($notifySpec, $acknowledgeSpec);
                 $publicationAudience['change_summary'] = $summaryText;
 
+                $dueAt = 0;
+                if ($acknowledgeEnabled) {
+                    $dueDate = trim((string)($params['ack_due_date'] ?? ''));
+                    if ($dueDate !== '') {
+                        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
+                            throw new RuntimeException('Enter a valid acknowledgement due date.');
+                        }
+                        $dueAt = strtotime($dueDate . ' 23:59:59');
+                        if (!$dueAt) throw new RuntimeException('Enter a valid acknowledgement due date.');
+                    }
+                }
+                $publicationAudience['ack_due_at'] = $dueAt;
+
                 $next->set('status', Constants::STATUS_PUBLISHED)
                     ->set('version', $version)
                     ->set('published_by', $actor)

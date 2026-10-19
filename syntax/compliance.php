@@ -64,6 +64,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $html .= $this->renderTotals($report['totals']);
         $html .= $this->renderPublicationTable($report['publications'], $publication);
         $html .= $this->renderUserTable($report['users']);
+        $html .= $this->renderExportData($report['publications'], $publication);
         $html .= '</div>';
 
         $renderer->doc .= $html;
@@ -123,6 +124,8 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
             : [];
         $html .= '<a class="button" href="' . hsc(wl($pageId, $resetParams)) . '">' .
             hsc($this->getLang('compliance_reset')) . '</a>';
+        $html .= '<button type="button" class="docapproval-compliance-export">' .
+            hsc($this->getLang('compliance_export_csv')) . '</button>';
         $html .= '</div></form>';
 
         return $html;
@@ -179,13 +182,22 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
             $url = wl((string)$row['pid'], ['rev' => (int)$row['view_revision']]);
 
             $html .= '<tr>';
-            $html .= '<td><a href="' . hsc($url) . '">' . hsc((string)$row['pid']) . '</a>';
+            $html .= '<td class="docapproval-compliance-page-cell"><a href="' . hsc($url) . '">' .
+                hsc((string)($row['title'] ?? $row['pid'])) . '</a>';
+            if ((string)($row['title'] ?? '') !== '' && (string)$row['title'] !== (string)$row['pid']) {
+                $html .= '<small>' . hsc((string)$row['pid']) . '</small>';
+            }
             if (!empty($row['is_current'])) {
                 $html .= ' <span class="docapproval-compliance-current">' . hsc($this->getLang('compliance_current_badge')) . '</span>';
             }
             $html .= '</td>';
             $html .= '<td>' . hsc($version) . '</td>';
-            $html .= '<td>' . hsc($this->formatTimestamp((int)$row['published_at'])) . '</td>';
+            $html .= '<td>' . hsc($this->formatTimestamp((int)$row['published_at']));
+            $publishedAge = $this->formatAge((int)$row['published_at']);
+            if ($publishedAge !== '') {
+                $html .= '<small class="docapproval-age">' . hsc($publishedAge) . '</small>';
+            }
+            $html .= '</td>';
             $html .= '<td>' . $required . '</td>';
             $html .= '<td>' . $complete . '</td>';
             $html .= '<td>' . $outstanding . '</td>';
@@ -246,6 +258,64 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         return '<span title="' . hsc($user) . '">' . hsc($name) . '</span>';
     }
 
+    protected function renderExportData(
+        array $rows,
+        helper_plugin_structdocapproval_publication $publication
+    ): string {
+        $export = [];
+        foreach ($rows as $row) {
+            $base = [
+                'page' => (string)$row['pid'],
+                'title' => (string)($row['title'] ?? $row['pid']),
+                'version' => Constants::formatVersion((string)$row['version']),
+                'publication_revision' => (int)$row['publication_revision'],
+                'content_revision' => (int)$row['content_revision'],
+                'published_at' => $this->formatTimestamp((int)$row['published_at']),
+                'published_by' => (string)$row['published_by'],
+                'published_by_name' => $row['published_by'] !== ''
+                    ? $publication->getUserDisplayName((string)$row['published_by'])
+                    : '',
+                'current' => !empty($row['is_current']) ? 'Yes' : 'No',
+                'change_summary' => (string)$row['change_summary'],
+                'acknowledge_audience' => (string)$row['acknowledge_spec'],
+            ];
+
+            if (!$row['required_users']) {
+                $export[] = $base + [
+                    'required_user' => '',
+                    'required_name' => '',
+                    'status' => $this->getLang('compliance_status_not_required'),
+                    'acknowledged_at' => '',
+                ];
+                continue;
+            }
+
+            foreach ($row['required_users'] as $user) {
+                $acknowledged = array_key_exists($user, $row['acknowledged_users']);
+                $export[] = $base + [
+                    'required_user' => (string)$user,
+                    'required_name' => $publication->getUserDisplayName((string)$user),
+                    'status' => $acknowledged
+                        ? $this->getLang('compliance_status_complete')
+                        : $this->getLang('compliance_status_outstanding'),
+                    'acknowledged_at' => $acknowledged
+                        ? $this->formatTimestamp((int)$row['acknowledged_users'][$user])
+                        : '',
+                ];
+            }
+        }
+
+        $json = json_encode(
+            $export,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES |
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+        if ($json === false) $json = '[]';
+
+        return '<script type="application/json" class="docapproval-compliance-export-data">' .
+            $json . '</script>';
+    }
+
     protected function renderUserTable(array $rows): string
     {
         $html = '<section class="docapproval-compliance-section">';
@@ -287,6 +357,24 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $value = ($complete / $required) * 100;
         $rounded = round($value, 1);
         return (fmod($rounded, 1.0) === 0.0 ? (string)(int)$rounded : number_format($rounded, 1)) . '%';
+    }
+
+    protected function formatAge(int $timestamp): string
+    {
+        if ($timestamp <= 0) return '';
+        $seconds = max(0, time() - $timestamp);
+
+        if ($seconds < 3600) {
+            $minutes = max(1, (int)floor($seconds / 60));
+            return sprintf($this->getLang($minutes === 1 ? 'age_minute' : 'age_minutes'), $minutes);
+        }
+        if ($seconds < 86400) {
+            $hours = max(1, (int)floor($seconds / 3600));
+            return sprintf($this->getLang($hours === 1 ? 'age_hour' : 'age_hours'), $hours);
+        }
+
+        $days = max(1, (int)floor($seconds / 86400));
+        return sprintf($this->getLang($days === 1 ? 'age_day' : 'age_days'), $days);
     }
 
     protected function formatTimestamp(int $timestamp): string

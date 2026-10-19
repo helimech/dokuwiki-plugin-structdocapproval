@@ -339,9 +339,14 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
                 (int)$row['acknowledged'] . '/' . (int)$row['ack_required'] . '</span>';
         }
 
-        return '<span class="docapproval-dashboard-ack outstanding">' .
+        $html = '<span class="docapproval-dashboard-ack outstanding' .
+            (!empty($row['ack_overdue']) ? ' overdue' : '') . '">' .
             (int)$row['ack_outstanding'] . ' ' . hsc($this->getLang('dashboard_outstanding_short')) .
-            ' (' . (int)$row['acknowledged'] . '/' . (int)$row['ack_required'] . ')</span>';
+            ' (' . (int)$row['acknowledged'] . '/' . (int)$row['ack_required'] . ')';
+        if (!empty($row['ack_due_at'])) {
+            $html .= '<small>' . $this->renderDueStatus((int)$row['ack_due_at']) . '</small>';
+        }
+        return $html . '</span>';
     }
 
     protected function renderDocumentDetails(string $dashboardPage, array $row, $publication): string
@@ -416,6 +421,33 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         }
         $html .= '</div></div>';
 
+        if (!empty($row['publication_history'])) {
+            $html .= '<div class="docapproval-dashboard-publication-history">';
+            $html .= '<strong>' . hsc($this->getLang('dashboard_recent_publications')) . '</strong>';
+            $html .= '<table class="inline"><thead><tr>';
+            foreach (['version','compliance_published','dashboard_acknowledgement','ack_due_date'] as $key) {
+                $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
+            }
+            $html .= '</tr></thead><tbody>';
+            foreach ($row['publication_history'] as $release) {
+                $version = Constants::formatVersion((string)$release['version']);
+                if ($version === '') $version = $this->getLang('version_unset');
+                $required = (int)$release['required'];
+                $complete = (int)$release['acknowledged'];
+                $ack = $required > 0 ? $complete . '/' . $required : '—';
+
+                $html .= '<tr>';
+                $html .= '<td>' . hsc($version) . '</td>';
+                $html .= '<td>' . hsc($this->formatTimestamp((int)$release['published_at'])) . '</td>';
+                $html .= '<td>' . hsc($ack) . '</td>';
+                $html .= '<td>' . ($release['ack_due_at']
+                    ? $this->renderDueStatus((int)$release['ack_due_at'])
+                    : '—') . '</td>';
+                $html .= '</tr>';
+            }
+            $html .= '</tbody></table></div>';
+        }
+
         $historyUrl = wl($dashboardPage, [
             'docapproval_dash_view' => 'history',
             'docapproval_history_page' => (string)$row['pid'],
@@ -428,6 +460,38 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         $html .= '</p></div></details>';
 
         return $html;
+    }
+
+    protected function renderDueStatus(int $dueAt): string
+    {
+        if ($dueAt <= 0) return '—';
+
+        $todayEnd = strtotime(date('Y-m-d') . ' 23:59:59');
+        $dueDay = strtotime(date('Y-m-d', $dueAt) . ' 23:59:59');
+        $days = (int)floor(($dueDay - $todayEnd) / 86400);
+
+        if ($days < 0) {
+            $abs = abs($days);
+            $label = sprintf(
+                $this->getLang($abs === 1 ? 'ack_overdue_one_day' : 'ack_overdue_days'),
+                $abs
+            );
+            $class = 'overdue';
+        } elseif ($days === 0) {
+            $label = $this->getLang('ack_due_today');
+            $class = 'today';
+        } else {
+            $label = sprintf($this->getLang('ack_due_in_days'), $days);
+            $class = 'future';
+        }
+
+        return '<span class="docapproval-due ' . hsc($class) . '">' .
+            hsc(date('Y-m-d', $dueAt)) . '<small>' . hsc($label) . '</small></span>';
+    }
+
+    protected function formatTimestamp(int $timestamp): string
+    {
+        return $timestamp > 0 ? dformat($timestamp) : '';
     }
 
     protected function detailPair(string $label, string $value): string

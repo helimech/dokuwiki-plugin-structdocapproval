@@ -314,9 +314,13 @@
             }
 
             var status = value(statusSelect) || 'all';
-            if (ignore !== 'status' && status !== 'all' &&
-                String(row.dataset.docapprovalStatus || '').toLowerCase() !== status) {
-                return false;
+            if (ignore !== 'status' && status !== 'all') {
+                var rowStatus = String(row.dataset.docapprovalStatus || '').toLowerCase();
+                if (status === 'not_published') {
+                    if (rowStatus === 'published') return false;
+                } else if (rowStatus !== status) {
+                    return false;
+                }
             }
 
             var assignee = value(assigneeInput);
@@ -611,12 +615,14 @@
 
     function initReminderConfirmations() {
         Array.prototype.forEach.call(
-            document.querySelectorAll('.docapproval-reminder-form'),
+            document.querySelectorAll(
+                '.docapproval-reminder-form, .docapproval-workflow-reminder-form'
+            ),
             function (form) {
                 if (form.dataset.docapprovalReminderBound === '1') return;
                 form.dataset.docapprovalReminderBound = '1';
                 form.addEventListener('submit', function (event) {
-                    var button = form.querySelector('.docapproval-reminder-button');
+                    var button = form.querySelector('button[data-confirm]');
                     var message = button ? (button.getAttribute('data-confirm') || '') : '';
                     if (message && !window.confirm(message)) {
                         event.preventDefault();

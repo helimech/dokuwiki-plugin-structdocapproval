@@ -110,8 +110,8 @@ class helper_plugin_structdocapproval_publication extends Plugin
         try {
             $db->query(
                 'REPLACE INTO struct_docapproval_publications ' .
-                '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at) ' .
-                'VALUES (?,?,?,?,?,?,?,?,?)',
+                '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at) ' .
+                'VALUES (?,?,?,?,?,?,?,?,?,?)',
                 [
                     $pid,
                     $publicationRevision,
@@ -122,6 +122,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
                     (string)($audience['change_summary'] ?? ''),
                     (string)$record->get('published_by'),
                     $publishedAt,
+                    (int)($audience['ack_due_at'] ?? 0),
                 ]
             );
 
@@ -252,6 +253,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
             'publication_revision' => $publicationRevision,
             'version' => (string)$snapshot['version'],
             'published_at' => (int)$snapshot['published_at'],
+            'ack_due_at' => (int)($snapshot['ack_due_at'] ?? 0),
             'notify_spec' => (string)$snapshot['notify_spec'],
             'acknowledge_spec' => (string)$snapshot['acknowledge_spec'],
             'required_users' => $required,
@@ -296,7 +298,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
         if (!$db) return [];
 
         $rows = $db->queryAll(
-            'SELECT r.pid,r.publication_revision,p.version,p.published_at ' .
+            'SELECT r.pid,r.publication_revision,p.version,p.published_at,p.ack_due_at ' .
             'FROM struct_docapproval_requirements r ' .
             'JOIN struct_docapproval_publications p ON p.pid=r.pid AND p.publication_revision=r.publication_revision ' .
             'LEFT JOIN struct_docapproval_acknowledgements a ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
@@ -311,6 +313,77 @@ class helper_plugin_structdocapproval_publication extends Plugin
             $out[] = $row;
         }
         return $out;
+    }
+
+    public function recordReminder(
+        string $pid,
+        int $publicationRevision,
+        array $deliveries,
+        string $sentBy
+    ): string {
+        $db = $this->db();
+        if (!$db) throw new RuntimeException('DocApproval database is unavailable.');
+        if (!$publicationRevision || !$deliveries) return '';
+
+        $pid = cleanID($pid);
+        $sentAt = time();
+        try {
+            $batchId = date('YmdHis', $sentAt) . '-' . bin2hex(random_bytes(4));
+        } catch (Throwable $e) {
+            $batchId = date('YmdHis', $sentAt) . '-' . substr(sha1(uniqid('', true)), 0, 8);
+        }
+
+        $pdo = $db->getPdo();
+        $started = !$pdo->inTransaction();
+        if ($started) $pdo->beginTransaction();
+
+        try {
+            foreach ($deliveries as $user => $email) {
+                $user = trim((string)$user);
+                $email = trim((string)$email);
+                if ($user === '' || $email === '') continue;
+                $db->query(
+                    'INSERT INTO struct_docapproval_reminders ' .
+                    '(batch_id,pid,publication_revision,user,email,sent_by,sent_at) ' .
+                    'VALUES (?,?,?,?,?,?,?)',
+                    [$batchId, $pid, $publicationRevision, $user, $email, $sentBy, $sentAt]
+                );
+            }
+            if ($started) $pdo->commit();
+        } catch (Throwable $e) {
+            if ($started && $pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+
+        return $batchId;
+    }
+
+    public function getReminderSummary(string $pid, int $publicationRevision): array
+    {
+        $db = $this->db();
+        if (!$db || !$publicationRevision) {
+            return ['batches' => 0, 'deliveries' => 0, 'last_sent_at' => 0, 'last_sent_by' => ''];
+        }
+
+        $rows = $db->queryAll(
+            'SELECT batch_id,sent_by,sent_at FROM struct_docapproval_reminders ' .
+            'WHERE pid=? AND publication_revision=? ORDER BY sent_at DESC,id DESC',
+            [cleanID($pid), $publicationRevision]
+        ) ?: [];
+
+        if (!$rows) {
+            return ['batches' => 0, 'deliveries' => 0, 'last_sent_at' => 0, 'last_sent_by' => ''];
+        }
+
+        $batches = [];
+        foreach ($rows as $row) $batches[(string)$row['batch_id']] = true;
+
+        return [
+            'batches' => count($batches),
+            'deliveries' => count($rows),
+            'last_sent_at' => (int)$rows[0]['sent_at'],
+            'last_sent_by' => (string)$rows[0]['sent_by'],
+        ];
     }
 
     public function getUserDisplayName(string $user): string

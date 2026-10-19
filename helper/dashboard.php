@@ -308,6 +308,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             Constants::STATUS_READY_TO_PUBLISH => 0,
             Constants::STATUS_PUBLISHED => 0,
             'ack_outstanding' => 0,
+            'ack_overdue' => 0,
         ];
     }
 
@@ -320,6 +321,9 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             $status = (string)($row['status'] ?? '');
             if (array_key_exists($status, $counts)) $counts[$status]++;
             $counts['ack_outstanding'] += (int)($row['ack_outstanding'] ?? 0);
+            if (!empty($row['ack_overdue'])) {
+                $counts['ack_overdue'] += (int)($row['ack_outstanding'] ?? 0);
+            }
         }
         return $counts;
     }

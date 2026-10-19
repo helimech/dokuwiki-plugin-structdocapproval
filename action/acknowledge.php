@@ -152,6 +152,10 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
             )) . '</summary>';
 
         $html .= '<div class="ack-report-body">';
+        if (!empty($data['ack_due_at'])) {
+            $html .= '<p class="ack-report-due">' .
+                $this->renderDueStatus((int)$data['ack_due_at']) . '</p>';
+        }
         $html .= '<div class="ack-report-sections">';
 
         if ($mode === 'acknowledged' || $mode === 'both') {

@@ -252,6 +252,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
         // the same dataset again. With hundreds of controlled pages that was the
         // dominant dashboard cost on every tab.
         $counts = $this->emptyCounts();
+        $visiblePids = [];
         $rows = $db->queryAll(
             'SELECT d.pid,d.col1 AS status ' .
             'FROM data_struct_docapproval d ' .
@@ -262,6 +263,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
         foreach ($rows as $row) {
             $pid = cleanID((string)($row['pid'] ?? ''));
             if ($pid === '' || auth_quickaclcheck($pid) < AUTH_READ) continue;
+            $visiblePids[$pid] = true;
             $counts['documents']++;
             $status = (string)($row['status'] ?? '');
             if (array_key_exists($status, $counts)) $counts[$status]++;
@@ -297,7 +299,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
 
         foreach ($ackRows as $row) {
             $pid = cleanID((string)($row['pid'] ?? ''));
-            if ($pid === '' || auth_quickaclcheck($pid) < AUTH_READ) continue;
+            if ($pid === '' || !isset($visiblePids[$pid])) continue;
             $required = (int)($row['required_count'] ?? 0);
             $acknowledged = (int)($row['acknowledged_count'] ?? 0);
             $counts['ack_outstanding'] += max(0, $required - $acknowledged);

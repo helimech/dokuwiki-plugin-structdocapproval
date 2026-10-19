@@ -64,7 +64,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $html .= $this->renderTotals($report['totals']);
         $html .= $this->renderPublicationTable($report['publications'], $publication);
         $html .= $this->renderUserTable($report['users']);
-        $html .= $this->renderExportData($report['publications'], $publication);
+        $html .= $this->renderExportData($report['publications'], $publication, $report['filters']);
         $html .= '</div>';
 
         $renderer->doc .= $html;
@@ -260,7 +260,8 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
     protected function renderExportData(
         array $rows,
-        helper_plugin_structdocapproval_publication $publication
+        helper_plugin_structdocapproval_publication $publication,
+        array $filters
     ): string {
         $export = [];
         foreach ($rows as $row) {
@@ -280,7 +281,16 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 'acknowledge_audience' => (string)$row['acknowledge_spec'],
             ];
 
-            if (!$row['required_users']) {
+            $requiredUsers = (array)$row['required_users'];
+            $filterUser = trim((string)($filters['user'] ?? ''));
+            if ($filterUser !== '') {
+                $requiredUsers = in_array($filterUser, $requiredUsers, true)
+                    ? [$filterUser]
+                    : [];
+            }
+
+            if (!$requiredUsers) {
+                if ($filterUser !== '') continue;
                 $export[] = $base + [
                     'required_user' => '',
                     'required_name' => '',
@@ -290,7 +300,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 continue;
             }
 
-            foreach ($row['required_users'] as $user) {
+            foreach ($requiredUsers as $user) {
                 $acknowledged = array_key_exists($user, $row['acknowledged_users']);
                 $export[] = $base + [
                     'required_user' => (string)$user,

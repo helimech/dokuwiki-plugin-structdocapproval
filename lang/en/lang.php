@@ -185,6 +185,7 @@ $lang['ack_due_in_days'] = 'Due in %d days';
 $lang['ack_overdue_one_day'] = 'Overdue 1 day';
 $lang['ack_overdue_days'] = 'Overdue %d days';
 $lang['reminder_send'] = 'Send Reminder (%d)';
+$lang['reminder_confirm'] = 'Send an acknowledgement reminder to all %d outstanding user(s) for this publication?';
 $lang['reminder_sent'] = 'Acknowledgement reminder sent to %d of %d outstanding user(s).';
 $lang['reminder_denied'] = 'Only managers and administrators may send acknowledgement reminders.';
 $lang['reminder_not_current'] = 'Reminders can only be sent for the current formal publication.';

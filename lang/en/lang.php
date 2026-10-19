@@ -67,6 +67,7 @@ $lang['admin_override'] = 'Administrator workflow override';
 $lang['override_target'] = 'Target status';
 $lang['override_reason'] = 'Reason (required)';
 $lang['transition_saved'] = 'Document approval workflow updated.';
+$lang['workflow_stale_reload'] = 'The workflow changed in another request. Reload the page before continuing.';
 $lang['notification_failed'] = 'The workflow was updated, but the notification email could not be sent: %s';
 
 $lang['directive_change_denied'] = 'Only an administrator or the assigned Publisher may add or remove ~~NOREVISIONCONTROL~~.';

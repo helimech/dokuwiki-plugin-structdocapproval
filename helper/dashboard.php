@@ -101,7 +101,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             $formalRevision = $publication->getCurrentPublicationRevision($pid);
             $snapshot = $formalRevision ? $publication->getSnapshot($pid, $formalRevision) : null;
             $compliance = $snapshot
-                ? $publication->getComplianceForPage($pid, $formalRevision)
+                ? $publication->getComplianceForPage($pid, $formalRevision, $snapshot)
                 : null;
 
             $required = $compliance ? count($compliance['required_users']) : 0;

@@ -274,19 +274,31 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
 
         foreach ($rows as $row) {
             $pid = (string)$row['pid'];
+            $title = trim((string)($row['title'] ?? $pid));
             $status = (string)$row['status'];
             $updatedTs = strtotime((string)$row['updated']) ?: 0;
-            $html .= '<tr data-docapproval-page="' . hsc(strtolower($pid)) . '"' .
+            $pageSearch = strtolower($pid . ' ' . $title);
+            $html .= '<tr data-docapproval-page="' . hsc($pageSearch) . '"' .
                 ' data-docapproval-status="' . hsc($status) . '"' .
                 ' data-docapproval-ack="' . hsc((string)$row['ack_state']) . '"' .
                 ' data-docapproval-assignees="' . hsc(strtolower((string)($row['assigned_search'] ?? ''))) . '"' .
                 ' data-docapproval-ack-outstanding="' . (int)$row['ack_outstanding'] . '">';
-            $html .= '<td><a href="' . hsc(wl($pid)) . '">' . hsc($pid) . '</a></td>';
+            $html .= '<td class="docapproval-dashboard-page-cell"><a href="' . hsc(wl($pid)) . '">' .
+                hsc($title) . '</a>';
+            if ($title !== $pid) {
+                $html .= '<small>' . hsc($pid) . '</small>';
+            }
+            $html .= '</td>';
             $html .= '<td data-order="' . $this->statusPriority($status) . '">' .
                 hsc($this->getLang('status_' . $status)) . '</td>';
             $html .= '<td>' . $this->renderAssignment((string)$row['assigned_spec'], $publication) . '</td>';
             $html .= '<td data-order="' . $updatedTs . '">' .
-                hsc($this->formatIsoDate((string)$row['updated'])) . '</td>';
+                hsc($this->formatIsoDate((string)$row['updated']));
+            $age = $this->formatAgeFromIso((string)$row['updated']);
+            if ($age !== '') {
+                $html .= '<small class="docapproval-age">' . hsc($age) . '</small>';
+            }
+            $html .= '</td>';
             $html .= '<td>' . hsc($row['published_version'] !== '' ? (string)$row['published_version'] : '—') . '</td>';
             $html .= '<td>' . $this->renderAckStatus($row) . '</td>';
             $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
@@ -341,7 +353,10 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         $html .= '<div class="docapproval-dashboard-detail-grid">';
         $html .= '<div><strong>' . hsc($this->getLang('dashboard_current_workflow')) . '</strong><dl>';
         $html .= $this->detailPair($this->getLang('status'), $this->getLang('status_' . $row['status']));
-        $html .= $this->detailPair($this->getLang('updated'), $this->formatIsoDate((string)$row['updated']));
+        $updatedDisplay = $this->formatIsoDate((string)$row['updated']);
+        $updatedAge = $this->formatAgeFromIso((string)$row['updated']);
+        if ($updatedAge !== '') $updatedDisplay .= ' — ' . $updatedAge;
+        $html .= $this->detailPair($this->getLang('updated'), $updatedDisplay);
         if ($row['submitted_by'] !== '') {
             $html .= $this->detailPair(
                 $this->getLang('submitted_by'),
@@ -451,6 +466,35 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             default:
                 return 99;
         }
+    }
+
+    protected function formatAgeFromIso(string $iso): string
+    {
+        if ($iso === '') return '';
+        $timestamp = strtotime($iso);
+        if (!$timestamp) return '';
+        $seconds = max(0, time() - $timestamp);
+
+        if ($seconds < 3600) {
+            $minutes = max(1, (int)floor($seconds / 60));
+            return sprintf(
+                $this->getLang($minutes === 1 ? 'age_minute' : 'age_minutes'),
+                $minutes
+            );
+        }
+        if ($seconds < 86400) {
+            $hours = max(1, (int)floor($seconds / 3600));
+            return sprintf(
+                $this->getLang($hours === 1 ? 'age_hour' : 'age_hours'),
+                $hours
+            );
+        }
+
+        $days = max(1, (int)floor($seconds / 86400));
+        return sprintf(
+            $this->getLang($days === 1 ? 'age_day' : 'age_days'),
+            $days
+        );
     }
 
     protected function formatIsoDate(string $iso): string

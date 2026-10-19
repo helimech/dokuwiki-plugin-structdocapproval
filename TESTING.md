@@ -459,3 +459,19 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 15. In Ready to Publish Release Audience, type an exact configured full name rather than selecting the autocomplete item. Confirm it canonicalizes to the stored login instead of producing an invalid full-name recipient.
 16. Repeat normal chip selection, @group entry and literal Notify email entry to confirm the recipient-picker cleanup did not regress existing behavior.
 17. Confirm all v0.12.9 live Documents filtering/sorting/paging, My Tasks workflow actions, acknowledgement recording, Compliance details and standalone syntaxes still behave as before.
+
+## 30. History autocomplete and initial Rev 000 (v0.12.11)
+
+1. Open the unified **History** tab. Confirm the old long page dropdown has been replaced by a searchable text/autocomplete control.
+2. Begin typing part of a page ID. Confirm the browser offers accessible DocApproval page suggestions and selecting one fills its actual page ID.
+3. Begin typing a document title. Confirm autocomplete suggestions display the human-readable title together with its page ID.
+4. Select a suggestion and click **Show History** (or press Enter). Confirm the selected page's workflow history loads normally.
+5. Type an exact unique document title manually without selecting the suggestion. Confirm it resolves to the correct page.
+6. Type text that does not uniquely identify an accessible DocApproval page. Confirm no history is exposed and a clear no-match message appears.
+7. From **Documents → Details → History**, confirm the dashboard still switches to History with that document already selected.
+8. Confirm History ACL/workflow-view restrictions remain unchanged and inaccessible pages are absent from the autocomplete set.
+9. Create a genuinely new page inside a controlled namespace so it begins as Draft with no previous Published baseline. Complete the normal workflow to Ready to Publish and confirm **New Version** defaults to **000**.
+10. Publish that new page as 000, make the next normal revision, complete the workflow again, and confirm the next suggested version is **001**.
+11. Use an existing page that was brought under DocApproval by Sync/Reconcile and therefore has an initialized Published baseline with no explicit document version. Edit it through a new workflow cycle and confirm the first subsequent suggested document revision remains **001**, not 000.
+12. Confirm manually entered numeric versions continue to normalize to three digits and non-simple version labels continue to behave as before.
+13. Re-run the v0.12.9 Documents live filtering tests and the v0.12.10 Compliance CSV export tests to confirm no regression.

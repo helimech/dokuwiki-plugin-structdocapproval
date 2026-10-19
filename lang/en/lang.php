@@ -256,6 +256,13 @@ $lang['dashboard_outstanding_short'] = 'outstanding';
 $lang['dashboard_current_workflow'] = 'Current workflow';
 $lang['dashboard_current_publication'] = 'Current publication';
 $lang['dashboard_no_published'] = 'No Published baseline is available.';
+$lang['compliance_export_csv'] = 'Export CSV';
+$lang['age_minute'] = '%d minute';
+$lang['age_minutes'] = '%d minutes';
+$lang['age_hour'] = '%d hour';
+$lang['age_hours'] = '%d hours';
+$lang['age_day'] = '%d day';
+$lang['age_days'] = '%d days';
 
 // DW2PDF integration
 $lang['dw2pdf_working'] = 'WORKING DRAFT - NOT APPROVED';

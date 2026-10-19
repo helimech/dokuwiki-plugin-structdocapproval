@@ -192,6 +192,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         $html .= '<select class="docapproval-dashboard-ack-filter">';
         $html .= $this->option('all', $this->getLang('compliance_status_all'), 'all');
         $html .= $this->option('outstanding', $this->getLang('compliance_status_outstanding'), 'all');
+        $html .= $this->option('overdue', $this->getLang('compliance_status_overdue'), 'all');
         $html .= $this->option('complete', $this->getLang('compliance_status_complete'), 'all');
         $html .= $this->option('none_required', $this->getLang('dashboard_ack_none'), 'all');
         $html .= '</select></label>';
@@ -243,6 +244,12 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             (int)($counts['ack_outstanding'] ?? 0) . '</strong><span>' .
             hsc($this->getLang('dashboard_ack_outstanding')) . '</span></button>';
 
+        $html .= '<button type="button" class="docapproval-dashboard-count attention" ' .
+            'data-docapproval-ack-card="overdue">' .
+            '<strong data-docapproval-count="ack_overdue">' .
+            (int)($counts['ack_overdue'] ?? 0) . '</strong><span>' .
+            hsc($this->getLang('compliance_overdue')) . '</span></button>';
+
         return $html . '</div>';
     }
 
@@ -281,6 +288,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             $html .= '<tr data-docapproval-page="' . hsc($pageSearch) . '"' .
                 ' data-docapproval-status="' . hsc($status) . '"' .
                 ' data-docapproval-ack="' . hsc((string)$row['ack_state']) . '"' .
+                ' data-docapproval-overdue="' . (!empty($row['ack_overdue']) ? '1' : '0') . '"' .
                 ' data-docapproval-assignees="' . hsc(strtolower((string)($row['assigned_search'] ?? ''))) . '"' .
                 ' data-docapproval-ack-outstanding="' . (int)$row['ack_outstanding'] . '">';
             $html .= '<td class="docapproval-dashboard-page-cell"><a href="' . hsc(wl($pid)) . '">' .

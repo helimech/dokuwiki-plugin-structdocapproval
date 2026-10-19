@@ -51,6 +51,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
 
         $currentRevisionCache = [];
         $latestPublishedCache = [];
+        $titleCache = [];
         $out = [];
 
         foreach ($rows as $snapshot) {
@@ -72,7 +73,18 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 if (!$dbHelper->isControlled($pid)) continue;
             }
 
-            if ($filters['page'] !== '' && stripos($pid, $filters['page']) === false) continue;
+            if (!array_key_exists($pid, $titleCache)) {
+                $titleCache[$pid] = $this->pageTitle($pid);
+            }
+            $title = $titleCache[$pid];
+
+            if (
+                $filters['page'] !== '' &&
+                stripos($pid, $filters['page']) === false &&
+                stripos($title, $filters['page']) === false
+            ) {
+                continue;
+            }
 
             $publishedAt = (int)($snapshot['published_at'] ?? 0);
             if ($filters['date_from_ts'] && $publishedAt < $filters['date_from_ts']) continue;
@@ -110,6 +122,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
 
             $out[] = [
                 'pid' => $pid,
+                'title' => $title,
                 'publication_revision' => $publicationRevision,
                 'content_revision' => (int)($snapshot['content_revision'] ?? $publicationRevision),
                 'view_revision' => $viewRevision,
@@ -135,6 +148,15 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             'users' => $users,
             'totals' => $totals,
         ];
+    }
+
+    protected function pageTitle(string $pid): string
+    {
+        $title = '';
+        if (function_exists('p_get_first_heading')) {
+            $title = trim((string)p_get_first_heading($pid));
+        }
+        return $title !== '' ? $title : $pid;
     }
 
     public function getUserSuggestions(): array

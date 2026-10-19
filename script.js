@@ -80,7 +80,7 @@
         }
 
         function canonicalToken(raw) {
-            var value = canonicalToken(raw);
+            var value = (raw || '').trim().replace(/,+$/, '').trim();
             var matched = findSuggestion(value);
             return matched ? matched.value : value;
         }
@@ -122,7 +122,7 @@
         }
 
         function addToken(raw) {
-            var value = (raw || '').trim().replace(/,+$/, '').trim();
+            var value = canonicalToken(raw);
             if (!value) return false;
             if (!hasToken(value)) tokens.push(value);
             syncSource();
@@ -515,6 +515,89 @@
         );
     }
 
+    function csvCell(value) {
+        var text = value === null || value === undefined ? '' : String(value);
+        return '"' + text.replace(/"/g, '""') + '"';
+    }
+
+    function downloadComplianceCsv(button) {
+        var root = button.closest('.plugin-structdocapproval-compliance');
+        if (!root) return;
+
+        var dataNode = root.querySelector('.docapproval-compliance-export-data');
+        if (!dataNode) return;
+
+        var rows = [];
+        try {
+            rows = JSON.parse(dataNode.textContent || '[]');
+        } catch (e) {
+            return;
+        }
+
+        var columns = [
+            ['page', 'Page'],
+            ['title', 'Title'],
+            ['version', 'Version'],
+            ['publication_revision', 'Publication Revision'],
+            ['content_revision', 'Content Revision'],
+            ['published_at', 'Published'],
+            ['published_by', 'Published By Login'],
+            ['published_by_name', 'Published By'],
+            ['current', 'Current Publication'],
+            ['change_summary', 'Change Summary'],
+            ['acknowledge_audience', 'Acknowledgement Audience'],
+            ['required_user', 'Required User Login'],
+            ['required_name', 'Required User'],
+            ['status', 'Acknowledgement Status'],
+            ['acknowledged_at', 'Acknowledged At']
+        ];
+
+        var lines = [
+            columns.map(function (column) { return csvCell(column[1]); }).join(',')
+        ];
+
+        rows.forEach(function (row) {
+            lines.push(columns.map(function (column) {
+                return csvCell(row[column[0]]);
+            }).join(','));
+        });
+
+        var blob = new Blob(
+            ['\ufeff' + lines.join('\r\n')],
+            { type: 'text/csv;charset=utf-8' }
+        );
+        var url = window.URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        var now = new Date();
+        var stamp = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0')
+        ].join('-');
+
+        link.href = url;
+        link.download = 'docapproval-compliance-' + stamp + '.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.setTimeout(function () {
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    }
+
+    function initComplianceExports() {
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.docapproval-compliance-export'),
+            function (button) {
+                if (button.dataset.docapprovalExportBound === '1') return;
+                button.dataset.docapprovalExportBound = '1';
+                button.addEventListener('click', function () {
+                    downloadComplianceCsv(button);
+                });
+            }
+        );
+    }
+
     function init() {
         Array.prototype.forEach.call(
             document.querySelectorAll('.docapproval-token-source'),
@@ -522,6 +605,7 @@
         );
         bindTransitionSummarySave();
         initDashboardDocumentTables();
+        initComplianceExports();
     }
 
     if (document.readyState === 'loading') {

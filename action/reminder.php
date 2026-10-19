@@ -67,7 +67,11 @@ class action_plugin_structdocapproval_reminder extends ActionPlugin
             if ($actor === '') $actor = 'unknown';
             $publication->recordReminder($pid, $publicationRevision, $deliveries, $actor);
 
-            msg(sprintf($this->getLang('reminder_sent'), count($deliveries)), 1);
+            msg(sprintf(
+                $this->getLang('reminder_sent'),
+                count($deliveries),
+                count($outstanding)
+            ), 1);
         } catch (Throwable $e) {
             msg($e->getMessage(), -1);
         }

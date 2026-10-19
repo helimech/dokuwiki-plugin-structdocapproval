@@ -14,7 +14,7 @@ A controlled-document workflow plugin for DokuWiki backed by the Struct database
 - Training performs a release-readiness review and records the training impact.
 - Publishers can **Publish**, **Return to Training**, or **Return to Draft**.
 - Ordinary readers continue to see the last Published revision while a newer working revision moves through the workflow.
-- Numeric document revisions are normalized to three digits, e.g. `2 → 002`.
+- Numeric document revisions are normalized to three digits, e.g. `2 → 002`. A brand-new controlled document's first formal Publish defaults to `000`; subsequent revisions increment normally.
 - The exceptional administrator workflow override tool can be enabled or disabled in plugin configuration.
 
 ## Assignment rules
@@ -209,12 +209,14 @@ Manager/administrator **Compliance** dashboard:
 
 The compliance dashboard is restricted to DokuWiki managers/administrators. It defaults to the current formal publication for each controlled page and can switch to all historical publication snapshots. Filters include page/title/namespace, required user, compliance state, and Published date range. It shows aggregate Required/Acknowledged/Outstanding counts, per-publication completion and user details, publication age, and a per-user compliance rollup. **Export CSV** downloads the currently filtered report as audit-friendly one-row-per-required-user evidence, including acknowledgement timestamps. Historical publication evidence remains reportable even when a page is later moved out of DocApproval control.
 
-Workflow history with a page selector:
+Workflow history with a searchable page/title autocomplete:
 
 ```
 ---- struct_docapprovalhistory ----
 ----
 ```
+
+The History selector accepts a page ID or a unique exact document title and offers the accessible DocApproval pages as browser autocomplete suggestions.
 
 ## Installation
 

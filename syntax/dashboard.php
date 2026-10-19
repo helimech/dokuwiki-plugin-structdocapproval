@@ -445,11 +445,15 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
                 $ack = $required > 0 ? $complete . '/' . $required : '—';
 
                 $html .= '<tr>';
-                $html .= '<td>' . hsc($version) . '</td>';
+                $releaseUrl = wl((string)$row['pid'], ['rev' => (int)$release['content_revision']]);
+                $html .= '<td><a href="' . hsc($releaseUrl) . '">' . hsc($version) . '</a></td>';
                 $html .= '<td>' . hsc($this->formatTimestamp((int)$release['published_at'])) . '</td>';
                 $html .= '<td>' . hsc($ack) . '</td>';
                 $html .= '<td>' . ($release['ack_due_at']
-                    ? $this->renderDueStatus((int)$release['ack_due_at'])
+                    ? $this->renderDueStatus(
+                        (int)$release['ack_due_at'],
+                        $required === 0 || $complete >= $required
+                    )
                     : '—') . '</td>';
                 $html .= '</tr>';
             }
@@ -470,9 +474,13 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         return $html;
     }
 
-    protected function renderDueStatus(int $dueAt): string
+    protected function renderDueStatus(int $dueAt, bool $complete = false): string
     {
         if ($dueAt <= 0) return '—';
+        if ($complete) {
+            return '<span class="docapproval-due complete">' .
+                hsc(date('Y-m-d', $dueAt)) . '</span>';
+        }
 
         $todayEnd = strtotime(date('Y-m-d') . ' 23:59:59');
         $dueDay = strtotime(date('Y-m-d', $dueAt) . ' 23:59:59');

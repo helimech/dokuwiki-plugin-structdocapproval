@@ -57,7 +57,13 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             ) {
                 continue;
             }
-            if ($filters['status'] !== 'all' && $status !== $filters['status']) continue;
+            if ($filters['status'] !== 'all') {
+                if ($filters['status'] === 'not_published') {
+                    if ($status === Constants::STATUS_PUBLISHED) continue;
+                } elseif ($status !== $filters['status']) {
+                    continue;
+                }
+            }
 
             $assignedSpec = '';
             if ($status === Constants::STATUS_AWAITING_REVIEW) {
@@ -279,7 +285,9 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
     protected function normalizeFilters(array $filters): array
     {
         $status = (string)($filters['status'] ?? 'all');
-        if (!in_array($status, array_merge(['all'], Constants::statuses()), true)) $status = 'all';
+        if (!in_array($status, array_merge(['all', 'not_published'], Constants::statuses()), true)) {
+            $status = 'all';
+        }
 
         $ack = (string)($filters['ack'] ?? 'all');
         if (!in_array($ack, ['all', 'outstanding', 'overdue', 'complete', 'none_required'], true)) $ack = 'all';

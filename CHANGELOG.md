@@ -4,6 +4,11 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.11.1 LESS compatibility hotfix — 2026-10-19
+
+- Replaced the CSS `min(42rem, 70vw)` expression on the History autocomplete width with equivalent plain `width` / `max-width` rules because DokuWiki's LESS compiler attempts arithmetic unit conversion and fails on mixed `rem` / `vw` values.
+- No functional or database changes.
+
 ## 0.12.11 history and initial revision test — 2026-10-19
 
 - Replaced the workflow History page dropdown with a searchable browser-autocomplete input backed by the accessible DocApproval page set.

@@ -141,6 +141,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 'acknowledge_spec' => (string)($snapshot['acknowledge_spec'] ?? ''),
                 'change_summary' => (string)($snapshot['change_summary'] ?? ''),
                 'is_current' => $isCurrent,
+                'is_controlled' => $dbHelper->isControlled($pid),
                 'required_users' => $requiredUsers,
                 'acknowledged_users' => $acknowledgedUsers,
                 'outstanding_users' => $outstandingUsers,

@@ -29,7 +29,24 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         if (!$db) return false;
 
         $pages = $db->queryAll('SELECT DISTINCT pid FROM data_struct_docapproval ORDER BY pid') ?: [];
-        $selected = cleanID($INPUT->str('docapproval_history_page'));
+        $rawSelected = trim($INPUT->str('docapproval_history_page'));
+
+        // Build the accessible autocomplete set once. A user may select a page ID
+        // from the datalist or type an exact document title; an exact title is
+        // accepted only when it resolves uniquely.
+        $availablePages = [];
+        foreach ($pages as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if ($pid === '') continue;
+            if (auth_quickaclcheck($pid) < AUTH_READ || !$dbHelper->canViewWorking($pid)) continue;
+            $title = $this->pageTitle($pid);
+            $availablePages[] = [
+                'pid' => $pid,
+                'title' => $title,
+                'label' => $title !== $pid ? $title . ' — ' . $pid : $pid,
+            ];
+        }
+        $selected = $this->resolvePageSelection($rawSelected, $availablePages);
 
         $embedded = is_array($data) && !empty($data['embedded']);
         $html = '<div id="docapproval-history" class="plugin-structdocapproval-history' .
@@ -42,18 +59,20 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         $html .= '<label>' . hsc($this->getLang('select_page')) . ' ';
         $html .= '<input type="search" class="edit docapproval-history-page-picker" ' .
             'name="docapproval_history_page" list="docapproval-history-pages" ' .
-            'value="' . hsc($selected) . '" placeholder="' .
+            'value="' . hsc($selected !== '' ? $selected : $rawSelected) . '" placeholder="' .
             hsc($this->getLang('select_page_prompt')) . '" autocomplete="off" /></label>';
         $html .= '<datalist id="docapproval-history-pages">';
-        foreach ($pages as $row) {
-            $pid = $row['pid'];
-            if (auth_quickaclcheck($pid) < AUTH_READ || !$dbHelper->canViewWorking($pid)) continue;
-            $title = $this->pageTitle($pid);
-            $label = $title !== $pid ? $title . ' — ' . $pid : $pid;
-            $html .= '<option value="' . hsc($pid) . '" label="' . hsc($label) . '"></option>';
+        foreach ($availablePages as $page) {
+            $html .= '<option value="' . hsc($page['pid']) . '" label="' .
+                hsc($page['label']) . '"></option>';
         }
         $html .= '</datalist>';
         $html .= ' <button type="submit">' . hsc($this->getLang('show_history')) . '</button></form>';
+
+        if ($rawSelected !== '' && $selected === '') {
+            $html .= '<p class="docapproval-warning">' .
+                hsc($this->getLang('history_page_not_found')) . '</p>';
+        }
 
         if ($selected !== '') {
             if (auth_quickaclcheck($selected) < AUTH_READ || !$dbHelper->canViewWorking($selected)) {
@@ -93,6 +112,30 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         $html .= '</div>';
         $renderer->doc .= $html;
         return true;
+    }
+
+    protected function resolvePageSelection(string $input, array $pages): string
+    {
+        if ($input === '') return '';
+
+        $clean = cleanID($input);
+        foreach ($pages as $page) {
+            if ($page['pid'] === $clean || strcasecmp($page['pid'], $input) === 0) {
+                return $page['pid'];
+            }
+        }
+
+        $matches = [];
+        foreach ($pages as $page) {
+            if (
+                strcasecmp($page['title'], $input) === 0 ||
+                strcasecmp($page['label'], $input) === 0
+            ) {
+                $matches[] = $page['pid'];
+            }
+        }
+
+        return count($matches) === 1 ? $matches[0] : '';
     }
 
     protected function pageTitle(string $pid): string

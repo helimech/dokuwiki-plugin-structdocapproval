@@ -4,6 +4,21 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.12 acknowledgement attention test — 2026-10-19
+
+- Added database migration 5 with a snapshotted acknowledgement due date on each publication plus immutable manual-reminder audit rows.
+- Added configurable **Default acknowledgement due period in days** (default 14; 0 leaves the Publish due date blank).
+- Ready to Publish now shows **Acknowledgement due** beside the acknowledgement audience; the field is enabled only when Require acknowledgement is selected and may be adjusted for that release.
+- Due dates are snapshotted with the publication and included in acknowledgement-required release emails.
+- My Tasks, the Published-page acknowledgement box/report, Documents, and Compliance now show due / due-today / overdue state.
+- Added **Overdue** filters and counts to Documents and Compliance.
+- Added manager/administrator **Send Reminder** for the current controlled publication. It targets only users who are still outstanding, asks for confirmation, and reports delivered versus outstanding counts.
+- Reminder evidence records a batch ID, document/publication, recipient user, actual email address, sender, and sent timestamp. Reminder evidence follows a document when it is moved.
+- Compliance Details shows the last reminder and reminder-batch count; Compliance CSV now includes due date and reminder evidence and marks overdue requirements explicitly.
+- Documents → Details now includes a compact five-release publication history with revision links, publication date, acknowledgement completion and due date.
+- Existing publications are migrated with no due date and no fabricated reminder history.
+- **Database migration required:** 4 → 5.
+
 ## 0.12.11.1 LESS compatibility hotfix — 2026-10-19
 
 - Replaced the CSS `min(42rem, 70vw)` expression on the History autocomplete width with equivalent plain `width` / `max-width` rules because DokuWiki's LESS compiler attempts arithmetic unit conversion and fails on mixed `rem` / `vw` values.

@@ -274,7 +274,11 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             echo '</form>';
         } elseif ($status === Constants::STATUS_READY_TO_PUBLISH && $this->db->canPublish($pid)) {
             $previous = WorkflowRecord::latestPublished($pid, (int)$record->get('revision'));
-            $suggested = $previous ? Constants::nextVersion((string)$previous->get('version')) : '001';
+            // A brand-new controlled document begins at formal document Rev 000.
+            // Existing pages brought under control already have an implicit Published
+            // baseline; when that baseline has no explicit version, nextVersion('')
+            // correctly suggests 001 for the first subsequent controlled revision.
+            $suggested = $previous ? Constants::nextVersion((string)$previous->get('version')) : '000';
             $notifyDefault = $assignments->getRoleSpec($pid, Constants::ROLE_NOTIFY);
             $ackDefault = $assignments->getRoleSpec($pid, Constants::ROLE_ACKNOWLEDGE);
 

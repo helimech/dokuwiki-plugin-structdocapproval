@@ -91,20 +91,18 @@ class helper_plugin_structdocapproval_acknowledge extends Plugin
         $now = time();
         $db = $this->db();
         if (!$db || !$db->query(
-            'INSERT INTO struct_docapproval_acknowledgements ' .
+            'INSERT OR IGNORE INTO struct_docapproval_acknowledgements ' .
             '(pid,user,publication_revision,content_revision,version,acknowledged_at) VALUES (?,?,?,?,?,?)',
             [$pid, $user, $publicationRevision, $contentRevision, $version, $now]
         )) {
             throw new RuntimeException('Could not record the acknowledgement.');
         }
 
-        return [
-            'pid' => $pid,
-            'user' => $user,
-            'publication_revision' => $publicationRevision,
-            'content_revision' => $contentRevision,
-            'version' => $version,
-            'acknowledged_at' => $now,
-        ];
+        // The primary key makes acknowledgement idempotent. If two browser requests
+        // race, one insert wins and the other simply returns the already-stored row
+        // instead of showing a false failure to the user.
+        $stored = $this->getAcknowledgement($pid, $user, $publicationRevision);
+        if (!$stored) throw new RuntimeException('Could not verify the acknowledgement record.');
+        return $stored;
     }
 }

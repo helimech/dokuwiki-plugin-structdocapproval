@@ -310,11 +310,10 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 ']" value="' . hsc($value) . '" />';
         }
 
-        $html .= '<button type="submit" class="docapproval-reminder-button">' .
-            hsc(sprintf(
-                $this->getLang('reminder_send'),
-                count((array)$row['outstanding_users'])
-            )) . '</button>';
+        $outstandingCount = count((array)$row['outstanding_users']);
+        $html .= '<button type="submit" class="docapproval-reminder-button" data-confirm="' .
+            hsc(sprintf($this->getLang('reminder_confirm'), $outstandingCount)) . '">' .
+            hsc(sprintf($this->getLang('reminder_send'), $outstandingCount)) . '</button>';
         $html .= '</form>';
         return $html;
     }

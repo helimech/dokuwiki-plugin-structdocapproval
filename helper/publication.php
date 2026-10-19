@@ -390,12 +390,42 @@ class helper_plugin_structdocapproval_publication extends Plugin
         );
 
         $rows = $db->queryAll(
-            'SELECT token FROM struct_docapproval_auto_reminder_runs WHERE run_date=? LIMIT 1',
+            'SELECT token,status,started_at FROM struct_docapproval_auto_reminder_runs ' .
+            'WHERE run_date=? LIMIT 1',
             [$runDate]
         ) ?: [];
-        if (!$rows || (string)$rows[0]['token'] !== $token) return ['', $runDate];
+        if (!$rows) return ['', $runDate];
+        if ((string)$rows[0]['token'] === $token) return [$token, $runDate];
 
-        return [$token, $runDate];
+        // A worker that dies after claiming the day would otherwise suppress all
+        // reminders until tomorrow. Reclaim only a clearly stale running claim.
+        $existingToken = (string)$rows[0]['token'];
+        $existingStatus = (string)$rows[0]['status'];
+        $existingStarted = (int)$rows[0]['started_at'];
+        if ($existingStatus === 'running' && $existingStarted > 0 && $existingStarted < ($startedAt - 1800)) {
+            $db->query(
+                'UPDATE struct_docapproval_auto_reminder_runs ' .
+                'SET token=?,started_at=?,finished_at=0,status=?,detail=? ' .
+                'WHERE run_date=? AND token=? AND status=? AND started_at=?',
+                [
+                    $token,
+                    $startedAt,
+                    'running',
+                    'Reclaimed stale reminder sweep.',
+                    $runDate,
+                    $existingToken,
+                    'running',
+                    $existingStarted,
+                ]
+            );
+            $winner = (string)$db->queryValue(
+                'SELECT token FROM struct_docapproval_auto_reminder_runs WHERE run_date=? LIMIT 1',
+                [$runDate]
+            );
+            if ($winner === $token) return [$token, $runDate];
+        }
+
+        return ['', $runDate];
     }
 
     public function finishAutomaticReminderRun(

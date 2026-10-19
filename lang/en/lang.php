@@ -153,6 +153,8 @@ $lang['email_notify_no_action'] = 'This message is informational only; no acknow
 $lang['email_ack_due'] = 'Acknowledgement due';
 $lang['email_ack_reminder_subject'] = '[DocApproval] Reminder — Acknowledgement Required — %s Rev %s';
 $lang['email_ack_reminder_intro'] = 'This is a reminder that your acknowledgement is still outstanding for a controlled document.';
+$lang['email_workflow_reminder_subject'] = '[DocApproval] Reminder — %s — %s';
+$lang['email_workflow_reminder_intro'] = 'This is a reminder that a controlled document is awaiting workflow action.';
 
 // end-user acknowledgement
 $lang['ack_required_title'] = 'Acknowledgement Required';
@@ -194,6 +196,15 @@ $lang['reminder_email_disabled'] = 'Workflow email is disabled in Struct DocAppr
 $lang['reminder_no_email'] = 'None of the outstanding users has an email address available to DokuWiki.';
 $lang['reminder_last_sent'] = 'Last reminder';
 $lang['reminder_batches'] = 'reminder batch(es)';
+$lang['workflow_reminder_review'] = 'Email Reviewer';
+$lang['workflow_reminder_training'] = 'Email Training';
+$lang['workflow_reminder_publish'] = 'Email Publisher';
+$lang['workflow_reminder_confirm'] = 'Send a workflow reminder email for this document?';
+$lang['workflow_reminder_sent'] = 'Workflow reminder sent to %d recipient(s).';
+$lang['workflow_reminder_denied'] = 'Only managers and administrators may send workflow reminders from the Documents dashboard.';
+$lang['workflow_reminder_invalid'] = 'This workflow state does not support a dashboard reminder.';
+$lang['workflow_reminder_stale'] = 'The document workflow changed before the reminder was sent. Reload Documents and try again.';
+$lang['workflow_reminder_no_recipients'] = 'No email recipients are currently resolved for this workflow stage.';
 
 // personal task dashboard
 $lang['my_tasks_title'] = 'My DocApproval Tasks';
@@ -262,6 +273,7 @@ $lang['dashboard_documents_title'] = 'Controlled Documents';
 $lang['dashboard_documents_intro'] = 'Current workflow, publication and acknowledgement state for controlled documents.';
 $lang['dashboard_workflow_filter'] = 'Workflow status';
 $lang['dashboard_all_statuses'] = 'All workflow states';
+$lang['dashboard_not_published'] = 'Not Published';
 $lang['dashboard_assignee_filter'] = 'Assigned user';
 $lang['dashboard_assignee_placeholder'] = 'user login';
 $lang['dashboard_ack_filter'] = 'Acknowledgement state';

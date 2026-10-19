@@ -561,6 +561,8 @@
             ['reminder_batches', 'Reminder Batches'],
             ['last_reminder_at', 'Last Reminder At'],
             ['last_reminder_by', 'Last Reminder By'],
+            ['last_reminder_type', 'Last Reminder Type'],
+            ['last_reminder_cc', 'Last Reminder CC'],
             ['required_user', 'Required User Login'],
             ['required_name', 'Required User'],
             ['status', 'Acknowledgement Status'],

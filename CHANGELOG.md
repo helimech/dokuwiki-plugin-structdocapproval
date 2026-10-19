@@ -4,6 +4,15 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.11 history and initial revision test — 2026-10-19
+
+- Replaced the workflow History page dropdown with a searchable browser-autocomplete input backed by the accessible DocApproval page set.
+- History autocomplete suggestions show the human-readable document title together with the page ID; the input accepts either a page ID or a unique exact document title.
+- Dashboard → History links still prefill the selected page directly.
+- A brand-new controlled document with no previous Published baseline now defaults its first formal Publish to document revision **000** instead of 001.
+- Existing pages that were initialized into DocApproval with an implicit Published baseline are intentionally unchanged: because they already have a prior baseline, their first subsequent controlled revision continues to suggest **001**.
+- No database migration is required.
+
 ## 0.12.10 reporting usability test — 2026-10-19
 
 - Added human-readable DokuWiki page titles throughout the unified Documents view, My Tasks, Compliance rows, and workflow History selector/headings while retaining the page ID underneath for unambiguous identification.

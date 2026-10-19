@@ -118,6 +118,8 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             if ($filters['ack'] !== 'all') {
                 if ($filters['ack'] === 'none_required') {
                     if (!in_array($ackState, ['none', 'not_required'], true)) continue;
+                } elseif ($filters['ack'] === 'overdue') {
+                    if (!$ackOverdue) continue;
                 } elseif ($ackState !== $filters['ack']) {
                     continue;
                 }
@@ -280,7 +282,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
         if (!in_array($status, array_merge(['all'], Constants::statuses()), true)) $status = 'all';
 
         $ack = (string)($filters['ack'] ?? 'all');
-        if (!in_array($ack, ['all', 'outstanding', 'complete', 'none_required'], true)) $ack = 'all';
+        if (!in_array($ack, ['all', 'outstanding', 'overdue', 'complete', 'none_required'], true)) $ack = 'all';
 
         return [
             'page' => trim((string)($filters['page'] ?? '')),

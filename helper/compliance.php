@@ -92,7 +92,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             if ($filters['date_from_ts'] && $publishedAt < $filters['date_from_ts']) continue;
             if ($filters['date_to_ts'] && $publishedAt > $filters['date_to_ts']) continue;
 
-            $compliance = $publication->getComplianceForPage($pid, $publicationRevision);
+            $compliance = $publication->getComplianceForPage($pid, $publicationRevision, $snapshot);
             if (!$compliance) continue;
 
             $requiredUsers = (array)$compliance['required_users'];

@@ -44,6 +44,9 @@ class action_plugin_structdocapproval_workflowreminder extends ActionPlugin
             if ($pid === '' || !in_array($status, $allowed, true)) {
                 throw new RuntimeException($this->getLang('workflow_reminder_invalid'));
             }
+            if (auth_quickaclcheck($pid) < AUTH_READ) {
+                throw new RuntimeException($this->getLang('workflow_reminder_denied'));
+            }
 
             /** @var helper_plugin_structdocapproval_db $dbHelper */
             $dbHelper = plugin_load('helper', 'structdocapproval_db');

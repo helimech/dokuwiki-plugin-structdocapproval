@@ -234,10 +234,24 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
             $html .= '<p><strong>' . hsc($this->getLang('reminder_last_sent')) . ':</strong> ' .
                 hsc($this->formatTimestamp((int)$reminder['last_sent_at']));
             if (!empty($reminder['last_sent_by'])) {
-                $html .= ' — ' . $this->renderUser($publication, (string)$reminder['last_sent_by']);
+                $sender = (string)$reminder['last_sent_by'];
+                $html .= ' — ' . ($sender === 'auto'
+                    ? hsc($this->getLang('reminder_type_auto'))
+                    : $this->renderUser($publication, $sender));
+            }
+            if (!empty($reminder['last_type'])) {
+                $html .= ' [' . hsc(
+                    $reminder['last_type'] === 'auto'
+                        ? $this->getLang('reminder_type_auto')
+                        : $this->getLang('reminder_type_manual')
+                ) . ']';
             }
             $html .= ' (' . (int)($reminder['batches'] ?? 0) . ' ' .
                 hsc($this->getLang('reminder_batches')) . ')</p>';
+            if (!empty($reminder['last_cc_spec'])) {
+                $html .= '<p><strong>' . hsc($this->getLang('reminder_cc')) . ':</strong> ' .
+                    hsc((string)$reminder['last_cc_spec']) . '</p>';
+            }
         }
 
         $html .= '<div class="docapproval-compliance-detail-grid">';
@@ -381,6 +395,8 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                     ? $this->formatTimestamp((int)$row['reminder']['last_sent_at'])
                     : '',
                 'last_reminder_by' => (string)($row['reminder']['last_sent_by'] ?? ''),
+                'last_reminder_type' => (string)($row['reminder']['last_type'] ?? ''),
+                'last_reminder_cc' => (string)($row['reminder']['last_cc_spec'] ?? ''),
             ];
 
             $requiredUsers = (array)$row['required_users'];

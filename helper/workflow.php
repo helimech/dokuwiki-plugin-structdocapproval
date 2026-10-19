@@ -198,20 +198,41 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 throw new RuntimeException('Unknown workflow action.');
         }
 
-        $next->save();
+        // For a normal Publish, persist the immutable release/audience snapshot
+        // before committing the Published workflow row. If audience persistence fails,
+        // the document remains Ready to Publish instead of becoming Published without
+        // its compliance boundary. If the workflow save itself fails, remove the
+        // pre-staged snapshot as compensation.
+        $publication = null;
+        $audienceStaged = false;
+        if ($action === Constants::ACTION_PUBLISH) {
+            /** @var helper_plugin_structdocapproval_publication $publication */
+            $publication = plugin_load('helper', 'structdocapproval_publication');
+            if (!$publication || $publicationAudience === null) {
+                throw new RuntimeException('The release audience could not be prepared for publication.');
+            }
+            $publication->persistAudience($next, $publicationAudience);
+            $audienceStaged = true;
+        }
+
+        try {
+            $next->save();
+        } catch (Throwable $e) {
+            if ($audienceStaged && $publication) {
+                try {
+                    $publication->removeAudience($pid, (int)$next->get('revision'));
+                } catch (Throwable $rollbackError) {
+                    // Preserve the original workflow-save failure; an orphan snapshot
+                    // is non-current and can be detected/reconciled during testing.
+                }
+            }
+            throw $e;
+        }
+
         if ($next->get('status') === Constants::STATUS_PUBLISHED) {
             /** @var helper_plugin_structdocapproval_publish $publish */
             $publish = plugin_load('helper', 'structdocapproval_publish');
-            $publish->publishStructData($pid, (int)$next->get('revision'));
-
-            if ($action === Constants::ACTION_PUBLISH) {
-                /** @var helper_plugin_structdocapproval_publication $publication */
-                $publication = plugin_load('helper', 'structdocapproval_publication');
-                if (!$publication || $publicationAudience === null) {
-                    throw new RuntimeException('The document was Published but its release audience could not be recorded.');
-                }
-                $publication->persistAudience($next, $publicationAudience);
-            }
+            if ($publish) $publish->publishStructData($pid, (int)$next->get('revision'));
         }
 
         $eventData = ['pid' => $pid, 'action' => $action, 'record' => $next, 'previous' => $current];

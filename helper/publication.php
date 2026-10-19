@@ -298,7 +298,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
 
             $publicationRevision = $this->getCurrentPublicationRevision($pid);
             if (!$publicationRevision) continue;
-            $compliance = $this->getComplianceForPage($pid, $publicationRevision);
+            $compliance = $this->getComplianceForPage($pid, $publicationRevision, $row);
             if ($compliance) $out[] = $compliance;
         }
 
@@ -474,7 +474,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
         $today = date('Y-m-d', $now);
 
         $rows = $db->queryAll(
-            'SELECT pid,publication_revision,ack_due_at FROM struct_docapproval_publications ' .
+            'SELECT * FROM struct_docapproval_publications ' .
             'WHERE ack_due_at>0 AND ack_due_at<? ORDER BY ack_due_at ASC,pid ASC',
             [$now]
         ) ?: [];

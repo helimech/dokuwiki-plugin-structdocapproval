@@ -425,7 +425,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
 
         $intervalDays = max(1, $intervalDays);
         $now = time();
-        $intervalSeconds = $intervalDays * 86400;
+        $today = date('Y-m-d', $now);
 
         $rows = $db->queryAll(
             'SELECT pid,publication_revision,ack_due_at FROM struct_docapproval_publications ' .
@@ -452,11 +452,13 @@ class helper_plugin_structdocapproval_publication extends Plugin
                 'WHERE pid=? AND publication_revision=? AND sent_at>?',
                 [$pid, $publicationRevision, (int)$row['ack_due_at']]
             );
-            if (
-                $lastOverdueReminder > 0 &&
-                ($now - $lastOverdueReminder) < $intervalSeconds
-            ) {
-                continue;
+            if ($lastOverdueReminder > 0) {
+                $lastDay = date('Y-m-d', $lastOverdueReminder);
+                $nextDay = date(
+                    'Y-m-d',
+                    strtotime('+' . $intervalDays . ' days', strtotime($lastDay . ' 00:00:00'))
+                );
+                if ($today < $nextDay) continue;
             }
 
             $out[] = [

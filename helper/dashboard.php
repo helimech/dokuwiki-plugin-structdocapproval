@@ -101,6 +101,8 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             $required = $compliance ? count($compliance['required_users']) : 0;
             $acknowledged = $compliance ? count($compliance['acknowledged_users']) : 0;
             $outstanding = $compliance ? count($compliance['outstanding_users']) : 0;
+            $ackDueAt = $snapshot ? (int)($snapshot['ack_due_at'] ?? 0) : 0;
+            $ackOverdue = $ackDueAt > 0 && time() > $ackDueAt && $outstanding > 0;
 
             $ackState = 'none';
             if ($snapshot) {
@@ -173,17 +175,62 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
                 'ack_required' => $required,
                 'acknowledged' => $acknowledged,
                 'ack_outstanding' => $outstanding,
+                'ack_due_at' => $ackDueAt,
+                'ack_overdue' => $ackOverdue,
                 'acknowledged_users' => $compliance ? (array)$compliance['acknowledged_users'] : [],
                 'outstanding_users' => $compliance ? (array)$compliance['outstanding_users'] : [],
                 'acknowledge_spec' => $snapshot ? (string)($snapshot['acknowledge_spec'] ?? '') : '',
             ];
         }
 
+        $historyMap = $this->loadPublicationHistory($db, array_column($out, 'pid'), 5);
+        foreach ($out as &$item) {
+            $item['publication_history'] = $historyMap[$item['pid']] ?? [];
+        }
+        unset($item);
+
         return [
             'filters' => $filters,
             'rows' => $out,
             'counts' => $this->countRows($out),
         ];
+    }
+
+    protected function loadPublicationHistory($db, array $pids, int $limit): array
+    {
+        if (!$pids || $limit < 1) return [];
+
+        $allowed = array_fill_keys($pids, true);
+        $rows = $db->queryAll(
+            'SELECT p.pid,p.publication_revision,p.content_revision,p.version,p.published_at,p.ack_due_at,' .
+            'COUNT(DISTINCT r.user) AS required_count,' .
+            'COUNT(DISTINCT a.user) AS acknowledged_count ' .
+            'FROM struct_docapproval_publications p ' .
+            'LEFT JOIN struct_docapproval_requirements r ' .
+            'ON r.pid=p.pid AND r.publication_revision=p.publication_revision ' .
+            'LEFT JOIN struct_docapproval_acknowledgements a ' .
+            'ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
+            'GROUP BY p.pid,p.publication_revision,p.content_revision,p.version,p.published_at,p.ack_due_at ' .
+            'ORDER BY p.pid,p.published_at DESC,p.publication_revision DESC'
+        ) ?: [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if (!isset($allowed[$pid])) continue;
+            if (isset($out[$pid]) && count($out[$pid]) >= $limit) continue;
+
+            $out[$pid][] = [
+                'publication_revision' => (int)$row['publication_revision'],
+                'content_revision' => (int)$row['content_revision'],
+                'version' => (string)$row['version'],
+                'published_at' => (int)$row['published_at'],
+                'ack_due_at' => (int)($row['ack_due_at'] ?? 0),
+                'required' => (int)$row['required_count'],
+                'acknowledged' => (int)$row['acknowledged_count'],
+            ];
+        }
+        return $out;
     }
 
     public function getOverview(): array

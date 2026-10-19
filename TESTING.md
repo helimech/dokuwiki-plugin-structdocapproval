@@ -439,3 +439,23 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 14. Confirm the Documents table does not show a duplicate generic DataTables search box or page-length selector in addition to the DocApproval controls.
 15. Confirm the column heading reads **Acknowledgement**, not **Default Acknowledge**.
 16. Confirm My Tasks, Compliance, History, publication acknowledgement controls and all standalone dashboard syntaxes still behave as before.
+
+## 29. Titles, age and compliance CSV export (v0.12.10)
+
+1. Open the unified **Documents** tab with pages whose DokuWiki first heading differs from the page ID. Confirm the human-readable title is the main link and the page ID is retained underneath.
+2. Type part of a document title into **Page / title / namespace**. Confirm the live Documents filter matches it just as it matches a page ID/namespace.
+3. Confirm **State Since** shows the normal date/time plus a neutral elapsed value such as `3 days`; verify Draft and Published rows are no longer labelled as "Waiting Since".
+4. Open **My Tasks**. Confirm acknowledgement, Review, Training Review, Ready to Publish and Recently Acknowledged rows use human-readable document titles with page IDs underneath where different.
+5. Confirm My Tasks Published/Waiting dates also show an elapsed value without changing workflow/task ordering.
+6. Open **History**. Confirm the page selector shows `Title — page:id` where a first heading is available, and the selected page heading also shows title plus page ID.
+7. Open **Compliance**. Confirm publication rows show human-readable title plus page ID and Published dates include elapsed age.
+8. Filter Compliance by part of a document title and confirm the correct publication rows remain.
+9. Apply a combination of Compliance filters (scope, page/title, user, status and/or date range), click **Export CSV**, and confirm the browser downloads a UTF-8 CSV without changing or reloading the report page.
+10. Open the CSV in Excel. Confirm columns include Page, Title, Version, Publication Revision, Content Revision, Published, publisher login/name, Current Publication, Change Summary, Acknowledgement Audience, required-user login/name, acknowledgement status and acknowledgement timestamp.
+11. For a publication requiring several users, confirm the export contains one row per required user and records Complete/Outstanding plus the acknowledgement time where complete.
+12. Filter Compliance to one Required User before exporting. Confirm only that person's requirement rows are present in the CSV even when the matching publication required several other users.
+13. Filter to **No acknowledgement required** and export. Confirm those publications are represented with blank required-user fields and status indicating no acknowledgement was required.
+14. Switch Compliance to **All publication history** and confirm historical publication rows export independently with their stored publication/content revisions and acknowledgement evidence.
+15. In Ready to Publish Release Audience, type an exact configured full name rather than selecting the autocomplete item. Confirm it canonicalizes to the stored login instead of producing an invalid full-name recipient.
+16. Repeat normal chip selection, @group entry and literal Notify email entry to confirm the recipient-picker cleanup did not regress existing behavior.
+17. Confirm all v0.12.9 live Documents filtering/sorting/paging, My Tasks workflow actions, acknowledgement recording, Compliance details and standalone syntaxes still behave as before.

@@ -101,7 +101,7 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
 
         $html .= '<div class="docapproval-my-tablewrap"><table class="inline">';
         $html .= '<thead><tr>';
-        foreach (['page', 'version', 'my_published', 'change_summary', 'actions'] as $key) {
+        foreach (['page', 'version', 'my_published', 'my_due', 'change_summary', 'actions'] as $key) {
             $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
@@ -122,6 +122,7 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
                 $html .= '<small class="docapproval-age">' . hsc($publishedAge) . '</small>';
             }
             $html .= '</td>';
+            $html .= '<td>' . $this->renderDueStatus((int)($row['ack_due_at'] ?? 0)) . '</td>';
             $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
             $html .= '<td><a href="' . hsc($url) . '">' . hsc($this->getLang('my_open_ack')) . '</a></td>';
             $html .= '</tr>';
@@ -198,6 +199,36 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
         }
 
         return $html . '</tbody></table></div></details>';
+    }
+
+    protected function renderDueStatus(int $dueAt): string
+    {
+        if ($dueAt <= 0) {
+            return '<span class="docapproval-due none">—</span>';
+        }
+
+        $todayEnd = strtotime(date('Y-m-d') . ' 23:59:59');
+        $dueDay = strtotime(date('Y-m-d', $dueAt) . ' 23:59:59');
+        $days = (int)floor(($dueDay - $todayEnd) / 86400);
+
+        $class = 'future';
+        if ($days < 0) {
+            $class = 'overdue';
+            $abs = abs($days);
+            $label = sprintf(
+                $this->getLang($abs === 1 ? 'ack_overdue_one_day' : 'ack_overdue_days'),
+                $abs
+            );
+        } elseif ($days === 0) {
+            $class = 'today';
+            $label = $this->getLang('ack_due_today');
+        } else {
+            $label = sprintf($this->getLang('ack_due_in_days'), $days);
+        }
+
+        return '<span class="docapproval-due ' . hsc($class) . '">' .
+            hsc(date('Y-m-d', $dueAt)) .
+            '<small>' . hsc($label) . '</small></span>';
     }
 
     protected function renderPageLink(string $url, string $pid, string $title): string

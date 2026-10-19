@@ -198,6 +198,14 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 throw new RuntimeException('Unknown workflow action.');
         }
 
+        // Recheck immediately before committing. This catches the normal
+        // double-click/two-tab race where another request has already advanced the
+        // workflow after this request loaded its starting record.
+        $live = WorkflowRecord::latest($pid);
+        if (!$live || $live->getRid() !== $current->getRid()) {
+            throw new RuntimeException($this->getLang('workflow_stale_reload'));
+        }
+
         // For a normal Publish, persist the immutable release/audience snapshot
         // before committing the Published workflow row. If audience persistence fails,
         // the document remains Ready to Publish instead of becoming Published without

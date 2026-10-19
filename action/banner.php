@@ -281,6 +281,8 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             $suggested = $previous ? Constants::nextVersion((string)$previous->get('version')) : '000';
             $notifyDefault = $assignments->getRoleSpec($pid, Constants::ROLE_NOTIFY);
             $ackDefault = $assignments->getRoleSpec($pid, Constants::ROLE_ACKNOWLEDGE);
+            $dueDays = max(0, (int)$this->getConf('ack_due_days'));
+            $ackDueDefault = $dueDays > 0 ? date('Y-m-d', strtotime('+' . $dueDays . ' days')) : '';
 
             /** @var helper_plugin_structdocapproval_publication $publication */
             $publication = plugin_load('helper', 'structdocapproval_publication');
@@ -304,6 +306,9 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             echo '<input type="text" class="edit docapproval-audience docapproval-token-source" data-allow-free-email="0" list="' . hsc($listId) . '" name="structdocapproval[acknowledge_spec]" value="' .
                 hsc($ackDefault) . '" placeholder="user or @group" />';
             echo '<span class="release-help">' . hsc($this->getLang('ack_publish_help')) . '</span>';
+            echo '<label class="release-due">' . hsc($this->getLang('ack_due_date')) .
+                ' <input type="date" class="edit docapproval-ack-due" name="structdocapproval[ack_due_date]" value="' .
+                hsc($ackDueDefault) . '" /></label>';
             echo '</div>';
 
             if ($suggestions) {

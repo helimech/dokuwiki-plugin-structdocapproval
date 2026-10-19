@@ -64,9 +64,18 @@ class helper_plugin_structdocapproval_publication extends Plugin
 
                 $group = substr($token, 1);
                 $members = $auth->retrieveUsers(0, 5000, ['grps' => $group]) ?: [];
+                $resolved = 0;
                 foreach ($members as $login => $data) {
                     if (is_int($login) && is_array($data) && isset($data['user'])) $login = $data['user'];
-                    if (is_string($login) && trim($login) !== '') $users[$login] = true;
+                    if (is_string($login) && trim($login) !== '') {
+                        $users[$login] = true;
+                        $resolved++;
+                    }
+                }
+                if ($resolved === 0) {
+                    throw new RuntimeException(
+                        sprintf($this->getLang('ack_group_empty'), $token)
+                    );
                 }
                 continue;
             }

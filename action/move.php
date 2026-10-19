@@ -194,8 +194,8 @@ class action_plugin_structdocapproval_move extends ActionPlugin
         // exist at the destination.
         $db->query(
             'INSERT OR IGNORE INTO struct_docapproval_publications ' .
-            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at) ' .
-            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at ' .
+            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at) ' .
+            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at ' .
             'FROM struct_docapproval_publications WHERE pid=?',
             [$new, $old]
         );
@@ -216,6 +216,11 @@ class action_plugin_structdocapproval_move extends ActionPlugin
             [$new, $old]
         );
         $db->query('DELETE FROM struct_docapproval_acknowledgements WHERE pid=?', [$old]);
+
+        $db->query(
+            'UPDATE struct_docapproval_reminders SET pid=? WHERE pid=?',
+            [$new, $old]
+        );
 
         // Exact page rules follow a page rename. Wildcard and regex rules stay where
         // they are and naturally resolve according to the destination namespace.

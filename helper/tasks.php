@@ -49,6 +49,15 @@ class helper_plugin_structdocapproval_tasks extends Plugin
         ];
     }
 
+    protected function pageTitle(string $pid): string
+    {
+        $title = '';
+        if (function_exists('p_get_first_heading')) {
+            $title = trim((string)p_get_first_heading($pid));
+        }
+        return $title !== '' ? $title : $pid;
+    }
+
     protected function getPendingAcknowledgements(string $user): array
     {
         /** @var helper_plugin_structdocapproval_publication $publication */
@@ -76,6 +85,7 @@ class helper_plugin_structdocapproval_tasks extends Plugin
 
             $out[] = [
                 'pid' => $pid,
+                'title' => $this->pageTitle($pid),
                 'publication_revision' => $publicationRevision,
                 'content_revision' => (int)$published->get('revision'),
                 'version' => (string)($snapshot['version'] ?? $row['version'] ?? ''),
@@ -123,6 +133,7 @@ class helper_plugin_structdocapproval_tasks extends Plugin
 
             $task = [
                 'pid' => $pid,
+                'title' => $this->pageTitle($pid),
                 'updated' => (string)($row['updated'] ?? ''),
                 'revision' => (int)($row['revision'] ?? 0),
                 'change_summary' => trim((string)($row['change_summary'] ?? '')),
@@ -188,6 +199,7 @@ class helper_plugin_structdocapproval_tasks extends Plugin
 
             $out[] = [
                 'pid' => $pid,
+                'title' => $this->pageTitle($pid),
                 'publication_revision' => (int)($row['publication_revision'] ?? 0),
                 'content_revision' => (int)($row['content_revision'] ?? 0),
                 'version' => (string)($row['version'] ?? ''),

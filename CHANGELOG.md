@@ -4,6 +4,23 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.13 management notifications and automatic reminders test — 2026-10-19
+
+- Added **Not Published** to Dashboard → Documents Workflow status. It live-filters every controlled page whose current workflow state is anything except Published.
+- Added manager/administrator workflow reminder controls in Documents → Details for **Awaiting Review**, **Awaiting Training Review**, and **Ready to Publish**.
+- Workflow reminders resolve the current frozen Reviewer or current Training/Publisher assignment, include the document title/status/state date/Change Summary/page link, and revalidate the workflow state before sending.
+- Added configurable automatic acknowledgement reminders:
+  - disabled by default;
+  - first automatic reminder is eligible on the first day after the snapshotted acknowledgement due date;
+  - repeat interval defaults to 7 days and is configurable;
+  - a manual reminder sent after the due date resets the automatic interval to avoid an immediate duplicate.
+- Added configurable acknowledgement-reminder CC recipients supporting DokuWiki users, @groups, and literal email addresses. The same CC list applies to manual and automatic acknowledgement reminders.
+- Automatic reminder sweeps are claimed once per local calendar day and run on the first normal wiki request after they become due. If the wiki receives no requests, the sweep waits until the next request rather than requiring a cron job.
+- Added audit differentiation between Manual and Automatic reminder batches plus the configured reminder CC snapshot.
+- Compliance Details and CSV now expose reminder type and CC information.
+- Added migration 6 for reminder type/CC evidence and the once-daily automatic-reminder run ledger.
+- **Database migration required:** 5 → 6.
+
 ## 0.12.12 acknowledgement attention test — 2026-10-19
 
 - Added database migration 5 with a snapshotted acknowledgement due date on each publication plus immutable manual-reminder audit rows.

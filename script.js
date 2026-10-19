@@ -609,6 +609,25 @@
         );
     }
 
+    function initAcknowledgementDueControls() {
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.docapproval-action-form'),
+            function (form) {
+                var checkbox = form.querySelector(
+                    'input[name="structdocapproval[acknowledge_enabled]"]'
+                );
+                var due = form.querySelector('.docapproval-ack-due');
+                if (!checkbox || !due) return;
+
+                function sync() {
+                    due.disabled = !checkbox.checked;
+                }
+                checkbox.addEventListener('change', sync);
+                sync();
+            }
+        );
+    }
+
     function init() {
         Array.prototype.forEach.call(
             document.querySelectorAll('.docapproval-token-source'),
@@ -617,6 +636,7 @@
         bindTransitionSummarySave();
         initDashboardDocumentTables();
         initComplianceExports();
+        initAcknowledgementDueControls();
     }
 
     if (document.readyState === 'loading') {

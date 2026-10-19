@@ -313,22 +313,37 @@ class helper_plugin_structdocapproval_publication extends Plugin
         $db = $this->db();
         if (!$db) return [];
 
-        $rows = $db->queryAll(
+        // Join requirements directly to each page's latest formal publication
+        // boundary. This avoids re-querying workflow history once per historical
+        // requirement merely to discard old releases.
+        return $db->queryAll(
             'SELECT r.pid,r.publication_revision,p.version,p.published_at,p.ack_due_at ' .
             'FROM struct_docapproval_requirements r ' .
-            'JOIN struct_docapproval_publications p ON p.pid=r.pid AND p.publication_revision=r.publication_revision ' .
-            'LEFT JOIN struct_docapproval_acknowledgements a ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
-            'WHERE r.user=? AND a.user IS NULL ORDER BY p.published_at DESC,r.pid',
-            [$user]
+            'JOIN struct_docapproval_publications p ' .
+                'ON p.pid=r.pid AND p.publication_revision=r.publication_revision ' .
+            'JOIN (' .
+                'SELECT d.pid,d.col5 AS publication_revision ' .
+                'FROM data_struct_docapproval d ' .
+                'JOIN (' .
+                    'SELECT pid,MAX(rid) AS max_rid ' .
+                    'FROM data_struct_docapproval ' .
+                    'WHERE col1=? AND (col2=? OR col2=? OR col2=?) ' .
+                    'GROUP BY pid' .
+                ') x ON x.pid=d.pid AND x.max_rid=d.rid' .
+            ') current_pub ' .
+                'ON current_pub.pid=r.pid AND current_pub.publication_revision=r.publication_revision ' .
+            'LEFT JOIN struct_docapproval_acknowledgements a ' .
+                'ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
+            'WHERE r.user=? AND a.user IS NULL ' .
+            'ORDER BY p.published_at DESC,r.pid',
+            [
+                Constants::STATUS_PUBLISHED,
+                Constants::ACTION_PUBLISH,
+                Constants::ACTION_INITIALIZE,
+                Constants::ACTION_ADMIN_OVERRIDE,
+                $user,
+            ]
         ) ?: [];
-
-        $out = [];
-        foreach ($rows as $row) {
-            $pid = cleanID((string)$row['pid']);
-            if ($this->getCurrentPublicationRevision($pid) !== (int)$row['publication_revision']) continue;
-            $out[] = $row;
-        }
-        return $out;
     }
 
     public function recordReminder(

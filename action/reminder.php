@@ -39,6 +39,12 @@ class action_plugin_structdocapproval_reminder extends ActionPlugin
                 throw new RuntimeException($this->getLang('reminder_denied'));
             }
 
+            /** @var helper_plugin_structdocapproval_db $dbHelper */
+            $dbHelper = plugin_load('helper', 'structdocapproval_db');
+            if (!$dbHelper || !$dbHelper->isControlled($pid)) {
+                throw new RuntimeException($this->getLang('reminder_not_current'));
+            }
+
             /** @var helper_plugin_structdocapproval_publication $publication */
             $publication = plugin_load('helper', 'structdocapproval_publication');
             if (!$publication) throw new RuntimeException('Publication helper is unavailable.');

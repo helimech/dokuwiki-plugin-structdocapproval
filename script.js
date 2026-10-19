@@ -330,6 +330,8 @@
             if (ignore !== 'ack' && ack !== 'all') {
                 if (ack === 'none_required') {
                     if (rowAck !== 'none' && rowAck !== 'not_required') return false;
+                } else if (ack === 'overdue') {
+                    if (String(row.dataset.docapprovalOverdue || '') !== '1') return false;
                 } else if (rowAck !== ack) {
                     return false;
                 }
@@ -383,7 +385,8 @@
                     awaiting_training: 0,
                     ready_to_publish: 0,
                     published: 0,
-                    ack_outstanding: 0
+                    ack_outstanding: 0,
+                    ack_overdue: 0
                 };
                 var rows = allRows();
 
@@ -402,10 +405,14 @@
                     // Outstanding acknowledgements are similarly faceted against
                     // all active filters except the acknowledgement-state filter.
                     if (rowMatches(row, 'ack')) {
-                        counts.ack_outstanding += parseInt(
+                        var outstanding = parseInt(
                             row.dataset.docapprovalAckOutstanding || '0',
                             10
                         ) || 0;
+                        counts.ack_outstanding += outstanding;
+                        if (String(row.dataset.docapprovalOverdue || '') === '1') {
+                            counts.ack_overdue += outstanding;
+                        }
                     }
                 }
 

@@ -145,8 +145,14 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 'required_users' => $requiredUsers,
                 'acknowledged_users' => $acknowledgedUsers,
                 'outstanding_users' => $outstandingUsers,
-                'reminder' => $reminderMap[$pid . '|' . $publicationRevision] ??
-                    ['batches' => 0, 'deliveries' => 0, 'last_sent_at' => 0, 'last_sent_by' => ''],
+                'reminder' => $reminderMap[$pid . '|' . $publicationRevision] ?? [
+                    'batches' => 0,
+                    'deliveries' => 0,
+                    'last_sent_at' => 0,
+                    'last_sent_by' => '',
+                    'last_type' => '',
+                    'last_cc_spec' => '',
+                ],
             ];
         }
 
@@ -164,7 +170,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
     protected function loadReminderSummaries($db): array
     {
         $rows = $db->queryAll(
-            'SELECT id,batch_id,pid,publication_revision,sent_by,sent_at ' .
+            'SELECT id,batch_id,pid,publication_revision,sent_by,sent_at,reminder_type,cc_spec ' .
             'FROM struct_docapproval_reminders ORDER BY sent_at DESC,id DESC'
         ) ?: [];
 
@@ -178,6 +184,8 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                     'deliveries' => 0,
                     'last_sent_at' => (int)$row['sent_at'],
                     'last_sent_by' => (string)$row['sent_by'],
+                    'last_type' => (string)($row['reminder_type'] ?? ''),
+                    'last_cc_spec' => (string)($row['cc_spec'] ?? ''),
                 ];
                 $batchSets[$key] = [];
             }

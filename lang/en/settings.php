@@ -6,6 +6,9 @@ $lang['compact_view'] = 'Use a more compact workflow banner';
 $lang['minor_edit_preserve_published'] = 'Allow minor edits by admins/publishers to remain Published instead of returning to Draft';
 $lang['admin_override_enable'] = 'Enable the administrator workflow override tool (administrators may still perform normal workflow actions when this is off)';
 $lang['ack_due_days'] = 'Default acknowledgement due period in days (0 = no default due date)';
+$lang['ack_auto_reminder_enable'] = 'Automatically remind outstanding users starting on the first day overdue';
+$lang['ack_auto_reminder_interval_days'] = 'Repeat automatic acknowledgement reminders every N days while still outstanding';
+$lang['ack_reminder_cc'] = 'Optional users, @groups, or email addresses to CC on acknowledgement reminder emails (comma separated)';
 
 $lang['ack_report_visibility'] = 'Who can see the on-page acknowledgement report';
 $lang['ack_report_visibility_o_off'] = 'Off';

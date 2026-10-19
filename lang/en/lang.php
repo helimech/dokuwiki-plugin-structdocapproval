@@ -180,6 +180,7 @@ $lang['ack_report_pending_heading'] = 'Users who still need to acknowledge';
 $lang['ack_report_none'] = 'None';
 $lang['ack_due_date'] = 'Acknowledgement due';
 $lang['ack_due_today'] = 'Due today';
+$lang['ack_due_past'] = 'Acknowledgement due date cannot be in the past.';
 $lang['ack_due_in_days'] = 'Due in %d days';
 $lang['ack_overdue_one_day'] = 'Overdue 1 day';
 $lang['ack_overdue_days'] = 'Overdue %d days';

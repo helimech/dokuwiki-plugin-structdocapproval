@@ -137,13 +137,15 @@ At Ready to Publish the Publisher sees:
 - **Send publication notification** — accepts DokuWiki users, `@groups`, and literal email addresses.
 - **Require acknowledgement** — accepts authenticated DokuWiki users and `@groups` only.
 - Both fields are prefilled from the page's Default Notify / Default Acknowledge assignment values, but the Publisher may change or disable them for that publication.
+- When **Require acknowledgement** is selected, **Acknowledgement due** is prefilled from the configurable default due period (14 days by default) and may be changed for that release. A blank due date means no deadline.
 - The publication fields use a token/chip autocomplete. After selecting one user/group the input remains available for the next recipient; comma or Enter also commits typed values.
 
 On Publish:
 
 - the selected Notify/Acknowledge specs are stored with the publication;
 - every Acknowledge user/group is resolved to individual user accounts and snapshotted as the required audience for that publication;
-- Acknowledge recipients receive an action-required email and automatically count as notified;
+- the selected acknowledgement due date is snapshotted with the publication;
+- Acknowledge recipients receive an action-required email including the due date when one is set, and automatically count as notified;
 - Notify-only recipients receive an informational publication email;
 - overlap is deduplicated so a person receives only the acknowledgement-required message;
 - the acknowledgement box appears at the bottom of the Published page only for users in that publication's requirement snapshot.
@@ -180,7 +182,7 @@ The recommended one-stop interface is the unified dashboard:
 ----
 ```
 
-Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement state and Change Summary into one operational table. It displays the page's human-readable first heading with the page ID retained underneath, and its page/title/namespace, workflow, assigned-user, and acknowledgement filters are live DataTables filters (no page reload). Workflow/acknowledgement summary cards are clickable filters, the table supports sorting plus 25 / 50 / 100 / All row paging with 50 rows by default, and State Since includes a neutral elapsed-age value.
+Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement/due state and Change Summary into one operational table. It displays the page's human-readable first heading with the page ID retained underneath, and its page/title/namespace, workflow, assigned-user, and acknowledgement filters are live DataTables filters (no page reload), including an **Overdue** acknowledgement filter. Workflow/acknowledgement summary cards are clickable filters, the table supports sorting plus 25 / 50 / 100 / All row paging with 50 rows by default, State Since includes a neutral elapsed-age value, and expanded Details includes the five most recent formal publication snapshots with acknowledgement completion.
 
 The individual report syntaxes remain supported for small embedded/special-purpose pages.
 
@@ -207,7 +209,7 @@ Manager/administrator **Compliance** dashboard:
 ----
 ```
 
-The compliance dashboard is restricted to DokuWiki managers/administrators. It defaults to the current formal publication for each controlled page and can switch to all historical publication snapshots. Filters include page/title/namespace, required user, compliance state, and Published date range. It shows aggregate Required/Acknowledged/Outstanding counts, per-publication completion and user details, publication age, and a per-user compliance rollup. **Export CSV** downloads the currently filtered report as audit-friendly one-row-per-required-user evidence, including acknowledgement timestamps. Historical publication evidence remains reportable even when a page is later moved out of DocApproval control.
+The compliance dashboard is restricted to DokuWiki managers/administrators. It defaults to the current formal publication for each controlled page and can switch to all historical publication snapshots. Filters include page/title/namespace, required user, compliance state (including **Overdue**), and Published date range. It shows aggregate Required/Acknowledged/Outstanding/Overdue counts, per-publication completion and user details, publication age, due state, reminder history, and a per-user compliance rollup. For a current controlled publication with outstanding users, managers can **Send Reminder** to only those still outstanding; each successful delivery is audit-recorded. **Export CSV** downloads the currently filtered report as audit-friendly one-row-per-required-user evidence, including due date, acknowledgement timestamps and reminder summary. Historical publication evidence remains reportable even when a page is later moved out of DocApproval control, but reminders cannot be sent for historical or uncontrolled releases.
 
 Workflow history with a searchable page/title autocomplete:
 

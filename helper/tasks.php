@@ -90,6 +90,7 @@ class helper_plugin_structdocapproval_tasks extends Plugin
                 'content_revision' => (int)$published->get('revision'),
                 'version' => (string)($snapshot['version'] ?? $row['version'] ?? ''),
                 'published_at' => (int)($snapshot['published_at'] ?? $row['published_at'] ?? 0),
+                'ack_due_at' => (int)($snapshot['ack_due_at'] ?? $row['ack_due_at'] ?? 0),
                 'change_summary' => (string)($snapshot['change_summary'] ?? ''),
             ];
         }

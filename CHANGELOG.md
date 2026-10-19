@@ -4,6 +4,17 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.10 reporting usability test — 2026-10-19
+
+- Added human-readable DokuWiki page titles throughout the unified Documents view, My Tasks, Compliance rows, and workflow History selector/headings while retaining the page ID underneath for unambiguous identification.
+- Page/title/namespace filters now match either the page ID or the page's first heading.
+- Added neutral age text to operational dates: workflow state age in Documents, queue age in My Tasks, and publication age in Compliance.
+- Renamed the unified Documents date column from **Waiting Since** to **State Since** because Draft and Published rows are not literally waiting for action.
+- Added **Export CSV** to Compliance. The export contains the currently filtered publication set and flattens acknowledgement evidence to one row per required user, including page ID/title, document version, publication/content revision, publisher, Change Summary, snapshotted acknowledgement audience, acknowledgement state, and acknowledgement timestamp.
+- Required-user filters are honored by the CSV export, so filtering to one person exports only that person's requirement rows.
+- Fixed the release-audience token helper's dormant recursive canonicalization bug and now canonicalizes an exact typed full-name match back to the stored login before submission.
+- No database migration is required.
+
 ## 0.12.9 live dashboard table test — 2026-10-16
 
 - Converted the unified Dashboard → Documents controls to live client-side DataTables filtering; changing filters no longer reloads the wiki page.

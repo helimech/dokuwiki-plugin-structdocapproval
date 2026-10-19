@@ -155,6 +155,32 @@ class helper_plugin_structdocapproval_publication extends Plugin
         }
     }
 
+    public function removeAudience(string $pid, int $publicationRevision): void
+    {
+        $db = $this->db();
+        if (!$db || !$publicationRevision) return;
+
+        $pid = cleanID($pid);
+        $pdo = $db->getPdo();
+        $started = !$pdo->inTransaction();
+        if ($started) $pdo->beginTransaction();
+
+        try {
+            $db->query(
+                'DELETE FROM struct_docapproval_requirements WHERE pid=? AND publication_revision=?',
+                [$pid, $publicationRevision]
+            );
+            $db->query(
+                'DELETE FROM struct_docapproval_publications WHERE pid=? AND publication_revision=?',
+                [$pid, $publicationRevision]
+            );
+            if ($started) $pdo->commit();
+        } catch (Throwable $e) {
+            if ($started && $pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public function getSnapshot(string $pid, int $publicationRevision): ?array
     {
         $db = $this->db();

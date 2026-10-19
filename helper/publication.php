@@ -224,8 +224,11 @@ class helper_plugin_structdocapproval_publication extends Plugin
         );
     }
 
-    public function getComplianceForPage(string $pid, ?int $publicationRevision = null): ?array
-    {
+    public function getComplianceForPage(
+        string $pid,
+        ?int $publicationRevision = null,
+        ?array $snapshot = null
+    ): ?array {
         $db = $this->db();
         if (!$db) return null;
 
@@ -235,7 +238,11 @@ class helper_plugin_structdocapproval_publication extends Plugin
         }
         if (!$publicationRevision) return null;
 
-        $snapshot = $this->getSnapshot($pid, $publicationRevision);
+        // Callers already iterating immutable publication rows may pass that row
+        // through and avoid a duplicate SELECT for every document.
+        if ($snapshot === null) {
+            $snapshot = $this->getSnapshot($pid, $publicationRevision);
+        }
         if (!$snapshot) return null;
 
         $required = $this->getRequiredUsers($pid, $publicationRevision);

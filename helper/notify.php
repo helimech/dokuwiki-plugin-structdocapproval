@@ -296,11 +296,27 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $snapshot = $publication->getSnapshot($pid, $publicationRevision);
         if (!$snapshot) throw new RuntimeException('Publication snapshot is unavailable.');
 
+        // Revalidate immediately before constructing the mail. Dashboard/automatic
+        // reminder candidate lists can become stale if somebody acknowledges between
+        // the report/sweep query and the send.
+        $compliance = $publication->getComplianceForPage($pid, $publicationRevision);
+        $outstandingSet = array_fill_keys(
+            $compliance ? (array)$compliance['outstanding_users'] : [],
+            true
+        );
+        $users = array_values(array_filter(
+            array_unique(array_filter(array_map('trim', $users))),
+            static function ($user) use ($outstandingSet) {
+                return isset($outstandingSet[$user]);
+            }
+        ));
+        if (!$users) throw new RuntimeException($this->getLang('reminder_none_outstanding'));
+
         /** @var AuthPlugin $auth */
         global $auth;
         $deliveries = [];
         $emails = [];
-        foreach (array_values(array_unique(array_filter(array_map('trim', $users)))) as $user) {
+        foreach ($users as $user) {
             $data = $auth ? $auth->getUserData($user) : false;
             $email = $data ? trim((string)($data['mail'] ?? '')) : '';
             if ($email === '') continue;

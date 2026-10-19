@@ -39,17 +39,21 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         if ($INPUT->str('docapproval_dash_view') === 'history') {
             $html .= '<input type="hidden" name="docapproval_dash_view" value="history" />';
         }
-        $html .= '<label>' . hsc($this->getLang('select_page')) . ' <select name="docapproval_history_page">';
-        $html .= '<option value="">' . hsc($this->getLang('select_page_prompt')) . '</option>';
+        $html .= '<label>' . hsc($this->getLang('select_page')) . ' ';
+        $html .= '<input type="search" class="edit docapproval-history-page-picker" ' .
+            'name="docapproval_history_page" list="docapproval-history-pages" ' .
+            'value="' . hsc($selected) . '" placeholder="' .
+            hsc($this->getLang('select_page_prompt')) . '" autocomplete="off" /></label>';
+        $html .= '<datalist id="docapproval-history-pages">';
         foreach ($pages as $row) {
             $pid = $row['pid'];
             if (auth_quickaclcheck($pid) < AUTH_READ || !$dbHelper->canViewWorking($pid)) continue;
-            $sel = $pid === $selected ? ' selected' : '';
             $title = $this->pageTitle($pid);
             $label = $title !== $pid ? $title . ' — ' . $pid : $pid;
-            $html .= '<option value="' . hsc($pid) . '"' . $sel . '>' . hsc($label) . '</option>';
+            $html .= '<option value="' . hsc($pid) . '" label="' . hsc($label) . '"></option>';
         }
-        $html .= '</select></label> <button type="submit">' . hsc($this->getLang('show_history')) . '</button></form>';
+        $html .= '</datalist>';
+        $html .= ' <button type="submit">' . hsc($this->getLang('show_history')) . '</button></form>';
 
         if ($selected !== '') {
             if (auth_quickaclcheck($selected) < AUTH_READ || !$dbHelper->canViewWorking($selected)) {

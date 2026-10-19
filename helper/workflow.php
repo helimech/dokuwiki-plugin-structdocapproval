@@ -203,6 +203,15 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         // the document remains Ready to Publish instead of becoming Published without
         // its compliance boundary. If the workflow save itself fails, remove the
         // pre-staged snapshot as compensation.
+        $publish = null;
+        if ($next->get('status') === Constants::STATUS_PUBLISHED) {
+            /** @var helper_plugin_structdocapproval_publish $publish */
+            $publish = plugin_load('helper', 'structdocapproval_publish');
+            if (!$publish) {
+                throw new RuntimeException('Struct publication helper is unavailable.');
+            }
+        }
+
         $publication = null;
         $audienceStaged = false;
         if ($action === Constants::ACTION_PUBLISH) {
@@ -230,9 +239,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         }
 
         if ($next->get('status') === Constants::STATUS_PUBLISHED) {
-            /** @var helper_plugin_structdocapproval_publish $publish */
-            $publish = plugin_load('helper', 'structdocapproval_publish');
-            if ($publish) $publish->publishStructData($pid, (int)$next->get('revision'));
+            $publish->publishStructData($pid, (int)$next->get('revision'));
         }
 
         $eventData = ['pid' => $pid, 'action' => $action, 'record' => $next, 'previous' => $current];

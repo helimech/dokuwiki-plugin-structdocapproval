@@ -108,6 +108,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $html .= '<select name="docapproval_comp_status">';
         $html .= $this->option('all', $this->getLang('compliance_status_all'), $filters['status']);
         $html .= $this->option('outstanding', $this->getLang('compliance_status_outstanding'), $filters['status']);
+        $html .= $this->option('overdue', $this->getLang('compliance_status_overdue'), $filters['status']);
         $html .= $this->option('complete', $this->getLang('compliance_status_complete'), $filters['status']);
         $html .= $this->option('not_required', $this->getLang('compliance_status_not_required'), $filters['status']);
         $html .= '</select></label>';
@@ -146,6 +147,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $html .= $this->countCard((int)$totals['required'], $this->getLang('ack_required_count'));
         $html .= $this->countCard((int)$totals['acknowledged'], $this->getLang('ack_complete_count'));
         $html .= $this->countCard((int)$totals['outstanding'], $this->getLang('ack_outstanding_count'));
+        $html .= $this->countCard((int)($totals['overdue'] ?? 0), $this->getLang('compliance_overdue'));
         $html .= $this->countCard($percent, $this->getLang('compliance_completion'));
         $html .= '</div>';
         return $html;
@@ -168,7 +170,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
         $html .= '<div class="docapproval-compliance-tablewrap"><table class="inline">';
         $html .= '<thead><tr>';
-        foreach (['page','version','compliance_published','ack_required_count','ack_complete_count','ack_outstanding_count','compliance_completion','change_summary','compliance_details'] as $key) {
+        foreach (['page','version','compliance_published','ack_due_date','ack_required_count','ack_complete_count','ack_outstanding_count','compliance_completion','change_summary','compliance_details'] as $key) {
             $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
@@ -198,6 +200,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 $html .= '<small class="docapproval-age">' . hsc($publishedAge) . '</small>';
             }
             $html .= '</td>';
+            $html .= '<td>' . $this->renderDueStatus((int)($row['ack_due_at'] ?? 0), $outstanding) . '</td>';
             $html .= '<td>' . $required . '</td>';
             $html .= '<td>' . $complete . '</td>';
             $html .= '<td>' . $outstanding . '</td>';
@@ -222,6 +225,20 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         }
         $html .= '<p><strong>' . hsc($this->getLang('release_acknowledge')) . ':</strong> ' .
             ($row['acknowledge_spec'] !== '' ? hsc((string)$row['acknowledge_spec']) : '—') . '</p>';
+        if (!empty($row['ack_due_at'])) {
+            $html .= '<p><strong>' . hsc($this->getLang('ack_due_date')) . ':</strong> ' .
+                $this->renderDueStatus((int)$row['ack_due_at'], count($row['outstanding_users'])) . '</p>';
+        }
+        $reminder = (array)($row['reminder'] ?? []);
+        if (!empty($reminder['last_sent_at'])) {
+            $html .= '<p><strong>' . hsc($this->getLang('reminder_last_sent')) . ':</strong> ' .
+                hsc($this->formatTimestamp((int)$reminder['last_sent_at']));
+            if (!empty($reminder['last_sent_by'])) {
+                $html .= ' — ' . $this->renderUser($publication, (string)$reminder['last_sent_by']);
+            }
+            $html .= ' (' . (int)($reminder['batches'] ?? 0) . ' ' .
+                hsc($this->getLang('reminder_batches')) . ')</p>';
+        }
 
         $html .= '<div class="docapproval-compliance-detail-grid">';
         $html .= '<div><strong>' . hsc($this->getLang('ack_report_acknowledged_heading')) . '</strong>';
@@ -248,8 +265,87 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
             }
             $html .= '</ul>';
         }
-        $html .= '</div></div></div></details>';
+        $html .= '</div></div>';
+
+        if (
+            !empty($row['is_current']) &&
+            !empty($row['outstanding_users']) &&
+            $this->getConf('email_enable')
+        ) {
+            $html .= $this->renderReminderForm($row);
+        }
+
+        $html .= '</div></details>';
         return $html;
+    }
+
+    protected function renderReminderForm(array $row): string
+    {
+        global $INPUT;
+
+        $html = '<form method="post" class="docapproval-reminder-form">';
+        $html .= '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
+        $html .= '<input type="hidden" name="structdocapproval_reminder[action]" value="send" />';
+        $html .= '<input type="hidden" name="structdocapproval_reminder[pid]" value="' .
+            hsc((string)$row['pid']) . '" />';
+        $html .= '<input type="hidden" name="structdocapproval_reminder[publication_revision]" value="' .
+            (int)$row['publication_revision'] . '" />';
+
+        if ($INPUT->str('docapproval_dash_view') === 'compliance') {
+            $html .= '<input type="hidden" name="structdocapproval_reminder[return_dashboard]" value="1" />';
+        }
+
+        $returns = [
+            'return_scope' => $INPUT->str('docapproval_comp_scope'),
+            'return_page' => $INPUT->str('docapproval_comp_page'),
+            'return_user' => $INPUT->str('docapproval_comp_user'),
+            'return_status' => $INPUT->str('docapproval_comp_status'),
+            'return_from' => $INPUT->str('docapproval_comp_from'),
+            'return_to' => $INPUT->str('docapproval_comp_to'),
+        ];
+        foreach ($returns as $name => $value) {
+            if ($value === '') continue;
+            $html .= '<input type="hidden" name="structdocapproval_reminder[' . hsc($name) .
+                ']" value="' . hsc($value) . '" />';
+        }
+
+        $html .= '<button type="submit" class="docapproval-reminder-button">' .
+            hsc(sprintf(
+                $this->getLang('reminder_send'),
+                count((array)$row['outstanding_users'])
+            )) . '</button>';
+        $html .= '</form>';
+        return $html;
+    }
+
+    protected function renderDueStatus(int $dueAt, int $outstanding): string
+    {
+        if ($dueAt <= 0) return '—';
+
+        $todayEnd = strtotime(date('Y-m-d') . ' 23:59:59');
+        $dueDay = strtotime(date('Y-m-d', $dueAt) . ' 23:59:59');
+        $days = (int)floor(($dueDay - $todayEnd) / 86400);
+
+        if ($outstanding <= 0) {
+            return '<span class="docapproval-due complete">' . hsc(date('Y-m-d', $dueAt)) . '</span>';
+        }
+        if ($days < 0) {
+            $abs = abs($days);
+            $label = sprintf(
+                $this->getLang($abs === 1 ? 'ack_overdue_one_day' : 'ack_overdue_days'),
+                $abs
+            );
+            $class = 'overdue';
+        } elseif ($days === 0) {
+            $label = $this->getLang('ack_due_today');
+            $class = 'today';
+        } else {
+            $label = sprintf($this->getLang('ack_due_in_days'), $days);
+            $class = 'future';
+        }
+
+        return '<span class="docapproval-due ' . hsc($class) . '">' .
+            hsc(date('Y-m-d', $dueAt)) . '<small>' . hsc($label) . '</small></span>';
     }
 
     protected function renderUser(helper_plugin_structdocapproval_publication $publication, string $user): string
@@ -272,6 +368,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 'publication_revision' => (int)$row['publication_revision'],
                 'content_revision' => (int)$row['content_revision'],
                 'published_at' => $this->formatTimestamp((int)$row['published_at']),
+                'ack_due_at' => !empty($row['ack_due_at']) ? date('Y-m-d', (int)$row['ack_due_at']) : '',
                 'published_by' => (string)$row['published_by'],
                 'published_by_name' => $row['published_by'] !== ''
                     ? $publication->getUserDisplayName((string)$row['published_by'])
@@ -279,6 +376,11 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 'current' => !empty($row['is_current']) ? 'Yes' : 'No',
                 'change_summary' => (string)$row['change_summary'],
                 'acknowledge_audience' => (string)$row['acknowledge_spec'],
+                'reminder_batches' => (int)($row['reminder']['batches'] ?? 0),
+                'last_reminder_at' => !empty($row['reminder']['last_sent_at'])
+                    ? $this->formatTimestamp((int)$row['reminder']['last_sent_at'])
+                    : '',
+                'last_reminder_by' => (string)($row['reminder']['last_sent_by'] ?? ''),
             ];
 
             $requiredUsers = (array)$row['required_users'];
@@ -337,7 +439,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
         $html .= '<div class="docapproval-compliance-tablewrap"><table class="inline">';
         $html .= '<thead><tr>';
-        foreach (['compliance_user','ack_required_count','ack_complete_count','ack_outstanding_count','compliance_completion'] as $key) {
+        foreach (['compliance_user','ack_required_count','ack_complete_count','ack_outstanding_count','compliance_overdue','compliance_completion'] as $key) {
             $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
@@ -348,6 +450,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
             $html .= '<td>' . (int)$row['required'] . '</td>';
             $html .= '<td>' . (int)$row['acknowledged'] . '</td>';
             $html .= '<td>' . (int)$row['outstanding'] . '</td>';
+            $html .= '<td>' . (int)($row['overdue'] ?? 0) . '</td>';
             $html .= '<td>' . hsc($this->percent((int)$row['acknowledged'], (int)$row['required'])) . '</td>';
             $html .= '</tr>';
         }

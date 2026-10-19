@@ -319,7 +319,9 @@ class helper_plugin_structdocapproval_publication extends Plugin
         string $pid,
         int $publicationRevision,
         array $deliveries,
-        string $sentBy
+        string $sentBy,
+        string $reminderType = 'manual',
+        string $ccSpec = ''
     ): string {
         $db = $this->db();
         if (!$db) throw new RuntimeException('DocApproval database is unavailable.');
@@ -344,9 +346,19 @@ class helper_plugin_structdocapproval_publication extends Plugin
                 if ($user === '' || $email === '') continue;
                 $db->query(
                     'INSERT INTO struct_docapproval_reminders ' .
-                    '(batch_id,pid,publication_revision,user,email,sent_by,sent_at) ' .
-                    'VALUES (?,?,?,?,?,?,?)',
-                    [$batchId, $pid, $publicationRevision, $user, $email, $sentBy, $sentAt]
+                    '(batch_id,pid,publication_revision,user,email,sent_by,sent_at,reminder_type,cc_spec) ' .
+                    'VALUES (?,?,?,?,?,?,?,?,?)',
+                    [
+                        $batchId,
+                        $pid,
+                        $publicationRevision,
+                        $user,
+                        $email,
+                        $sentBy,
+                        $sentAt,
+                        $reminderType === 'auto' ? 'auto' : 'manual',
+                        $ccSpec,
+                    ]
                 );
             }
             if ($started) $pdo->commit();
@@ -356,6 +368,99 @@ class helper_plugin_structdocapproval_publication extends Plugin
         }
 
         return $batchId;
+    }
+
+    public function claimAutomaticReminderRun(): array
+    {
+        $db = $this->db();
+        if (!$db) return ['', ''];
+
+        $runDate = date('Y-m-d');
+        try {
+            $token = bin2hex(random_bytes(8));
+        } catch (Throwable $e) {
+            $token = substr(sha1(uniqid('', true)), 0, 16);
+        }
+        $startedAt = time();
+
+        $db->query(
+            'INSERT OR IGNORE INTO struct_docapproval_auto_reminder_runs ' .
+            '(run_date,token,started_at,finished_at,status,detail) VALUES (?,?,?,?,?,?)',
+            [$runDate, $token, $startedAt, 0, 'running', '']
+        );
+
+        $rows = $db->queryAll(
+            'SELECT token FROM struct_docapproval_auto_reminder_runs WHERE run_date=? LIMIT 1',
+            [$runDate]
+        ) ?: [];
+        if (!$rows || (string)$rows[0]['token'] !== $token) return ['', $runDate];
+
+        return [$token, $runDate];
+    }
+
+    public function finishAutomaticReminderRun(
+        string $runDate,
+        string $token,
+        string $status,
+        string $detail = ''
+    ): void {
+        $db = $this->db();
+        if (!$db || $runDate === '' || $token === '') return;
+
+        $db->query(
+            'UPDATE struct_docapproval_auto_reminder_runs ' .
+            'SET finished_at=?,status=?,detail=? WHERE run_date=? AND token=?',
+            [time(), $status, $detail, $runDate, $token]
+        );
+    }
+
+    public function getAutomaticReminderCandidates(int $intervalDays): array
+    {
+        $db = $this->db();
+        if (!$db) return [];
+
+        /** @var helper_plugin_structdocapproval_db $dbHelper */
+        $dbHelper = plugin_load('helper', 'structdocapproval_db');
+        if (!$dbHelper) return [];
+
+        $intervalDays = max(1, $intervalDays);
+        $now = time();
+        $intervalSeconds = $intervalDays * 86400;
+
+        $rows = $db->queryAll(
+            'SELECT pid,publication_revision,ack_due_at FROM struct_docapproval_publications ' .
+            'WHERE ack_due_at>0 AND ack_due_at<? ORDER BY ack_due_at ASC,pid ASC',
+            [$now]
+        ) ?: [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            $publicationRevision = (int)($row['publication_revision'] ?? 0);
+            if ($pid === '' || !$publicationRevision) continue;
+            if (!$dbHelper->isControlled($pid)) continue;
+            if ($this->getCurrentPublicationRevision($pid) !== $publicationRevision) continue;
+
+            $compliance = $this->getComplianceForPage($pid, $publicationRevision);
+            if (!$compliance || empty($compliance['outstanding_users'])) continue;
+
+            $lastAuto = (int)$db->queryValue(
+                'SELECT COALESCE(MAX(sent_at),0) FROM struct_docapproval_reminders ' .
+                'WHERE pid=? AND publication_revision=? AND reminder_type=?',
+                [$pid, $publicationRevision, 'auto']
+            );
+            if ($lastAuto > 0 && ($now - $lastAuto) < $intervalSeconds) continue;
+
+            $out[] = [
+                'pid' => $pid,
+                'publication_revision' => $publicationRevision,
+                'ack_due_at' => (int)$row['ack_due_at'],
+                'outstanding_users' => (array)$compliance['outstanding_users'],
+                'last_auto_reminder_at' => $lastAuto,
+            ];
+        }
+
+        return $out;
     }
 
     public function getReminderSummary(string $pid, int $publicationRevision): array

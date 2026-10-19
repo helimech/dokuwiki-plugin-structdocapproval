@@ -170,6 +170,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         $html .= '<label>' . hsc($this->getLang('dashboard_workflow_filter'));
         $html .= '<select class="docapproval-dashboard-status-filter">';
         $html .= $this->option('all', $this->getLang('dashboard_all_statuses'), 'all');
+        $html .= $this->option('not_published', $this->getLang('dashboard_not_published'), 'all');
         foreach (Constants::statuses() as $status) {
             $html .= $this->option($status, $this->getLang('status_' . $status), 'all');
         }
@@ -429,6 +430,11 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         }
         $html .= '</div></div>';
 
+        $workflowReminder = $this->renderWorkflowReminderForm($dashboardPage, $row);
+        if ($workflowReminder !== '') {
+            $html .= $workflowReminder;
+        }
+
         if (!empty($row['publication_history'])) {
             $html .= '<div class="docapproval-dashboard-publication-history">';
             $html .= '<strong>' . hsc($this->getLang('dashboard_recent_publications')) . '</strong>';
@@ -471,6 +477,34 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             hsc($this->getLang('view_history')) . '</a>';
         $html .= '</p></div></details>';
 
+        return $html;
+    }
+
+    protected function renderWorkflowReminderForm(string $dashboardPage, array $row): string
+    {
+        if (!$this->getConf('email_enable')) return '';
+
+        $status = (string)($row['status'] ?? '');
+        $labels = [
+            Constants::STATUS_AWAITING_REVIEW => 'workflow_reminder_review',
+            Constants::STATUS_AWAITING_TRAINING => 'workflow_reminder_training',
+            Constants::STATUS_READY_TO_PUBLISH => 'workflow_reminder_publish',
+        ];
+        if (!isset($labels[$status])) return '';
+
+        $html = '<form method="post" class="docapproval-workflow-reminder-form">';
+        $html .= '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
+        $html .= '<input type="hidden" name="structdocapproval_workflow_reminder[action]" value="send" />';
+        $html .= '<input type="hidden" name="structdocapproval_workflow_reminder[pid]" value="' .
+            hsc((string)$row['pid']) . '" />';
+        $html .= '<input type="hidden" name="structdocapproval_workflow_reminder[status]" value="' .
+            hsc($status) . '" />';
+        $html .= '<input type="hidden" name="structdocapproval_workflow_reminder[return_page]" value="' .
+            hsc($dashboardPage) . '" />';
+        $html .= '<button type="submit" class="docapproval-workflow-reminder-button" data-confirm="' .
+            hsc($this->getLang('workflow_reminder_confirm')) . '">' .
+            hsc($this->getLang($labels[$status])) . '</button>';
+        $html .= '</form>';
         return $html;
     }
 

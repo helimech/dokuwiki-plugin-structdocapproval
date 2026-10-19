@@ -114,9 +114,14 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
             $url = wl($pid, ['rev' => $revision]);
 
             $html .= '<tr>';
-            $html .= '<td><a href="' . hsc($url) . '">' . hsc($pid) . '</a></td>';
+            $html .= '<td>' . $this->renderPageLink($url, $pid, (string)($row['title'] ?? $pid)) . '</td>';
             $html .= '<td>' . hsc($version) . '</td>';
-            $html .= '<td>' . hsc($this->formatTimestamp((int)$row['published_at'])) . '</td>';
+            $html .= '<td>' . hsc($this->formatTimestamp((int)$row['published_at']));
+            $publishedAge = $this->formatAge((int)$row['published_at']);
+            if ($publishedAge !== '') {
+                $html .= '<small class="docapproval-age">' . hsc($publishedAge) . '</small>';
+            }
+            $html .= '</td>';
             $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
             $html .= '<td><a href="' . hsc($url) . '">' . hsc($this->getLang('my_open_ack')) . '</a></td>';
             $html .= '</tr>';
@@ -147,8 +152,13 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
             $pid = (string)$row['pid'];
             $url = wl($pid);
             $html .= '<tr>';
-            $html .= '<td><a href="' . hsc($url) . '">' . hsc($pid) . '</a></td>';
-            $html .= '<td>' . hsc($this->formatIsoDate((string)$row['updated'])) . '</td>';
+            $html .= '<td>' . $this->renderPageLink($url, $pid, (string)($row['title'] ?? $pid)) . '</td>';
+            $html .= '<td>' . hsc($this->formatIsoDate((string)$row['updated']));
+            $waitingAge = $this->formatAgeFromIso((string)$row['updated']);
+            if ($waitingAge !== '') {
+                $html .= '<small class="docapproval-age">' . hsc($waitingAge) . '</small>';
+            }
+            $html .= '</td>';
             $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
             $html .= '<td><a href="' . hsc($url) . '">' . hsc($openLabel) . '</a></td>';
             $html .= '</tr>';
@@ -179,7 +189,7 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
             if ($version === '') $version = $this->getLang('version_unset');
 
             $html .= '<tr>';
-            $html .= '<td><a href="' . hsc($url) . '">' . hsc($pid) . '</a></td>';
+            $html .= '<td>' . $this->renderPageLink($url, $pid, (string)($row['title'] ?? $pid)) . '</td>';
             $html .= '<td>' . hsc($version) . '</td>';
             $html .= '<td>' . hsc($this->formatTimestamp((int)$row['acknowledged_at'])) . '</td>';
             $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
@@ -188,6 +198,43 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
         }
 
         return $html . '</tbody></table></div></details>';
+    }
+
+    protected function renderPageLink(string $url, string $pid, string $title): string
+    {
+        $title = trim($title);
+        if ($title === '') $title = $pid;
+
+        $html = '<a href="' . hsc($url) . '">' . hsc($title) . '</a>';
+        if ($title !== $pid) {
+            $html .= '<small class="docapproval-page-id">' . hsc($pid) . '</small>';
+        }
+        return $html;
+    }
+
+    protected function formatAgeFromIso(string $iso): string
+    {
+        if ($iso === '') return '';
+        $timestamp = strtotime($iso);
+        return $timestamp ? $this->formatAge($timestamp) : '';
+    }
+
+    protected function formatAge(int $timestamp): string
+    {
+        if ($timestamp <= 0) return '';
+        $seconds = max(0, time() - $timestamp);
+
+        if ($seconds < 3600) {
+            $minutes = max(1, (int)floor($seconds / 60));
+            return sprintf($this->getLang($minutes === 1 ? 'age_minute' : 'age_minutes'), $minutes);
+        }
+        if ($seconds < 86400) {
+            $hours = max(1, (int)floor($seconds / 3600));
+            return sprintf($this->getLang($hours === 1 ? 'age_hour' : 'age_hours'), $hours);
+        }
+
+        $days = max(1, (int)floor($seconds / 86400));
+        return sprintf($this->getLang($days === 1 ? 'age_day' : 'age_days'), $days);
     }
 
     protected function renderSummary(string $summary): string

@@ -215,6 +215,14 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
         $html .= '<div class="ack-title"><strong>' . hsc($this->getLang('ack_required_title')) . '</strong></div>';
         $html .= '<p>' . hsc(sprintf($this->getLang('ack_required_context'), $version, $publishedAt)) . '</p>';
 
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        $snapshot = $publication ? $publication->getSnapshot($pid, $requirementRevision) : null;
+        $dueAt = (int)($snapshot['ack_due_at'] ?? 0);
+        if ($dueAt > 0) {
+            $html .= '<p class="ack-due-context">' . $this->renderDueStatus($dueAt) . '</p>';
+        }
+
         if ($previous && (int)$previous['content_revision'] < $revision) {
             $diff = wl($pid, [
                 'do' => 'diff',
@@ -246,6 +254,32 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
             '<div class="ack-title"><strong>' . hsc($this->getLang('ack_complete_title')) . '</strong></div>' .
             '<p>' . hsc(sprintf($this->getLang('ack_complete_context'), $version, $date)) . '</p>' .
             '</div>';
+    }
+
+    protected function renderDueStatus(int $dueAt): string
+    {
+        $todayEnd = strtotime(date('Y-m-d') . ' 23:59:59');
+        $dueDay = strtotime(date('Y-m-d', $dueAt) . ' 23:59:59');
+        $days = (int)floor(($dueDay - $todayEnd) / 86400);
+
+        if ($days < 0) {
+            $abs = abs($days);
+            $label = sprintf(
+                $this->getLang($abs === 1 ? 'ack_overdue_one_day' : 'ack_overdue_days'),
+                $abs
+            );
+            $class = 'overdue';
+        } elseif ($days === 0) {
+            $label = $this->getLang('ack_due_today');
+            $class = 'today';
+        } else {
+            $label = sprintf($this->getLang('ack_due_in_days'), $days);
+            $class = 'future';
+        }
+
+        return '<span class="docapproval-due ' . hsc($class) . '"><strong>' .
+            hsc($this->getLang('ack_due_date')) . ':</strong> ' .
+            hsc(date('Y-m-d', $dueAt)) . ' — ' . hsc($label) . '</span>';
     }
 
     protected function formatDate(string $iso): string

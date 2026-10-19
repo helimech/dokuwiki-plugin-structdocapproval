@@ -609,6 +609,23 @@
         );
     }
 
+    function initReminderConfirmations() {
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.docapproval-reminder-form'),
+            function (form) {
+                if (form.dataset.docapprovalReminderBound === '1') return;
+                form.dataset.docapprovalReminderBound = '1';
+                form.addEventListener('submit', function (event) {
+                    var button = form.querySelector('.docapproval-reminder-button');
+                    var message = button ? (button.getAttribute('data-confirm') || '') : '';
+                    if (message && !window.confirm(message)) {
+                        event.preventDefault();
+                    }
+                });
+            }
+        );
+    }
+
     function initAcknowledgementDueControls() {
         Array.prototype.forEach.call(
             document.querySelectorAll('.docapproval-action-form'),
@@ -637,6 +654,7 @@
         initDashboardDocumentTables();
         initComplianceExports();
         initAcknowledgementDueControls();
+        initReminderConfirmations();
     }
 
     if (document.readyState === 'loading') {

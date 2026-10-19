@@ -243,8 +243,67 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
 
     public function getOverview(): array
     {
-        $report = $this->getDocuments([]);
-        return $report['counts'];
+        $db = $this->db();
+        if (!$db) return $this->emptyCounts();
+
+        // Keep the tab badges cheap. The previous implementation built the complete
+        // Documents dataset (titles, publication snapshots, compliance users and
+        // five-release history) just to obtain two counts, and then Documents built
+        // the same dataset again. With hundreds of controlled pages that was the
+        // dominant dashboard cost on every tab.
+        $counts = $this->emptyCounts();
+        $rows = $db->queryAll(
+            'SELECT d.pid,d.col1 AS status ' .
+            'FROM data_struct_docapproval d ' .
+            'JOIN struct_docapproval_pages p ON p.pid=d.pid ' .
+            'WHERE d.latest=1 AND p.controlled=1'
+        ) ?: [];
+
+        foreach ($rows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if ($pid === '' || auth_quickaclcheck($pid) < AUTH_READ) continue;
+            $counts['documents']++;
+            $status = (string)($row['status'] ?? '');
+            if (array_key_exists($status, $counts)) $counts[$status]++;
+        }
+
+        $ackRows = $db->queryAll(
+            'SELECT b.pid,' .
+            'COUNT(DISTINCT r.user) AS required_count,' .
+            'COUNT(DISTINCT a.user) AS acknowledged_count ' .
+            'FROM (' .
+                'SELECT d.pid,d.col5 AS publication_revision ' .
+                'FROM data_struct_docapproval d ' .
+                'JOIN (' .
+                    'SELECT pid,MAX(rid) AS max_rid ' .
+                    'FROM data_struct_docapproval ' .
+                    'WHERE col1=? AND (col2=? OR col2=? OR col2=?) ' .
+                    'GROUP BY pid' .
+                ') x ON x.pid=d.pid AND x.max_rid=d.rid ' .
+                'JOIN struct_docapproval_pages p ON p.pid=d.pid AND p.controlled=1' .
+            ') b ' .
+            'LEFT JOIN struct_docapproval_requirements r ' .
+                'ON r.pid=b.pid AND r.publication_revision=b.publication_revision ' .
+            'LEFT JOIN struct_docapproval_acknowledgements a ' .
+                'ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
+            'GROUP BY b.pid',
+            [
+                Constants::STATUS_PUBLISHED,
+                Constants::ACTION_PUBLISH,
+                Constants::ACTION_INITIALIZE,
+                Constants::ACTION_ADMIN_OVERRIDE,
+            ]
+        ) ?: [];
+
+        foreach ($ackRows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if ($pid === '' || auth_quickaclcheck($pid) < AUTH_READ) continue;
+            $required = (int)($row['required_count'] ?? 0);
+            $acknowledged = (int)($row['acknowledged_count'] ?? 0);
+            $counts['ack_outstanding'] += max(0, $required - $acknowledged);
+        }
+
+        return $counts;
     }
 
     public function getAssigneeSuggestions(): array

@@ -45,7 +45,9 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
             $pid = $row['pid'];
             if (auth_quickaclcheck($pid) < AUTH_READ || !$dbHelper->canViewWorking($pid)) continue;
             $sel = $pid === $selected ? ' selected' : '';
-            $html .= '<option value="' . hsc($pid) . '"' . $sel . '>' . hsc($pid) . '</option>';
+            $title = $this->pageTitle($pid);
+            $label = $title !== $pid ? $title . ' — ' . $pid : $pid;
+            $html .= '<option value="' . hsc($pid) . '"' . $sel . '>' . hsc($label) . '</option>';
         }
         $html .= '</select></label> <button type="submit">' . hsc($this->getLang('show_history')) . '</button></form>';
 
@@ -54,7 +56,12 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
                 $html .= '<p class="docapproval-warning">' . hsc($this->getLang('history_denied')) . '</p>';
             } else {
                 $rows = $db->queryAll('SELECT * FROM data_struct_docapproval WHERE pid=? ORDER BY rid ASC', [$selected]) ?: [];
-                $html .= '<h3><a href="' . hsc(wl($selected)) . '">' . hsc($selected) . '</a></h3>';
+                $title = $this->pageTitle($selected);
+                $html .= '<h3><a href="' . hsc(wl($selected)) . '">' . hsc($title) . '</a>';
+                if ($title !== $selected) {
+                    $html .= ' <small class="docapproval-page-id">' . hsc($selected) . '</small>';
+                }
+                $html .= '</h3>';
                 $html .= '<table class="inline"><thead><tr>';
                 foreach (['date','action','actor','status','revision','assigned_reviewer','reviewed_by','training','version','comment'] as $k) {
                     $html .= '<th>' . hsc($this->getLang($k)) . '</th>';
@@ -82,6 +89,15 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         $html .= '</div>';
         $renderer->doc .= $html;
         return true;
+    }
+
+    protected function pageTitle(string $pid): string
+    {
+        $title = '';
+        if (function_exists('p_get_first_heading')) {
+            $title = trim((string)p_get_first_heading($pid));
+        }
+        return $title !== '' ? $title : $pid;
     }
 
     protected function formatDate($iso): string

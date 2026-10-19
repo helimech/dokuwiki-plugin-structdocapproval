@@ -37,6 +37,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
         $assignments = Assignments::getInstance();
         $assigneeGroups = $filters['assignee'] !== '' ? $this->userGroups($filters['assignee']) : [];
         $assignedSearchCache = [];
+        $titleCache = [];
         $out = [];
 
         foreach ($rows as $row) {
@@ -44,7 +45,18 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             if ($pid === '' || auth_quickaclcheck($pid) < AUTH_READ) continue;
 
             $status = (string)($row['col1'] ?? '');
-            if ($filters['page'] !== '' && stripos($pid, $filters['page']) === false) continue;
+            if (!array_key_exists($pid, $titleCache)) {
+                $titleCache[$pid] = $this->pageTitle($pid);
+            }
+            $title = $titleCache[$pid];
+
+            if (
+                $filters['page'] !== '' &&
+                stripos($pid, $filters['page']) === false &&
+                stripos($title, $filters['page']) === false
+            ) {
+                continue;
+            }
             if ($filters['status'] !== 'all' && $status !== $filters['status']) continue;
 
             $assignedSpec = '';
@@ -135,6 +147,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
 
             $out[] = [
                 'pid' => $pid,
+                'title' => $title,
                 'status' => $status,
                 'updated' => (string)($row['col4'] ?? ''),
                 'revision' => (int)($row['col5'] ?? 0),
@@ -203,6 +216,15 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             return strnatcasecmp((string)$a['name'], (string)$b['name']);
         });
         return $out;
+    }
+
+    protected function pageTitle(string $pid): string
+    {
+        $title = '';
+        if (function_exists('p_get_first_heading')) {
+            $title = trim((string)p_get_first_heading($pid));
+        }
+        return $title !== '' ? $title : $pid;
     }
 
     protected function normalizeFilters(array $filters): array

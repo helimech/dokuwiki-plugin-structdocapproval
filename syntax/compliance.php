@@ -409,7 +409,9 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                     'required_name' => $publication->getUserDisplayName((string)$user),
                     'status' => $acknowledged
                         ? $this->getLang('compliance_status_complete')
-                        : $this->getLang('compliance_status_outstanding'),
+                        : (!empty($row['is_overdue'])
+                            ? $this->getLang('compliance_status_overdue')
+                            : $this->getLang('compliance_status_outstanding')),
                     'acknowledged_at' => $acknowledged
                         ? $this->formatTimestamp((int)$row['acknowledged_users'][$user])
                         : '',

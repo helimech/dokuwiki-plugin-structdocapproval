@@ -348,7 +348,12 @@ class Assignments
         $out = [];
         foreach ($this->splitSpec($spec) as $token) {
             if ($token[0] !== '@') {
-                $out[$token] = $token;
+                // Do not offer stale/typoed direct logins as actionable assignees.
+                // If the auth backend is temporarily unavailable retain the token so
+                // we do not silently erase configured routing information.
+                if (!$auth || $auth->getUserData($token)) {
+                    $out[$token] = $token;
+                }
                 continue;
             }
             if (!$auth || !$auth->canDo('getUsers')) continue;

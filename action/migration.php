@@ -90,9 +90,29 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
     {
         $file = sprintf(DOKU_PLUGIN . 'structdocapproval/db/update%04d.sql', $version);
         $sql = io_readFile($file, false);
-        foreach (Tools::SQLstring2array($sql) as $statement) {
-            if (!$sqlite->query($statement)) return false;
+        $statements = Tools::SQLstring2array($sql);
+
+        // A version must be all-or-nothing. This is especially important for
+        // migrations containing multiple ALTER/CREATE statements: without a
+        // transaction, a failure midway leaves the schema half-upgraded while the
+        // stored version still points at the previous migration.
+        $pdo = $sqlite->getPdo();
+        $started = !$pdo->inTransaction();
+        if ($started) $pdo->beginTransaction();
+
+        try {
+            foreach ($statements as $statement) {
+                if (!$sqlite->query($statement)) {
+                    throw new RuntimeException(
+                        'Struct DocApproval database migration ' . $version . ' failed.'
+                    );
+                }
+            }
+            if ($started) $pdo->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($started && $pdo->inTransaction()) $pdo->rollBack();
+            return false;
         }
-        return true;
     }
 }

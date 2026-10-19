@@ -108,6 +108,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $publication = plugin_load('helper', 'structdocapproval_publication');
         $snapshot = $publication ? $publication->getSnapshot($pid, (int)$record->get('revision')) : null;
         $changeSummary = trim((string)($snapshot['change_summary'] ?? ''));
+        $ackDueAt = (int)($snapshot['ack_due_at'] ?? 0);
 
         $subject = sprintf(
             $ackRequired ? $this->getLang('email_ack_subject') : $this->getLang('email_notify_subject'),
@@ -122,8 +123,11 @@ class helper_plugin_structdocapproval_notify extends Plugin
             $this->textField($this->getLang('email_page'), $title),
             $this->textField($this->getLang('version'), $version),
             $this->textField($this->getLang('ack_published'), $publishedAt),
-            $this->textField($this->getLang('email_view_page'), $pageUrl),
         ];
+        if ($ackRequired && $ackDueAt > 0) {
+            $text[] = $this->textField($this->getLang('email_ack_due'), date('Y-m-d', $ackDueAt));
+        }
+        $text[] = $this->textField($this->getLang('email_view_page'), $pageUrl);
 
         if ($changeSummary !== '') {
             $text[] = '';
@@ -142,8 +146,11 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $html = '<p>' . hsc($intro) . '</p><p>' .
             $this->htmlField($this->getLang('email_page'), $title) .
             $this->htmlField($this->getLang('version'), $version) .
-            $this->htmlField($this->getLang('ack_published'), $publishedAt) .
-            '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
+            $this->htmlField($this->getLang('ack_published'), $publishedAt);
+        if ($ackRequired && $ackDueAt > 0) {
+            $html .= $this->htmlField($this->getLang('email_ack_due'), date('Y-m-d', $ackDueAt));
+        }
+        $html .= '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
             '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a></p>';
 
         if ($changeSummary !== '') {
@@ -166,6 +173,101 @@ class helper_plugin_structdocapproval_notify extends Plugin
         if (!$mailer->send()) {
             throw new RuntimeException('DokuWiki Mailer reported that the publication message was not sent.');
         }
+    }
+
+    /**
+     * Send a manual reminder to the supplied outstanding acknowledgement users.
+     *
+     * Returns the exact user=>email deliveries that were successfully handed to
+     * DokuWiki Mailer so the caller can persist defensible reminder audit evidence.
+     */
+    public function sendAcknowledgementReminder(
+        string $pid,
+        int $publicationRevision,
+        array $users
+    ): array {
+        if (!$this->getConf('email_enable')) {
+            throw new RuntimeException($this->getLang('reminder_email_disabled'));
+        }
+
+        $pid = cleanID($pid);
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        if (!$publication) throw new RuntimeException('Publication helper is unavailable.');
+
+        $snapshot = $publication->getSnapshot($pid, $publicationRevision);
+        if (!$snapshot) throw new RuntimeException('Publication snapshot is unavailable.');
+
+        /** @var AuthPlugin $auth */
+        global $auth;
+        $deliveries = [];
+        $emails = [];
+        foreach (array_values(array_unique(array_filter(array_map('trim', $users)))) as $user) {
+            $data = $auth ? $auth->getUserData($user) : false;
+            $email = $data ? trim((string)($data['mail'] ?? '')) : '';
+            if ($email === '') continue;
+            $deliveries[$user] = $email;
+            $emails[$email] = true;
+        }
+        if (!$emails) throw new RuntimeException($this->getLang('reminder_no_email'));
+
+        $title = trim((string)p_get_first_heading($pid));
+        if ($title === '') $title = $pid;
+        $version = Constants::formatVersion((string)($snapshot['version'] ?? ''));
+        if ($version === '') $version = $this->getLang('version_unset');
+        $publishedAt = (int)($snapshot['published_at'] ?? 0);
+        $dueAt = (int)($snapshot['ack_due_at'] ?? 0);
+        $changeSummary = trim((string)($snapshot['change_summary'] ?? ''));
+        $pageUrl = wl($pid, '', true, '&');
+
+        $subject = sprintf($this->getLang('email_ack_reminder_subject'), $title, $version);
+        $text = [
+            $this->getLang('email_ack_reminder_intro'),
+            '',
+            $this->textField($this->getLang('email_page'), $title),
+            $this->textField($this->getLang('version'), $version),
+        ];
+        if ($publishedAt > 0) {
+            $text[] = $this->textField($this->getLang('ack_published'), dformat($publishedAt));
+        }
+        if ($dueAt > 0) {
+            $text[] = $this->textField($this->getLang('email_ack_due'), date('Y-m-d', $dueAt));
+        }
+        $text[] = $this->textField($this->getLang('email_view_page'), $pageUrl);
+        if ($changeSummary !== '') {
+            $text[] = '';
+            $text[] = $this->getLang('email_change_summary') . ':';
+            $text[] = $changeSummary;
+        }
+        $text[] = '';
+        $text[] = $this->getLang('email_ack_instruction');
+
+        $html = '<p>' . hsc($this->getLang('email_ack_reminder_intro')) . '</p><p>' .
+            $this->htmlField($this->getLang('email_page'), $title) .
+            $this->htmlField($this->getLang('version'), $version);
+        if ($publishedAt > 0) {
+            $html .= $this->htmlField($this->getLang('ack_published'), dformat($publishedAt));
+        }
+        if ($dueAt > 0) {
+            $html .= $this->htmlField($this->getLang('email_ack_due'), date('Y-m-d', $dueAt));
+        }
+        $html .= '<strong>' . hsc($this->getLang('email_view_page')) . ':</strong>&nbsp;&nbsp;' .
+            '<a href="' . hsc($pageUrl) . '">' . hsc($pageUrl) . '</a></p>';
+        if ($changeSummary !== '') {
+            $html .= '<p><strong>' . hsc($this->getLang('email_change_summary')) . ':</strong><br>' .
+                nl2br(hsc($changeSummary)) . '</p>';
+        }
+        $html .= '<p><strong>' . hsc($this->getLang('email_ack_instruction')) . '</strong></p>';
+
+        $mailer = new Mailer();
+        $mailer->bcc(array_keys($emails));
+        $mailer->subject($subject);
+        $mailer->setBody(implode("\n", $text) . "\n", null, null, $html);
+        if (!$mailer->send()) {
+            throw new RuntimeException('DokuWiki Mailer reported that the reminder was not sent.');
+        }
+
+        return $deliveries;
     }
 
     public function resolveRecipients(array $specs, bool $allowLiteralEmails = true): array

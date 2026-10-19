@@ -180,7 +180,7 @@ The recommended one-stop interface is the unified dashboard:
 ----
 ```
 
-Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement state and Change Summary into one operational table. Its page/namespace, workflow, assigned-user, and acknowledgement filters are live DataTables filters (no page reload), the workflow/acknowledgement summary cards are clickable filters, and the table supports sorting plus 25 / 50 / 100 / All row paging with 50 rows by default.
+Every logged-in user gets **My Tasks**. DokuWiki managers/administrators also get **Documents**, **Compliance**, and **History** tabs. The Documents tab joins the current workflow, latest Published revision, acknowledgement state and Change Summary into one operational table. It displays the page's human-readable first heading with the page ID retained underneath, and its page/title/namespace, workflow, assigned-user, and acknowledgement filters are live DataTables filters (no page reload). Workflow/acknowledgement summary cards are clickable filters, the table supports sorting plus 25 / 50 / 100 / All row paging with 50 rows by default, and State Since includes a neutral elapsed-age value.
 
 The individual report syntaxes remain supported for small embedded/special-purpose pages.
 
@@ -207,7 +207,7 @@ Manager/administrator **Compliance** dashboard:
 ----
 ```
 
-The compliance dashboard is restricted to DokuWiki managers/administrators. It defaults to the current formal publication for each controlled page and can switch to all historical publication snapshots. Filters include page/namespace, required user, compliance state, and Published date range. It shows aggregate Required/Acknowledged/Outstanding counts, per-publication completion and user details, and a per-user compliance rollup. Historical publication evidence remains reportable even when a page is later moved out of DocApproval control.
+The compliance dashboard is restricted to DokuWiki managers/administrators. It defaults to the current formal publication for each controlled page and can switch to all historical publication snapshots. Filters include page/title/namespace, required user, compliance state, and Published date range. It shows aggregate Required/Acknowledged/Outstanding counts, per-publication completion and user details, publication age, and a per-user compliance rollup. **Export CSV** downloads the currently filtered report as audit-friendly one-row-per-required-user evidence, including acknowledgement timestamps. Historical publication evidence remains reportable even when a page is later moved out of DocApproval control.
 
 Workflow history with a page selector:
 

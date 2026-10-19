@@ -534,3 +534,20 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 24. Confirm an uncontrolled historical document never receives an automatic reminder even if its old snapshot has an overdue date and outstanding users.
 25. Verify the traffic-driven scheduler behavior: if no wiki request occurs on a due day, the next normal request runs that day's current sweep and sends any then-eligible reminder rather than requiring cron.
 26. Re-run v0.12.12 due-date/manual reminder tests and v0.12.9 live Documents filtering tests to confirm no regression.
+
+## 33. Pre-test hardening checks (v0.12.13.1)
+
+1. On an install currently at database version 5, upgrade to v0.12.13.1 and confirm migration 6 reaches version 6 normally. Verify the new automatic-reminder tables/columns exist and all pre-existing publication/reminder data remains intact.
+2. On a disposable database copy, force a migration-6 SQL statement to fail midway and confirm the schema changes and DocApproval version marker roll back together rather than leaving a half-applied migration.
+3. With automatic reminders enabled and an overdue test publication, submit a **manual Send Reminder** POST as the first request of the day. Confirm only the manual reminder is sent; the automatic sweep waits for a subsequent normal GET.
+4. Force an automatic-reminder exception/DB-lock-style failure and confirm the requested wiki page still renders instead of failing because the background reminder service failed.
+5. Simulate a reminder run left in `running`. Confirm another request does not reclaim it immediately, but a run older than 30 minutes can be reclaimed and completed.
+6. Double-click/rapidly resubmit the same acknowledgement from two browser requests. Confirm exactly one acknowledgement row exists and both requests resolve idempotently rather than reporting a false duplicate-key failure.
+7. Configure Require acknowledgement with a typoed or genuinely empty `@group`. Confirm Publish is rejected before the workflow becomes Published.
+8. Start a reminder while the publication/user state changes in another session. Confirm the mail helper rechecks the current controlled publication and removes users who have already acknowledged before the actual send.
+9. Remove a page from control or publish a newer formal revision before a stale reminder request reaches the mail helper. Confirm the stale reminder is rejected.
+10. Compare dashboard tab badge counts with the Documents/Compliance detail data after the overview-query optimization. Confirm ACL-hidden pages remain excluded from both the document and acknowledgement-outstanding badges.
+11. Open Documents with the current ~382-page dataset and compare load time/query feel with v0.12.13. Confirm the tab header no longer appears to build the full Documents report twice.
+12. Confirm My Tasks shows only current acknowledgement requirements after several historical revisions with old unacknowledged requirements in the database.
+13. Configure an invalid direct Reviewer login and confirm it is not offered as an eligible reviewer. Verify valid users and @group members continue to resolve normally.
+14. Re-run the full v0.12.13 automatic/manual reminder tests, v0.12.12 due-date tests, and v0.12.9 live Documents filtering tests.

@@ -352,7 +352,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             (int)$row['ack_outstanding'] . ' ' . hsc($this->getLang('dashboard_outstanding_short')) .
             ' (' . (int)$row['acknowledged'] . '/' . (int)$row['ack_required'] . ')';
         if (!empty($row['ack_due_at'])) {
-            $html .= '<small>' . $this->renderDueStatus((int)$row['ack_due_at']) . '</small>';
+            $html .= $this->renderDueStatus((int)$row['ack_due_at']);
         }
         return $html . '</span>';
     }

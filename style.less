@@ -198,6 +198,18 @@
             font-size: 0.88em;
             opacity: 0.75;
         }
+
+        .release-due {
+            grid-column: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9em;
+        }
+
+        .release-due input {
+            width: auto;
+        }
     }
 
     .docapproval-publish-actionbar {
@@ -244,7 +256,8 @@
         grid-template-columns: 1fr;
     }
 
-    .plugin-structdocapproval-banner .docapproval-release-audience .release-help {
+    .plugin-structdocapproval-banner .docapproval-release-audience .release-help,
+    .plugin-structdocapproval-banner .docapproval-release-audience .release-due {
         grid-column: 1;
     }
 
@@ -627,7 +640,7 @@
 
     .docapproval-compliance-counts {
         display: grid;
-        grid-template-columns: repeat(6, minmax(8rem, 1fr));
+        grid-template-columns: repeat(7, minmax(7rem, 1fr));
         gap: 0.6rem;
         margin: 0.85rem 0 1.25rem 0;
     }
@@ -744,6 +757,52 @@
     white-space: nowrap;
 }
 
+.docapproval-due {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.docapproval-due small,
+.docapproval-dashboard-ack small {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.88em;
+    font-weight: normal;
+    opacity: 0.8;
+}
+
+.docapproval-due.overdue,
+.docapproval-dashboard-ack.overdue,
+.docapproval-dashboard-count.attention strong {
+    font-weight: 700;
+}
+
+.docapproval-due.overdue {
+    border-left: 3px solid currentColor;
+    padding-left: 0.35rem;
+}
+
+.docapproval-reminder-form {
+    margin-top: 0.8rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid @ini_border;
+}
+
+.docapproval-reminder-button {
+    white-space: nowrap;
+}
+
+.docapproval-dashboard-publication-history {
+    margin-top: 0.9rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid @ini_border;
+}
+
+.docapproval-dashboard-publication-history table {
+    width: 100%;
+    margin-top: 0.35rem;
+}
+
 .plugin-structdocapproval-dashboard {
     margin: 0.5rem 0 1.5rem 0;
 
@@ -837,7 +896,7 @@
 
     .docapproval-dashboard-counts {
         display: grid;
-        grid-template-columns: repeat(6, minmax(8rem, 1fr));
+        grid-template-columns: repeat(7, minmax(7rem, 1fr));
         gap: 0.6rem;
         margin: 0.85rem 0 1rem 0;
     }

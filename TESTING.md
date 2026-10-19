@@ -550,4 +550,7 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 11. Open Documents with the current ~382-page dataset and compare load time/query feel with v0.12.13. Confirm the tab header no longer appears to build the full Documents report twice.
 12. Confirm My Tasks shows only current acknowledgement requirements after several historical revisions with old unacknowledged requirements in the database.
 13. Configure an invalid direct Reviewer login and confirm it is not offered as an eligible reviewer. Verify valid users and @group members continue to resolve normally.
-14. Re-run the full v0.12.13 automatic/manual reminder tests, v0.12.12 due-date tests, and v0.12.9 live Documents filtering tests.
+14. In a disposable test copy, force publication-audience persistence to fail during Publish. Confirm the page remains Ready to Publish rather than becoming Published without a publication snapshot/requirement set.
+15. In a disposable test copy, force the workflow record save to fail after the publication audience has been staged. Confirm the staged publication/requirement rows are removed and the page does not acquire a false formal publication boundary.
+16. Open the same workflow action in two tabs. Complete the transition in tab A, then submit the stale form in tab B. Confirm tab B is rejected with a reload message instead of creating a duplicate/stale workflow event.
+17. Re-run the full v0.12.13 automatic/manual reminder tests, v0.12.12 due-date tests, and v0.12.9 live Documents filtering tests.

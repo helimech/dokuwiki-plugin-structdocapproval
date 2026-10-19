@@ -124,8 +124,9 @@ $lang['revision'] = 'Wiki Revision';
 $lang['assigned_reviewer'] = 'Assigned Reviewer';
 $lang['comment'] = 'Note';
 $lang['select_page'] = 'Page';
-$lang['select_page_prompt'] = 'Select a page…';
+$lang['select_page_prompt'] = 'Start typing a page ID or document title…';
 $lang['show_history'] = 'Show History';
+$lang['history_page_not_found'] = 'No accessible DocApproval page uniquely matches that page ID or document title.';
 $lang['history_denied'] = 'You do not have permission to view workflow history for this page.';
 $lang['working_history_restricted'] = 'Working revision history is restricted; showing the latest Published revision.';
 

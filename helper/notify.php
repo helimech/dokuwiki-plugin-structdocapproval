@@ -296,6 +296,16 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $snapshot = $publication->getSnapshot($pid, $publicationRevision);
         if (!$snapshot) throw new RuntimeException('Publication snapshot is unavailable.');
 
+        /** @var helper_plugin_structdocapproval_db $dbHelper */
+        $dbHelper = plugin_load('helper', 'structdocapproval_db');
+        if (
+            !$dbHelper ||
+            !$dbHelper->isControlled($pid) ||
+            $publication->getCurrentPublicationRevision($pid) !== $publicationRevision
+        ) {
+            throw new RuntimeException($this->getLang('reminder_not_current'));
+        }
+
         // Revalidate immediately before constructing the mail. Dashboard/automatic
         // reminder candidate lists can become stale if somebody acknowledges between
         // the report/sweep query and the send.

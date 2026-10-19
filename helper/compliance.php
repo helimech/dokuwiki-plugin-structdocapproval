@@ -53,6 +53,8 @@ class helper_plugin_structdocapproval_compliance extends Plugin
         $currentRevisionCache = [];
         $latestPublishedCache = [];
         $titleCache = [];
+        $controlledCache = [];
+        $now = time();
         $reminderMap = $this->loadReminderSummaries($db);
         $out = [];
 
@@ -67,12 +69,17 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             }
             $isCurrent = $currentRevisionCache[$pid] === $publicationRevision;
 
+            if (!array_key_exists($pid, $controlledCache)) {
+                $controlledCache[$pid] = $dbHelper->isControlled($pid);
+            }
+            $isControlled = $controlledCache[$pid];
+
             if ($filters['scope'] === 'current') {
                 if (!$isCurrent) continue;
                 // Match the existing Admin current-compliance semantics: once a page
                 // is no longer controlled, its evidence remains historical but it no
                 // longer counts as a current DocApproval obligation.
-                if (!$dbHelper->isControlled($pid)) continue;
+                if (!$isControlled) continue;
             }
 
             if (!array_key_exists($pid, $titleCache)) {
@@ -99,7 +106,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
             $acknowledgedUsers = (array)$compliance['acknowledged_users'];
             $outstandingUsers = (array)$compliance['outstanding_users'];
             $dueAt = (int)($snapshot['ack_due_at'] ?? 0);
-            $isOverdue = $dueAt > 0 && time() > $dueAt && count($outstandingUsers) > 0;
+            $isOverdue = $dueAt > 0 && $now > $dueAt && count($outstandingUsers) > 0;
 
             if ($filters['user'] !== '') {
                 if (!in_array($filters['user'], $requiredUsers, true)) continue;
@@ -141,7 +148,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
                 'acknowledge_spec' => (string)($snapshot['acknowledge_spec'] ?? ''),
                 'change_summary' => (string)($snapshot['change_summary'] ?? ''),
                 'is_current' => $isCurrent,
-                'is_controlled' => $dbHelper->isControlled($pid),
+                'is_controlled' => $isControlled,
                 'required_users' => $requiredUsers,
                 'acknowledged_users' => $acknowledgedUsers,
                 'outstanding_users' => $outstandingUsers,

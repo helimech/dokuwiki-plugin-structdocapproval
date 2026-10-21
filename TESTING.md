@@ -554,3 +554,11 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 15. In a disposable test copy, force the workflow record save to fail after the publication audience has been staged. Confirm the staged publication/requirement rows are removed and the page does not acquire a false formal publication boundary.
 16. Open the same workflow action in two tabs. Complete the transition in tab A, then submit the stale form in tab B. Confirm tab B is rejected with a reload message instead of creating a duplicate/stale workflow event.
 17. Re-run the full v0.12.13 automatic/manual reminder tests, v0.12.12 due-date tests, and v0.12.9 live Documents filtering tests.
+
+## 34. History-link hotfix (v0.12.13.2)
+
+1. Open Dashboard → Documents, expand Details on a controlled document, and click **History**.
+2. Confirm the dashboard switches to the History tab, the page picker is prefilled with that document ID, and that document's workflow history is displayed immediately.
+3. Repeat with a namespaced page ID containing multiple colons.
+4. From an active Draft/Review/Training workflow with a previous Published revision, click the banner's **View Changes** link and confirm both diff revision parameters arrive correctly and the expected comparison opens.
+5. Confirm manually selecting a page by ID/title in the History autocomplete still works unchanged.

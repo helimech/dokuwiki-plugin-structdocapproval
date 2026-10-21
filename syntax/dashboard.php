@@ -466,10 +466,14 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             $html .= '</tbody></table></div>';
         }
 
+        // wl() defaults to an HTML-escaped "&amp;" separator. Because this
+        // complete URL is escaped with hsc() below, request a raw "&" here so a
+        // two-parameter History link is escaped exactly once. Double escaping made
+        // the browser send "amp;docapproval_history_page" instead of the real field.
         $historyUrl = wl($dashboardPage, [
             'docapproval_dash_view' => 'history',
             'docapproval_history_page' => (string)$row['pid'],
-        ]) . '#docapproval-history';
+        ], false, '&') . '#docapproval-history';
         $html .= '<p class="docapproval-dashboard-detail-links">';
         $html .= '<a href="' . hsc(wl((string)$row['pid'])) . '">' .
             hsc($this->getLang('my_view')) . '</a> · ';

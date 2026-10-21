@@ -4,6 +4,13 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.13.2 History-link hotfix — 2026-10-21
+
+- Fixed Documents → Details → History so the History tab opens with that document already selected.
+- Root cause was double HTML escaping of the second query-string separator: `wl()` emitted `&amp;` and the completed URL was then escaped again with `hsc()`, causing the browser to submit `amp;docapproval_history_page` instead of `docapproval_history_page`.
+- Corrected the same URL-generation pattern in the workflow banner's multi-parameter diff link.
+- No database migration or configuration change is required.
+
 ## 0.12.13.1 pre-test hardening — 2026-10-19
 
 - Reviewed the acknowledgement/publication/dashboard/reminder paths before destructive testing and tightened several failure/race cases.

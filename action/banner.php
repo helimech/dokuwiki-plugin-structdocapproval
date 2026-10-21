@@ -97,7 +97,16 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
                 userlink($previous->get('published_by') ?: $previous->get('actor')),
                 hsc($this->formatDate($previous->get('published_at') ?: $previous->get('datetime')))
             );
-            $diff = wl($pid, ['do' => 'diff', 'rev2[0]' => $previous->get('revision'), 'rev2[1]' => $record->get('revision')]);
+            $diff = wl(
+                $pid,
+                [
+                    'do' => 'diff',
+                    'rev2[0]' => $previous->get('revision'),
+                    'rev2[1]' => $record->get('revision'),
+                ],
+                false,
+                '&'
+            );
             echo ' <a href="' . hsc($diff) . '">' . hsc($this->getLang('view_changes')) . '</a>';
             echo '</div>';
         } else {

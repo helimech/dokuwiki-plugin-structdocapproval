@@ -4,6 +4,17 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+## 0.12.14 two-digit minimum document revisions — 2026-10-22
+
+- Changed simple numeric document revisions from fixed three-digit formatting to a minimum width of two digits.
+- Numeric revisions now display/store as `00, 01, ... 09, 10, ... 99, 100, 101, ...`; the width expands naturally once three digits are required.
+- Brand-new controlled documents now begin at **Rev 00**.
+- Existing pages initialized into control with an implicit Published baseline continue to suggest **Rev 01** for their first subsequent controlled revision.
+- Existing historical values stored under the former three-digit convention are normalized at display time, so `002` renders as `02` without rewriting historical database evidence; `100` remains `100`.
+- Non-numeric/custom revision labels remain unchanged.
+- No database migration or configuration change is required.
+
+
 ## 0.12.13.2 History-link hotfix — 2026-10-21
 
 - Fixed Documents → Details → History so the History tab opens with that document already selected.

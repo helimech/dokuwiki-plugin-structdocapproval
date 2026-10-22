@@ -139,7 +139,7 @@ Create or edit a DW2PDF template footer and include:
 
 Then test:
 
-- Published controlled page → revision is three-digit Published revision and status is Published.
+- Published controlled page → revision is minimum-two-digit Published revision and status is Published.
 - Working Draft exported by an editor/workflow participant → `@DOCREV@` is `DRAFT` and status is `WORKING DRAFT - NOT APPROVED`.
 - Ordinary reader exporting while a newer Draft exists → PDF remains based on the Published revision and shows the Published revision metadata.
 - Historical Published revision export → footer matches that historical Published revision.
@@ -460,7 +460,7 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 16. Repeat normal chip selection, @group entry and literal Notify email entry to confirm the recipient-picker cleanup did not regress existing behavior.
 17. Confirm all v0.12.9 live Documents filtering/sorting/paging, My Tasks workflow actions, acknowledgement recording, Compliance details and standalone syntaxes still behave as before.
 
-## 30. History autocomplete and initial Rev 000 (v0.12.11)
+## 30. History autocomplete and initial Rev 00 (v0.12.11)
 
 1. Open the unified **History** tab. Confirm the old long page dropdown has been replaced by a searchable text/autocomplete control.
 2. Begin typing part of a page ID. Confirm the browser offers accessible DocApproval page suggestions and selecting one fills its actual page ID.
@@ -470,10 +470,10 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 6. Type text that does not uniquely identify an accessible DocApproval page. Confirm no history is exposed and a clear no-match message appears.
 7. From **Documents → Details → History**, confirm the dashboard still switches to History with that document already selected.
 8. Confirm History ACL/workflow-view restrictions remain unchanged and inaccessible pages are absent from the autocomplete set.
-9. Create a genuinely new page inside a controlled namespace so it begins as Draft with no previous Published baseline. Complete the normal workflow to Ready to Publish and confirm **New Version** defaults to **000**.
-10. Publish that new page as 000, make the next normal revision, complete the workflow again, and confirm the next suggested version is **001**.
-11. Use an existing page that was brought under DocApproval by Sync/Reconcile and therefore has an initialized Published baseline with no explicit document version. Edit it through a new workflow cycle and confirm the first subsequent suggested document revision remains **001**, not 000.
-12. Confirm manually entered numeric versions continue to normalize to three digits and non-simple version labels continue to behave as before.
+9. Create a genuinely new page inside a controlled namespace so it begins as Draft with no previous Published baseline. Complete the normal workflow to Ready to Publish and confirm **New Version** defaults to **00**.
+10. Publish that new page as 00, make the next normal revision, complete the workflow again, and confirm the next suggested version is **01**.
+11. Use an existing page that was brought under DocApproval by Sync/Reconcile and therefore has an initialized Published baseline with no explicit document version. Edit it through a new workflow cycle and confirm the first subsequent suggested document revision remains **01**, not 00.
+12. Confirm manually entered numeric versions continue to normalize to a minimum of two digits and non-simple version labels continue to behave as before.
 13. Re-run the v0.12.9 Documents live filtering tests and the v0.12.10 Compliance CSV export tests to confirm no regression.
 
 ## 31. Acknowledgement due dates, reminders and compact publication history (v0.12.12)
@@ -504,7 +504,7 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 24. For an old release that was fully acknowledged after its due date, confirm compact history displays the due date without incorrectly labelling the completed historical release as currently overdue.
 25. Confirm Published-preserving Minor Changes remain within the same formal acknowledgement cycle and do not reset the due date or reminder history.
 26. Re-run normal Publish/Notify without Require acknowledgement and confirm no acknowledgement due requirement/reminder UI is introduced.
-27. Re-run the v0.12.11 History autocomplete / Rev 000 tests and v0.12.10 Compliance CSV tests to confirm no regression.
+27. Re-run the v0.12.11 History autocomplete / Rev 00 tests and v0.12.10 Compliance CSV tests to confirm no regression.
 
 ## 32. Documents Not Published, workflow reminders and automatic acknowledgement reminders (v0.12.13)
 
@@ -562,3 +562,13 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 3. Repeat with a namespaced page ID containing multiple colons.
 4. From an active Draft/Review/Training workflow with a previous Published revision, click the banner's **View Changes** link and confirm both diff revision parameters arrive correctly and the expected comparison opens.
 5. Confirm manually selecting a page by ID/title in the History autocomplete still works unchanged.
+
+## 35. Two-digit minimum document revisions (v0.12.14)
+
+1. Create a genuinely new controlled document and confirm its first formal Publish suggestion is **00**.
+2. Publish revision **00**, edit through another full workflow cycle, and confirm the next suggestion is **01**.
+3. Confirm numeric entries normalize as follows: `0 → 00`, `1 → 01`, `9 → 09`, `10 → 10`, `99 → 99`, `100 → 100`, and `101 → 101`.
+4. Confirm an existing initialized page with a Published baseline but no explicit document revision still suggests **01** for its first subsequent controlled revision.
+5. Confirm historical records physically stored under the former three-digit convention display using the new minimum-two-digit convention (for example stored `002` displays as **02**, while stored `100` remains **100**).
+6. Check the banner, Documents, History, My Tasks, Compliance, acknowledgement report, emails, PDF placeholders, and Compliance CSV for consistent revision display.
+7. Confirm non-simple revision labels continue unchanged.

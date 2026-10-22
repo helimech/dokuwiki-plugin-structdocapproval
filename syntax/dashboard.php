@@ -448,13 +448,6 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
         }
         $html .= '</div></div>';
 
-        $changeSummary = trim((string)($row['change_summary'] ?? ''));
-        if ($changeSummary !== '') {
-            $html .= '<div class="docapproval-dashboard-detail-summary"><strong>' .
-                hsc($this->getLang('change_summary')) . '</strong><div>' .
-                nl2br(hsc($changeSummary)) . '</div></div>';
-        }
-
         $workflowReminder = $this->renderWorkflowReminderForm($dashboardPage, $row);
         if ($workflowReminder !== '') {
             $html .= $workflowReminder;
@@ -590,8 +583,7 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
         $summary = trim($summary);
         return $summary === ''
             ? '<span class="docapproval-dashboard-none">—</span>'
-            : '<span class="docapproval-dashboard-summary-preview">' .
-                nl2br(hsc($summary)) . '</span>';
+            : nl2br(hsc($summary));
     }
 
     protected function statusPriority(string $status): int

@@ -51,7 +51,17 @@ class syntax_plugin_structdocapproval_current extends SyntaxPlugin
         global $ID;
         $html = '<div class="plugin-structdocapproval-current"><table class="inline"><thead><tr>';
         foreach (
-            ['page', 'status', 'assigned_to', 'submitted_by', 'reviewed_by', 'training', 'version', 'updated', 'history']
+            [
+                'page',
+                'status',
+                'assigned_to',
+                'submitted_by',
+                'reviewed_by',
+                'training',
+                'version',
+                'updated',
+                'history',
+            ]
             as $k
         ) {
             $html .= '<th>' . hsc($this->getLang($k)) . '</th>';

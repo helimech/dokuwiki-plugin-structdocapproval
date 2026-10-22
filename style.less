@@ -942,19 +942,66 @@
     }
 
     .docapproval-dashboard-tablewrap td.docapproval-dashboard-summary-cell {
-        width: 28rem;
-        max-width: 28rem;
-        white-space: normal !important;
-        overflow: hidden;
+        width: 6.5rem;
+        max-width: 6.5rem;
+        white-space: nowrap;
     }
 
-    .docapproval-dashboard-summary-text {
+    .docapproval-dashboard-summary-button {
+        white-space: nowrap;
+    }
+
+    .docapproval-dashboard-summary-popover {
+        width: min(44rem, calc(100vw - 2rem));
+        max-height: min(70vh, 42rem);
+        overflow: auto;
+        padding: 0;
+        border: 1px solid @ini_border;
+        border-radius: 4px;
+        background: @ini_background;
+        color: @ini_text;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+    }
+
+    .docapproval-dashboard-summary-popover::backdrop {
+        background: rgba(0, 0, 0, 0.28);
+    }
+
+    .docapproval-dashboard-summary-popover-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.75rem 0.9rem;
+        border-bottom: 1px solid @ini_border;
+        background: @ini_background_alt;
+    }
+
+    .docapproval-dashboard-summary-close {
+        border: 0;
+        background: transparent;
+        padding: 0 0.2rem;
+        font-size: 1.4em;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .docapproval-dashboard-summary-document {
+        padding: 0.75rem 0.9rem 0;
+        font-weight: 600;
+    }
+
+    .docapproval-dashboard-summary-document small {
         display: block;
-        width: 100%;
-        max-width: 28rem;
-        white-space: normal !important;
+        margin-top: 0.12rem;
+        font-weight: normal;
+        opacity: 0.7;
+    }
+
+    .docapproval-dashboard-summary-popover-text {
+        padding: 0.75rem 0.9rem 1rem;
+        white-space: normal;
         overflow-wrap: anywhere;
-        word-break: break-word;
     }
 
     .docapproval-dashboard-tablewrap th,

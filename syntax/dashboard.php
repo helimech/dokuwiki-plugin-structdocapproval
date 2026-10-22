@@ -286,7 +286,7 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
             'dashboard_waiting_since',
             'dashboard_published_rev',
             'dashboard_acknowledgement',
-            'change_summary',
+            'dashboard_change_summary',
             'compliance_details'
             ] as $key
         ) {
@@ -325,7 +325,7 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
             $html .= '<td>' . hsc($row['published_version'] !== '' ? (string)$row['published_version'] : '—') . '</td>';
             $html .= '<td>' . $this->renderAckStatus($row) . '</td>';
             $html .= '<td class="docapproval-dashboard-summary-cell">' .
-                $this->renderSummary((string)$row['change_summary']) . '</td>';
+                $this->renderSummary((string)$row['change_summary'], $title, $pid) . '</td>';
             $html .= '<td>' . $this->renderDocumentDetails($pageId, $row, $publication) . '</td>';
             $html .= '</tr>';
         }
@@ -578,13 +578,29 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
         return '<span title="' . hsc($user) . '">' . hsc($name) . '</span>';
     }
 
-    protected function renderSummary(string $summary): string
+    protected function renderSummary(string $summary, string $title, string $pid): string
     {
         $summary = trim($summary);
-        return $summary === ''
-            ? '<span class="docapproval-dashboard-none">—</span>'
-            : '<span class="docapproval-dashboard-summary-text">' .
-                nl2br(hsc($summary)) . '</span>';
+        if ($summary === '') return '<span class="docapproval-dashboard-none">—</span>';
+
+        $id = 'docapproval-summary-' . substr(md5($pid), 0, 12);
+        $html = '<button type="button" class="docapproval-dashboard-summary-button" ' .
+            'popovertarget="' . hsc($id) . '">' . hsc($this->getLang('dashboard_view_summary')) . '</button>';
+        $html .= '<div id="' . hsc($id) . '" class="docapproval-dashboard-summary-popover" popover>';
+        $html .= '<div class="docapproval-dashboard-summary-popover-head"><strong>' .
+            hsc($this->getLang('change_summary')) . '</strong>';
+        $html .= '<button type="button" class="docapproval-dashboard-summary-close" ' .
+            'popovertarget="' . hsc($id) . '" popovertargetaction="hide" aria-label="' .
+            hsc($this->getLang('dashboard_close')) . '">×</button></div>';
+        $html .= '<div class="docapproval-dashboard-summary-document">' . hsc($title);
+        if ($title !== $pid) {
+            $html .= '<small>' . hsc($pid) . '</small>';
+        }
+        $html .= '</div>';
+        $html .= '<div class="docapproval-dashboard-summary-popover-text">' .
+            nl2br(hsc($summary)) . '</div></div>';
+
+        return $html;
     }
 
     protected function statusPriority(string $status): int

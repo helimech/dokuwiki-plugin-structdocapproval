@@ -324,7 +324,8 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
             $html .= '</td>';
             $html .= '<td>' . hsc($row['published_version'] !== '' ? (string)$row['published_version'] : '—') . '</td>';
             $html .= '<td>' . $this->renderAckStatus($row) . '</td>';
-            $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
+            $html .= '<td class="docapproval-dashboard-summary-cell">' .
+                $this->renderSummary((string)$row['change_summary']) . '</td>';
             $html .= '<td>' . $this->renderDocumentDetails($pageId, $row, $publication) . '</td>';
             $html .= '</tr>';
         }

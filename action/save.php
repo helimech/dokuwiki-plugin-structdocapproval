@@ -12,8 +12,14 @@ class action_plugin_structdocapproval_save extends ActionPlugin
     public function register(EventHandler $controller)
     {
         // Validate privileged page-local opt-out changes before DokuWiki writes them.
-        $controller->register_hook('COMMON_WIKIPAGE_SAVE', 'BEFORE', $this, 'validateNoRevisionControl', null,
-            PHP_INT_MIN);
+        $controller->register_hook(
+            'COMMON_WIKIPAGE_SAVE',
+            'BEFORE',
+            $this,
+            'validateNoRevisionControl',
+            null,
+            PHP_INT_MIN
+        );
         $controller->register_hook('COMMON_WIKIPAGE_SAVE', 'AFTER', $this, 'handleSave');
     }
 

@@ -323,7 +323,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
 
             $publicationRevision = $this->getCurrentPublicationRevision($pid);
             if (!$publicationRevision) continue;
-            $compliance = $this->getComplianceForPage($pid, $publicationRevision, $row);
+            $compliance = $this->getComplianceForPage($pid, $publicationRevision);
             if ($compliance) $out[] = $compliance;
         }
 

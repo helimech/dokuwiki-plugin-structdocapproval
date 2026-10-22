@@ -324,7 +324,8 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
             $html .= '</td>';
             $html .= '<td>' . hsc($row['published_version'] !== '' ? (string)$row['published_version'] : '—') . '</td>';
             $html .= '<td>' . $this->renderAckStatus($row) . '</td>';
-            $html .= '<td>' . $this->renderSummary((string)$row['change_summary']) . '</td>';
+            $html .= '<td class="docapproval-dashboard-summary-cell">' .
+                $this->renderSummary((string)$row['change_summary']) . '</td>';
             $html .= '<td>' . $this->renderDocumentDetails($pageId, $row, $publication) . '</td>';
             $html .= '</tr>';
         }
@@ -446,6 +447,13 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
             }
         }
         $html .= '</div></div>';
+
+        $changeSummary = trim((string)($row['change_summary'] ?? ''));
+        if ($changeSummary !== '') {
+            $html .= '<div class="docapproval-dashboard-detail-summary"><strong>' .
+                hsc($this->getLang('change_summary')) . '</strong><div>' .
+                nl2br(hsc($changeSummary)) . '</div></div>';
+        }
 
         $workflowReminder = $this->renderWorkflowReminderForm($dashboardPage, $row);
         if ($workflowReminder !== '') {
@@ -582,7 +590,8 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
         $summary = trim($summary);
         return $summary === ''
             ? '<span class="docapproval-dashboard-none">—</span>'
-            : nl2br(hsc($summary));
+            : '<span class="docapproval-dashboard-summary-preview">' .
+                nl2br(hsc($summary)) . '</span>';
     }
 
     protected function statusPriority(string $status): int

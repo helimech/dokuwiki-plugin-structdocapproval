@@ -79,7 +79,8 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
 
             $replace['@DOCREV@'] = hsc($version);
             $replace['@DOCDATE@'] = hsc($date);
-            $replace['@DOCPUBLISHEDBY@'] = hsc($this->displayName((string)($record->get('published_by') ?: $record->get('actor'))));
+            $publishedBy = (string)($record->get('published_by') ?: $record->get('actor'));
+            $replace['@DOCPUBLISHEDBY@'] = hsc($this->displayName($publishedBy));
             $replace['@DOCSTATUS@'] = hsc($this->getLang('dw2pdf_published'));
             $replace['@DOCLASTPUBREV@'] = hsc($version);
             $replace['@DOCLASTPUBDATE@'] = hsc($date);
@@ -100,7 +101,8 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
             $prevVersion = Constants::formatVersion((string)$previous->get('version'));
             if ($prevVersion === '') $prevVersion = $this->getLang('version_unset');
             $replace['@DOCLASTPUBREV@'] = hsc($prevVersion);
-            $replace['@DOCLASTPUBDATE@'] = hsc($this->formatDate((string)($previous->get('published_at') ?: $previous->get('datetime'))));
+            $lastPublishedAt = (string)($previous->get('published_at') ?: $previous->get('datetime'));
+            $replace['@DOCLASTPUBDATE@'] = hsc($this->formatDate($lastPublishedAt));
         }
     }
 

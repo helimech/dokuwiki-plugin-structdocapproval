@@ -63,7 +63,11 @@ class syntax_plugin_structdocapproval_my extends SyntaxPlugin
         $html .= '<div class="docapproval-my-counts">';
         $html .= $this->countCard('docapproval-my-ack', $counts['ack'], $this->getLang('my_ack_required'));
         $html .= $this->countCard('docapproval-my-review', $counts['review'], $this->getLang('my_reviews_required'));
-        $html .= $this->countCard('docapproval-my-training', $counts['training'], $this->getLang('my_training_required'));
+        $html .= $this->countCard(
+            'docapproval-my-training',
+            $counts['training'],
+            $this->getLang('my_training_required')
+        );
         $html .= $this->countCard('docapproval-my-publish', $counts['publish'], $this->getLang('my_publish_required'));
         $html .= '</div>';
 

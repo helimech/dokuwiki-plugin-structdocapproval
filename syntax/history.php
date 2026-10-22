@@ -1,19 +1,34 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_history extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 156; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 156;
+    }
 
     public function connectTo($mode)
     {
-        $this->Lexer->addSpecialPattern('----+ *struct[_]?docapprovalhistory *-+\n.*?\n?----+', $mode, 'plugin_structdocapproval_history');
+        $this->Lexer->addSpecialPattern(
+            '----+ *struct[_]?docapprovalhistory *-+\n.*?\n?----+',
+            $mode,
+            'plugin_structdocapproval_history'
+        );
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }
@@ -78,7 +93,10 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
             if (auth_quickaclcheck($selected) < AUTH_READ || !$dbHelper->canViewWorking($selected)) {
                 $html .= '<p class="docapproval-warning">' . hsc($this->getLang('history_denied')) . '</p>';
             } else {
-                $rows = $db->queryAll('SELECT * FROM data_struct_docapproval WHERE pid=? ORDER BY rid ASC', [$selected]) ?: [];
+                $rows = $db->queryAll(
+                    'SELECT * FROM data_struct_docapproval WHERE pid=? ORDER BY rid ASC',
+                    [$selected]
+                ) ?: [];
                 $title = $this->pageTitle($selected);
                 $html .= '<h3><a href="' . hsc(wl($selected)) . '">' . hsc($title) . '</a>';
                 if ($title !== $selected) {
@@ -86,12 +104,25 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
                 }
                 $html .= '</h3>';
                 $html .= '<table class="inline"><thead><tr>';
-                foreach (['date','action','actor','status','revision','assigned_reviewer','reviewed_by','training','version','comment'] as $k) {
+                foreach (
+                    [
+                        'date',
+                        'action',
+                        'actor',
+                        'status',
+                        'revision',
+                        'assigned_reviewer',
+                        'reviewed_by',
+                        'training',
+                        'version',
+                        'comment',
+                    ] as $k
+                ) {
                     $html .= '<th>' . hsc($this->getLang($k)) . '</th>';
                 }
                 $html .= '</tr></thead><tbody>';
                 foreach ($rows as $row) {
-                    $revlink = wl($selected, ['rev'=>$row['col5']]);
+                    $revlink = wl($selected, ['rev' => $row['col5']]);
                     $html .= '<tr>';
                     $html .= '<td>' . hsc($this->formatDate($row['col4'])) . '</td>';
                     $html .= '<td>' . hsc($this->getLang('action_' . $row['col2'])) . '</td>';
@@ -101,7 +132,10 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
                     $html .= '<td>' . ($row['col9'] ? userlink($row['col9']) : '') . '</td>';
                     $html .= '<td>' . ($row['col10'] ? userlink($row['col10']) : '') . '</td>';
                     $training = $row['col14'] ? $this->getLang('training_' . $row['col14']) : '';
-                    $html .= '<td>' . hsc($training) . ($row['col15'] ? '<br><small>' . hsc($row['col15']) . '</small>' : '') . '</td>';
+                    $trainingNote = $row['col15']
+                        ? '<br><small>' . hsc($row['col15']) . '</small>'
+                        : '';
+                    $html .= '<td>' . hsc($training) . $trainingNote . '</td>';
                     $html .= '<td>' . hsc(Constants::formatVersion((string)$row['col6'])) . '</td>';
                     $html .= '<td>' . hsc($row['col18']) . '</td>';
                     $html .= '</tr>';

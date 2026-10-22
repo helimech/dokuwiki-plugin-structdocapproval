@@ -47,7 +47,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
             } elseif ($action === 'save_rules') {
                 foreach ($INPUT->arr('rules') as $id => $rule) {
                     $pattern = trim((string)($rule['pattern'] ?? ''));
-                    if (!$matcher->validPattern($pattern)) throw new RuntimeException($this->getLang('invalid_pattern') . ': ' . $pattern);
+                    if (!$matcher->validPattern($pattern)) {
+                        throw new RuntimeException($this->getLang('invalid_pattern') . ': ' . $pattern);
+                    }
                     $assignments->updateRule(
                         (int)$id,
                         ((string)($rule['include'] ?? '+')) === '+',
@@ -83,7 +85,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                 $rule = $postedRules[$id] ?? null;
                 if (is_array($rule)) {
                     $pattern = trim((string)($rule['pattern'] ?? ''));
-                    if (!$matcher->validPattern($pattern)) throw new RuntimeException($this->getLang('invalid_pattern') . ': ' . $pattern);
+                    if (!$matcher->validPattern($pattern)) {
+                        throw new RuntimeException($this->getLang('invalid_pattern') . ': ' . $pattern);
+                    }
                     $assignments->updateRule(
                         $id,
                         ((string)($rule['include'] ?? '+')) === '+',
@@ -105,14 +109,20 @@ class admin_plugin_structdocapproval extends AdminPlugin
             msg($e->getMessage(), -1);
         }
 
-        send_redirect(wl($ID, ['do'=>'admin','page'=>'structdocapproval'], true, '&'));
+        send_redirect(wl($ID, ['do' => 'admin','page' => 'structdocapproval'], true, '&'));
     }
 
     protected function reportSync(array $s, string $langKey): void
     {
         $text = sprintf(
             $this->getLang($langKey),
-            $s['matched'], $s['initialized'], $s['updated'], $s['excluded'], $s['directive_excluded'], $s['conflicts'], $s['errors']
+            $s['matched'],
+            $s['initialized'],
+            $s['updated'],
+            $s['excluded'],
+            $s['directive_excluded'],
+            $s['conflicts'],
+            $s['errors']
         );
         msg($text, ($s['errors'] || $s['conflicts']) ? 0 : 1);
     }
@@ -136,50 +146,76 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<input type="hidden" name="page" value="structdocapproval" />';
         echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<table class="inline plugin-structdocapproval-rules">';
-        echo '<tr><th>#</th><th>+/-</th><th>' . hsc($this->getLang('pattern')) . '</th><th>' . hsc($this->getLang('reviewer')) . '</th><th>' . hsc($this->getLang('training')) . '</th><th>' . hsc($this->getLang('publisher')) . '</th><th>' . hsc($this->getLang('notify')) . '</th><th>' . hsc($this->getLang('acknowledge')) . '</th><th>' . hsc($this->getLang('actions')) . '</th></tr>';
+        echo '<tr><th>#</th><th>+/-</th>';
+        foreach (['pattern', 'reviewer', 'training', 'publisher', 'notify', 'acknowledge', 'actions'] as $key) {
+            echo '<th>' . hsc($this->getLang($key)) . '</th>';
+        }
+        echo '</tr>';
 
         foreach ($rules as $idx => $rule) {
             $id = (int)$rule['id'];
             echo '<tr>';
             echo '<td>' . ($idx + 1) . '</td>';
-            echo '<td><select name="rules[' . $id . '][include]"><option value="+"' . ((int)$rule['include_rule'] ? ' selected' : '') . '>+</option><option value="-"' . (!(int)$rule['include_rule'] ? ' selected' : '') . '>-</option></select></td>';
-            echo '<td><input class="edit" type="text" name="rules[' . $id . '][pattern]" value="' . hsc($rule['pattern']) . '" /></td>';
-            echo '<td><input class="edit" type="text" name="rules[' . $id . '][reviewer]" value="' . hsc($rule['reviewer']) . '" /></td>';
-            echo '<td><input class="edit" type="text" name="rules[' . $id . '][training]" value="' . hsc($rule['training']) . '" /></td>';
-            echo '<td><input class="edit" type="text" name="rules[' . $id . '][publisher]" value="' . hsc($rule['publisher']) . '" /></td>';
-            echo '<td><input class="edit" type="text" name="rules[' . $id . '][notify]" value="' . hsc($rule['notify'] ?? '') . '" /></td>';
-            echo '<td><input class="edit" type="text" name="rules[' . $id . '][acknowledge]" value="' . hsc($rule['acknowledge'] ?? '') . '" /></td>';
+            echo '<td><select name="rules[' . $id . '][include]">';
+            echo '<option value="+"' . ((int)$rule['include_rule'] ? ' selected' : '') . '>+</option>';
+            echo '<option value="-"' . (!(int)$rule['include_rule'] ? ' selected' : '') . '>-</option>';
+            echo '</select></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][pattern]" value="' .
+                hsc($rule['pattern']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][reviewer]" value="' .
+                hsc($rule['reviewer']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][training]" value="' .
+                hsc($rule['training']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][publisher]" value="' .
+                hsc($rule['publisher']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][notify]" value="' .
+                hsc($rule['notify'] ?? '') . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][acknowledge]" value="' .
+                hsc($rule['acknowledge'] ?? '') . '" /></td>';
             echo '<td class="rule-actions">';
-            echo '<button type="submit" name="action" value="move_up:' . $id . '" title="' . hsc($this->getLang('move_up')) . '">↑</button>';
-            echo '<button type="submit" name="action" value="move_down:' . $id . '" title="' . hsc($this->getLang('move_down')) . '">↓</button>';
-            echo '<button type="submit" name="action" value="sync:' . $id . '">' . hsc($this->getLang('sync_rule')) . '</button>';
-            echo '<button type="submit" name="action" value="remove:' . $id . '" class="danger">' . hsc($this->getLang('remove_rule')) . '</button>';
+            echo '<button type="submit" name="action" value="move_up:' . $id . '" title="' .
+                hsc($this->getLang('move_up')) . '">↑</button>';
+            echo '<button type="submit" name="action" value="move_down:' . $id . '" title="' .
+                hsc($this->getLang('move_down')) . '">↓</button>';
+            echo '<button type="submit" name="action" value="sync:' . $id . '">' .
+                hsc($this->getLang('sync_rule')) . '</button>';
+            echo '<button type="submit" name="action" value="remove:' . $id . '" class="danger">' .
+                hsc($this->getLang('remove_rule')) . '</button>';
             echo '</td></tr>';
         }
         echo '</table>';
-        echo '<p><button type="submit" name="action" value="save_rules">' . hsc($this->getLang('save_rules')) . '</button></p>';
+        echo '<p><button type="submit" name="action" value="save_rules">' .
+            hsc($this->getLang('save_rules')) . '</button></p>';
         echo '<p class="docapproval-help">' . hsc($this->getLang('rules_help')) . '</p>';
         echo '</form>';
 
         echo '<h2>' . hsc($this->getLang('add_rule')) . '</h2>';
         echo '<form method="post" action="' . hsc(wl($ID)) . '">';
-        echo '<input type="hidden" name="do" value="admin" /><input type="hidden" name="page" value="structdocapproval" /><input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
+        echo '<input type="hidden" name="do" value="admin" />';
+        echo '<input type="hidden" name="page" value="structdocapproval" />';
+        echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<table class="inline plugin-structdocapproval-rules"><tr>';
-        echo '<td><select name="newrule[include]"><option value="+">+</option><option value="-">-</option></select></td>';
+        echo '<td><select name="newrule[include]">';
+        echo '<option value="+">+</option><option value="-">-</option>';
+        echo '</select></td>';
         echo '<td><input class="edit" type="text" name="newrule[pattern]" placeholder="policy:**" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[reviewer]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[training]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[publisher]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[notify]" placeholder="user, @group, or email" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[acknowledge]" placeholder="user or @group" /></td>';
-        echo '<td><button type="submit" name="action" value="add_rule">' . hsc($this->getLang('add_rule')) . '</button></td>';
+        echo '<td><button type="submit" name="action" value="add_rule">' .
+            hsc($this->getLang('add_rule')) . '</button></td>';
         echo '</tr></table></form>';
 
         echo '<h2>' . hsc($this->getLang('reconcile_heading')) . '</h2>';
         echo '<p>' . hsc($this->getLang('reconcile_intro')) . '</p>';
         echo '<form method="post" action="' . hsc(wl($ID)) . '">';
-        echo '<input type="hidden" name="do" value="admin" /><input type="hidden" name="page" value="structdocapproval" /><input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
-        echo '<button type="submit" name="action" value="reconcile">' . hsc($this->getLang('reconcile_run')) . '</button>';
+        echo '<input type="hidden" name="do" value="admin" />';
+        echo '<input type="hidden" name="page" value="structdocapproval" />';
+        echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
+        echo '<button type="submit" name="action" value="reconcile">' .
+            hsc($this->getLang('reconcile_run')) . '</button>';
         echo '</form>';
 
         $this->renderAcknowledgementStatus();
@@ -203,7 +239,18 @@ class admin_plugin_structdocapproval extends AdminPlugin
 
         echo '<table class="inline plugin-structdocapproval-ack-status">';
         echo '<thead><tr>';
-        foreach (['page','version','ack_published','ack_required_count','ack_complete_count','ack_outstanding_count','release_notify','release_acknowledge'] as $key) {
+        foreach (
+            [
+                'page',
+                'version',
+                'ack_published',
+                'ack_required_count',
+                'ack_complete_count',
+                'ack_outstanding_count',
+                'release_notify',
+                'release_acknowledge',
+            ] as $key
+        ) {
             echo '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         echo '</tr></thead><tbody>';

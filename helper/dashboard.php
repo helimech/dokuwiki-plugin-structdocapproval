@@ -52,8 +52,8 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
 
             if (
                 $filters['page'] !== '' &&
-                stripos($pid, $filters['page']) === false &&
-                stripos($title, $filters['page']) === false
+                stripos($pid, (string) $filters['page']) === false &&
+                stripos($title, (string) $filters['page']) === false
             ) {
                 continue;
             }
@@ -328,9 +328,7 @@ class helper_plugin_structdocapproval_dashboard extends Plugin
             ];
         }
 
-        usort($out, static function (array $a, array $b): int {
-            return strnatcasecmp((string)$a['name'], (string)$b['name']);
-        });
+        usort($out, static fn(array $a, array $b): int => strnatcasecmp((string)$a['name'], (string)$b['name']));
         return $out;
     }
 

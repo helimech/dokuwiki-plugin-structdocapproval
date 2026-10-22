@@ -18,6 +18,7 @@ class AccessTableDocApproval extends AccessTableSerial
     {
         $cols = array_merge($this->getSingleNoninputCols(), $this->singleCols);
         $cols = implode(',', $cols);
+
         $vals = array_merge($this->getSingleNoninputValues(), $this->singleValues);
         $rid = $this->getRid() ?: "(SELECT (COALESCE(MAX(rid), 0 ) + 1) FROM $this->stable)";
 
@@ -51,7 +52,7 @@ class AccessTableDocApproval extends AccessTableSerial
         }
 
         $ret = $this->sqlite->queryValue("SELECT rev FROM $table $where ORDER BY rev DESC LIMIT 1", $opts);
-        if ($ret !== false) $ret = (int)$ret;
+        if ($ret !== false) return (int)$ret;
         return $ret;
     }
 

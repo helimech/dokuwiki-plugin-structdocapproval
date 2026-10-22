@@ -1,12 +1,15 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
+
 /**
  * Page-local revision-control exclusion directive.
  *
  * The directive is intentionally invisible in rendered output. Its workflow
  * effect is enforced by Assignments and the save/reconcile handlers.
  */
-class syntax_plugin_structdocapproval_norevisioncontrol extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_norevisioncontrol extends SyntaxPlugin
 {
     public function getType()
     {
@@ -32,7 +35,7 @@ class syntax_plugin_structdocapproval_norevisioncontrol extends DokuWiki_Syntax_
         );
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }

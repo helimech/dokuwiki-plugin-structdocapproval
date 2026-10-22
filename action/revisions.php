@@ -36,9 +36,18 @@ class action_plugin_structdocapproval_revisions extends ActionPlugin
             if (!$record) continue;
 
             $label = $this->getLang('status_' . $record->get('status'));
-            if ($record->get('version')) $label .= ' · ' . $this->getLang('version') . ' ' . Constants::formatVersion((string)$record->get('version'));
-            if ($record->get('reviewed_by')) $label .= ' · ' . $this->getLang('reviewed_by') . ' ' . hsc(userlink($record->get('reviewed_by'), true));
-            if ($record->get('training_by')) $label .= ' · ' . $this->getLang('training') . ': ' . hsc(userlink($record->get('training_by'), true));
+            if ($record->get('version')) {
+                $label .= ' · ' . $this->getLang('version') . ' ' .
+                    Constants::formatVersion((string)$record->get('version'));
+            }
+            if ($record->get('reviewed_by')) {
+                $label .= ' · ' . $this->getLang('reviewed_by') . ' ' .
+                    hsc(userlink($record->get('reviewed_by'), true));
+            }
+            if ($record->get('training_by')) {
+                $label .= ' · ' . $this->getLang('training') . ': ' .
+                    hsc(userlink($record->get('training_by'), true));
+            }
             $el->val($el->val() . ' <span class="plugin-structdocapproval-revision-status">' . hsc($label) . '</span>');
         }
     }

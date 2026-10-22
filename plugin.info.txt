@@ -1,7 +1,8 @@
 base   structdocapproval
 author Andrew G
 email  
-date   2026-10-19
+date   2026-10-22
+minphp 8.2
 name   Struct DocApproval
 desc   Controlled document review, training review, publishing, notification, and acknowledgement workflow backed by Struct
 url    https://www.dokuwiki.org/plugin:structdocapproval

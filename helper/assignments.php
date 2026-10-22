@@ -17,10 +17,10 @@ class helper_plugin_structdocapproval_assignments extends Plugin
         if ($pns === null) $pns = ':' . getNS($page) . ':';
         $ans = ':' . cleanID($pattern) . ':';
 
-        if (substr($pattern, -2) === '**') {
-            return strpos($pns, $ans) === 0;
+        if (str_ends_with($pattern, '**')) {
+            return str_starts_with($pns, $ans);
         }
-        if (substr($pattern, -1) === '*') {
+        if (str_ends_with($pattern, '*')) {
             return $ans === $pns;
         }
         return cleanID($pattern) === $page;

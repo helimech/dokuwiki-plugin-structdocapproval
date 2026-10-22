@@ -1,4 +1,5 @@
 <?php
+
 $conf['email_enable'] = 0;
 $conf['review_queue_cc'] = '';
 $conf['publish_notify'] = '';

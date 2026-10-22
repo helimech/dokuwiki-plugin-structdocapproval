@@ -25,7 +25,9 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
 
         [$structVersion, $ourVersion] = $this->getDbVersions($sqlite);
         if ((int)$structVersion < self::MIN_DB_STRUCT) {
-            throw new RuntimeException('Struct is outdated. Minimum Struct database version is ' . self::MIN_DB_STRUCT . '.');
+            throw new RuntimeException(
+                'Struct is outdated. Minimum Struct database version is ' . self::MIN_DB_STRUCT . '.'
+            );
         }
         $latest = (int)trim(file_get_contents(DOKU_PLUGIN . 'structdocapproval/db/latest.version'));
         if ($ourVersion !== null && (int)$ourVersion >= $latest) return true;
@@ -40,10 +42,12 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
             // by a failed version write from making the next request rerun the ALTER.
             if ($version === 1) {
                 if (!$this->$method($sqlite)) return false;
-                if (!$sqlite->query(
-                    'REPLACE INTO opts (val,opt) VALUES (?,?)',
-                    [$version, 'dbversion_struct_docapproval']
-                )) {
+                if (
+                    !$sqlite->query(
+                        'REPLACE INTO opts (val,opt) VALUES (?,?)',
+                        [$version, 'dbversion_struct_docapproval']
+                    )
+                ) {
                     return false;
                 }
                 continue;
@@ -59,16 +63,18 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
                         'Struct DocApproval database migration ' . $version . ' failed.'
                     );
                 }
-                if (!$sqlite->query(
-                    'REPLACE INTO opts (val,opt) VALUES (?,?)',
-                    [$version, 'dbversion_struct_docapproval']
-                )) {
+                if (
+                    !$sqlite->query(
+                        'REPLACE INTO opts (val,opt) VALUES (?,?)',
+                        [$version, 'dbversion_struct_docapproval']
+                    )
+                ) {
                     throw new RuntimeException(
                         'Could not record Struct DocApproval database version ' . $version . '.'
                     );
                 }
                 if ($started) $pdo->commit();
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 if ($started && $pdo->inTransaction()) $pdo->rollBack();
                 return false;
             }
@@ -80,7 +86,10 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
     {
         $struct = null;
         $ours = null;
-        $rows = $sqlite->queryAll('SELECT opt,val FROM opts WHERE opt=? OR opt=?', ['dbversion', 'dbversion_struct_docapproval']) ?: [];
+        $rows = $sqlite->queryAll(
+            'SELECT opt,val FROM opts WHERE opt=? OR opt=?',
+            ['dbversion', 'dbversion_struct_docapproval']
+        ) ?: [];
         foreach ($rows as $row) {
             if ($row['opt'] === 'dbversion') $struct = $row['val'];
             if ($row['opt'] === 'dbversion_struct_docapproval') $ours = $row['val'];
@@ -147,7 +156,7 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
             }
             if ($started) $pdo->commit();
             return true;
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             if ($started && $pdo->inTransaction()) $pdo->rollBack();
             return false;
         }

@@ -103,22 +103,15 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
         $mode = (string)$this->getConf('ack_report_visibility');
         if ($mode === '') $mode = 'managers';
 
-        switch ($mode) {
-            case 'off':
-                return false;
-            case 'admins':
-                return auth_isadmin();
-            case 'managers':
-                return auth_ismanager();
-            case 'publishers':
-                return $db->canPublish($pid);
-            case 'workflow':
-                return $db->canViewWorking($pid);
-            case 'authenticated':
-                return $user !== '';
-            default:
-                return false;
-        }
+        return match ($mode) {
+            'off' => false,
+            'admins' => auth_isadmin(),
+            'managers' => auth_ismanager(),
+            'publishers' => $db->canPublish($pid),
+            'workflow' => $db->canViewWorking($pid),
+            'authenticated' => $user !== '',
+            default => false,
+        };
     }
 
     protected function renderReport(string $pid, int $requirementRevision): string
@@ -239,7 +232,8 @@ class action_plugin_structdocapproval_acknowledge extends ActionPlugin
         $html .= '<form method="post" class="docapproval-ack-form">';
         $html .= '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         $html .= '<input type="hidden" name="structdocapproval_ack[action]" value="acknowledge" />';
-        $html .= '<input type="hidden" name="structdocapproval_ack[publication_revision]" value="' . $requirementRevision . '" />';
+        $html .= '<input type="hidden" name="structdocapproval_ack[publication_revision]" value="' .
+            $requirementRevision . '" />';
         $html .= '<input type="hidden" name="structdocapproval_ack[content_revision]" value="' . $revision . '" />';
         $html .= '<label><input type="checkbox" name="structdocapproval_ack[confirm]" value="1" /> ' .
             hsc($this->getLang('ack_confirm_label')) . '</label>';

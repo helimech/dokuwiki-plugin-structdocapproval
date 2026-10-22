@@ -1,12 +1,23 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_my extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 157; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 157;
+    }
 
     public function connectTo($mode)
     {
@@ -17,7 +28,7 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
         );
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }
@@ -52,7 +63,11 @@ class syntax_plugin_structdocapproval_my extends DokuWiki_Syntax_Plugin
         $html .= '<div class="docapproval-my-counts">';
         $html .= $this->countCard('docapproval-my-ack', $counts['ack'], $this->getLang('my_ack_required'));
         $html .= $this->countCard('docapproval-my-review', $counts['review'], $this->getLang('my_reviews_required'));
-        $html .= $this->countCard('docapproval-my-training', $counts['training'], $this->getLang('my_training_required'));
+        $html .= $this->countCard(
+            'docapproval-my-training',
+            $counts['training'],
+            $this->getLang('my_training_required')
+        );
         $html .= $this->countCard('docapproval-my-publish', $counts['publish'], $this->getLang('my_publish_required'));
         $html .= '</div>';
 

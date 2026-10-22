@@ -47,12 +47,13 @@ class Assignments
         string $publisher = '',
         string $notify = '',
         string $acknowledge = ''
-    ): int
-    {
+    ): int {
         $max = (int)$this->sqlite->queryValue('SELECT COALESCE(MAX(sort_order), 0) FROM struct_docapproval_rules');
         $order = $max + 10;
         $this->sqlite->query(
-            'INSERT INTO struct_docapproval_rules (sort_order, include_rule, pattern, reviewer, training, publisher, notify, acknowledge) VALUES (?,?,?,?,?,?,?,?)',
+            'INSERT INTO struct_docapproval_rules ' .
+            '(sort_order, include_rule, pattern, reviewer, training, publisher, notify, acknowledge) ' .
+            'VALUES (?,?,?,?,?,?,?,?)',
             [
                 $order,
                 $include ? 1 : 0,
@@ -78,10 +79,10 @@ class Assignments
         string $publisher = '',
         string $notify = '',
         string $acknowledge = ''
-    ): bool
-    {
+    ): bool {
         $ok = (bool)$this->sqlite->query(
-            'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, training=?, publisher=?, notify=?, acknowledge=? WHERE id=?',
+            'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, training=?, ' .
+            'publisher=?, notify=?, acknowledge=? WHERE id=?',
             [
                 $include ? 1 : 0,
                 trim($pattern),
@@ -122,14 +123,19 @@ class Assignments
         $a = (int)$rules[$index]['sort_order'];
         $b = (int)$rules[$swap]['sort_order'];
         $this->sqlite->query('UPDATE struct_docapproval_rules SET sort_order=? WHERE id=?', [$b, $id]);
-        $this->sqlite->query('UPDATE struct_docapproval_rules SET sort_order=? WHERE id=?', [$a, (int)$rules[$swap]['id']]);
+        $this->sqlite->query(
+            'UPDATE struct_docapproval_rules SET sort_order=? WHERE id=?',
+            [$a, (int)$rules[$swap]['id']]
+        );
         $this->loadRules();
         return true;
     }
 
     protected function normalizeOrder(): void
     {
-        $rules = $this->sqlite->queryAll('SELECT id FROM struct_docapproval_rules ORDER BY sort_order ASC, id ASC') ?: [];
+        $rules = $this->sqlite->queryAll(
+            'SELECT id FROM struct_docapproval_rules ORDER BY sort_order ASC, id ASC'
+        ) ?: [];
         $n = 10;
         foreach ($rules as $rule) {
             $this->sqlite->query('UPDATE struct_docapproval_rules SET sort_order=? WHERE id=?', [$n, (int)$rule['id']]);
@@ -234,7 +240,9 @@ class Assignments
         $pid = cleanID($pid);
         $resolved = $this->resolvePage($pid, $content);
         $this->sqlite->query(
-            'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) VALUES (?,?,?,?,?,?,?,?)',
+            'REPLACE INTO struct_docapproval_pages ' .
+            '(pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) ' .
+            'VALUES (?,?,?,?,?,?,?,?)',
             [
                 $pid,
                 $resolved['controlled'] ? 1 : 0,
@@ -251,14 +259,17 @@ class Assignments
 
     public function getMaterialized(string $pid): ?array
     {
-        $rows = $this->sqlite->queryAll('SELECT * FROM struct_docapproval_pages WHERE pid=? LIMIT 1', [cleanID($pid)]) ?: [];
+        $rows = $this->sqlite->queryAll(
+            'SELECT * FROM struct_docapproval_pages WHERE pid=? LIMIT 1',
+            [cleanID($pid)]
+        ) ?: [];
         return $rows ? $rows[0] : null;
     }
 
     public function isControlled(string $pid): bool
     {
         $row = $this->getMaterialized($pid);
-        return $row ? (bool)$row['controlled'] : false;
+        return $row && (bool)$row['controlled'];
     }
 
     public function getRoleSpec(string $pid, string $role): string
@@ -374,7 +385,9 @@ class Assignments
 
     public function getControlledPages(): array
     {
-        $rows = $this->sqlite->queryAll('SELECT pid FROM struct_docapproval_pages WHERE controlled=1 ORDER BY pid') ?: [];
+        $rows = $this->sqlite->queryAll(
+            'SELECT pid FROM struct_docapproval_pages WHERE controlled=1 ORDER BY pid'
+        ) ?: [];
         return array_column($rows, 'pid');
     }
 

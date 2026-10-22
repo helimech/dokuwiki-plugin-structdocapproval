@@ -27,7 +27,9 @@ class helper_plugin_structdocapproval_notify extends Plugin
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
                 if ($record->get('assigned_reviewer')) $specs[] = (string)$record->get('assigned_reviewer');
-                if (trim((string)$this->getConf('review_queue_cc')) !== '') $specs[] = (string)$this->getConf('review_queue_cc');
+                if (trim((string)$this->getConf('review_queue_cc')) !== '') {
+                    $specs[] = (string)$this->getConf('review_queue_cc');
+                }
                 break;
             case Constants::ACTION_REVIEW_RETURNED:
             case Constants::ACTION_RETURN_DRAFT:
@@ -50,6 +52,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $mailer = new Mailer();
         $mailer->bcc($recipients);
         $mailer->subject(sprintf($this->getLang('email_subject'), $this->getLang('action_' . $action), $pid));
+
         $body = $this->buildBody($action, $record);
         $mailer->setBody($body['text'], null, null, $body['html']);
         if (!$mailer->send()) throw new RuntimeException('DokuWiki Mailer reported that the message was not sent.');
@@ -179,9 +182,10 @@ class helper_plugin_structdocapproval_notify extends Plugin
 
         $ackKeys = [];
         foreach ($ackRecipients as $email) $ackKeys[strtolower($email)] = true;
-        $notifyRecipients = array_values(array_filter($notifyRecipients, static function ($email) use ($ackKeys) {
-            return !isset($ackKeys[strtolower($email)]);
-        }));
+        $notifyRecipients = array_values(array_filter(
+            $notifyRecipients,
+            static fn($email) => !isset($ackKeys[strtolower($email)])
+        ));
 
         if ($ackRecipients) {
             $this->sendPublicationMail($record, $ackRecipients, true);
@@ -260,7 +264,9 @@ class helper_plugin_structdocapproval_notify extends Plugin
         ) . '</strong></p>';
 
         if (trim((string)$record->get('comment')) !== '') {
-            $html .= '<p>' . $this->htmlField($this->getLang('email_comment'), (string)$record->get('comment')) . '</p>';
+            $html .= '<p>' .
+                $this->htmlField($this->getLang('email_comment'), (string)$record->get('comment')) .
+                '</p>';
         }
 
         $mailer = new Mailer();
@@ -315,10 +321,8 @@ class helper_plugin_structdocapproval_notify extends Plugin
             true
         );
         $users = array_values(array_filter(
-            array_unique(array_filter(array_map('trim', $users))),
-            static function ($user) use ($outstandingSet) {
-                return isset($outstandingSet[$user]);
-            }
+            array_unique(array_filter(array_map(trim(...), $users))),
+            static fn($user) => isset($outstandingSet[$user])
         ));
         if (!$users) throw new RuntimeException($this->getLang('reminder_none_outstanding'));
 
@@ -340,9 +344,10 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $ccRecipients = $ccSpec !== '' ? $this->resolveRecipients([$ccSpec], true) : [];
         $recipientKeys = [];
         foreach (array_keys($emails) as $email) $recipientKeys[strtolower($email)] = true;
-        $ccRecipients = array_values(array_filter($ccRecipients, static function ($email) use ($recipientKeys) {
-            return !isset($recipientKeys[strtolower($email)]);
-        }));
+        $ccRecipients = array_values(array_filter(
+            $ccRecipients,
+            static fn($email) => !isset($recipientKeys[strtolower($email)])
+        ));
 
         $title = trim((string)p_get_first_heading($pid));
         if ($title === '') $title = $pid;
@@ -430,7 +435,7 @@ class helper_plugin_structdocapproval_notify extends Plugin
                 continue;
             }
 
-            if (strpos($token, '@') !== false && $allowLiteralEmails) {
+            if (str_contains($token, '@') && $allowLiteralEmails) {
                 $emails[$token] = true;
             }
         }

@@ -31,7 +31,7 @@ class action_plugin_structdocapproval_visibility extends ActionPlugin
         if ($action === 'show') return; // action/show.php handles the normal reader view.
 
         $protected = in_array($action, ['edit', 'source', 'raw', 'revisions', 'diff'], true) ||
-            strpos($action, 'export_') === 0;
+            str_starts_with($action, 'export_');
         if (!$protected) return;
 
         $published = WorkflowRecord::latestPublished($ID);

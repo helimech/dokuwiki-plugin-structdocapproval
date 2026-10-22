@@ -1,12 +1,23 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_compliance extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 158; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 158;
+    }
 
     public function connectTo($mode)
     {
@@ -17,7 +28,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         );
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }
@@ -76,7 +87,8 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         global $INPUT;
         $dashboardView = $INPUT->str('docapproval_dash_view');
 
-        $html = '<form method="get" action="' . hsc(DOKU_BASE . DOKU_SCRIPT) . '" class="docapproval-compliance-filters">';
+        $html = '<form method="get" action="' . hsc(DOKU_BASE . DOKU_SCRIPT) .
+            '" class="docapproval-compliance-filters">';
         $html .= '<input type="hidden" name="id" value="' . hsc($pageId) . '" />';
         if ($dashboardView === 'compliance') {
             $html .= '<input type="hidden" name="docapproval_dash_view" value="compliance" />';
@@ -90,11 +102,13 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
         $html .= '<label>' . hsc($this->getLang('compliance_page_filter')) .
             '<input class="edit" type="text" name="docapproval_comp_page" value="' .
-            hsc((string)$filters['page']) . '" placeholder="' . hsc($this->getLang('compliance_page_placeholder')) . '" /></label>';
+            hsc((string)$filters['page']) . '" placeholder="' .
+            hsc($this->getLang('compliance_page_placeholder')) . '" /></label>';
 
         $html .= '<label>' . hsc($this->getLang('compliance_user_filter')) .
             '<input class="edit" type="text" name="docapproval_comp_user" list="docapproval-compliance-users" value="' .
-            hsc((string)$filters['user']) . '" placeholder="' . hsc($this->getLang('compliance_user_placeholder')) . '" /></label>';
+            hsc((string)$filters['user']) . '" placeholder="' .
+            hsc($this->getLang('compliance_user_placeholder')) . '" /></label>';
         $html .= '<datalist id="docapproval-compliance-users">';
         foreach ($users as $user) {
             $login = (string)$user['user'];
@@ -114,9 +128,11 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $html .= '</select></label>';
 
         $html .= '<label>' . hsc($this->getLang('compliance_from')) .
-            '<input class="edit" type="date" name="docapproval_comp_from" value="' . hsc((string)$filters['date_from']) . '" /></label>';
+            '<input class="edit" type="date" name="docapproval_comp_from" value="' .
+            hsc((string)$filters['date_from']) . '" /></label>';
         $html .= '<label>' . hsc($this->getLang('compliance_to')) .
-            '<input class="edit" type="date" name="docapproval_comp_to" value="' . hsc((string)$filters['date_to']) . '" /></label>';
+            '<input class="edit" type="date" name="docapproval_comp_to" value="' .
+            hsc((string)$filters['date_to']) . '" /></label>';
 
         $html .= '<div class="docapproval-compliance-filter-actions">';
         $html .= '<button type="submit">' . hsc($this->getLang('compliance_apply')) . '</button>';
@@ -159,18 +175,34 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
             '</strong><span>' . hsc($label) . '</span></div>';
     }
 
-    protected function renderPublicationTable(array $rows, helper_plugin_structdocapproval_publication $publication): string
-    {
+    protected function renderPublicationTable(
+        array $rows,
+        helper_plugin_structdocapproval_publication $publication
+    ): string {
         $html = '<section class="docapproval-compliance-section">';
         $html .= '<h3>' . hsc($this->getLang('compliance_publication_table')) . ' (' . count($rows) . ')</h3>';
 
         if (!$rows) {
-            return $html . '<p class="docapproval-compliance-none">' . hsc($this->getLang('compliance_none')) . '</p></section>';
+            return $html . '<p class="docapproval-compliance-none">' .
+                hsc($this->getLang('compliance_none')) . '</p></section>';
         }
 
         $html .= '<div class="docapproval-compliance-tablewrap"><table class="inline">';
         $html .= '<thead><tr>';
-        foreach (['page','version','compliance_published','ack_due_date','ack_required_count','ack_complete_count','ack_outstanding_count','compliance_completion','change_summary','compliance_details'] as $key) {
+        foreach (
+            [
+                'page',
+                'version',
+                'compliance_published',
+                'ack_due_date',
+                'ack_required_count',
+                'ack_complete_count',
+                'ack_outstanding_count',
+                'compliance_completion',
+                'change_summary',
+                'compliance_details',
+            ] as $key
+        ) {
             $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
@@ -190,7 +222,8 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
                 $html .= '<small>' . hsc((string)$row['pid']) . '</small>';
             }
             if (!empty($row['is_current'])) {
-                $html .= ' <span class="docapproval-compliance-current">' . hsc($this->getLang('compliance_current_badge')) . '</span>';
+                $html .= ' <span class="docapproval-compliance-current">' .
+                    hsc($this->getLang('compliance_current_badge')) . '</span>';
             }
             $html .= '</td>';
             $html .= '<td>' . hsc($version) . '</td>';
@@ -215,7 +248,8 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
 
     protected function renderDetails(array $row, helper_plugin_structdocapproval_publication $publication): string
     {
-        $html = '<details class="docapproval-compliance-details"><summary>' . hsc($this->getLang('compliance_show_details')) . '</summary>';
+        $html = '<details class="docapproval-compliance-details"><summary>' .
+            hsc($this->getLang('compliance_show_details')) . '</summary>';
         $html .= '<div class="docapproval-compliance-detail-body">';
 
         if (trim((string)$row['published_by']) !== '') {
@@ -452,19 +486,30 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         $html .= '<h3>' . hsc($this->getLang('compliance_user_table')) . ' (' . count($rows) . ')</h3>';
 
         if (!$rows) {
-            return $html . '<p class="docapproval-compliance-none">' . hsc($this->getLang('compliance_no_users')) . '</p></section>';
+            return $html . '<p class="docapproval-compliance-none">' .
+                hsc($this->getLang('compliance_no_users')) . '</p></section>';
         }
 
         $html .= '<div class="docapproval-compliance-tablewrap"><table class="inline">';
         $html .= '<thead><tr>';
-        foreach (['compliance_user','ack_required_count','ack_complete_count','ack_outstanding_count','compliance_overdue','compliance_completion'] as $key) {
+        foreach (
+            [
+                'compliance_user',
+                'ack_required_count',
+                'ack_complete_count',
+                'ack_outstanding_count',
+                'compliance_overdue',
+                'compliance_completion',
+            ] as $key
+        ) {
             $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
 
         foreach ($rows as $row) {
             $html .= '<tr>';
-            $html .= '<td><span title="' . hsc((string)$row['user']) . '">' . hsc((string)$row['name']) . '</span></td>';
+            $html .= '<td><span title="' . hsc((string)$row['user']) . '">' .
+                hsc((string)$row['name']) . '</span></td>';
             $html .= '<td>' . (int)$row['required'] . '</td>';
             $html .= '<td>' . (int)$row['acknowledged'] . '</td>';
             $html .= '<td>' . (int)$row['outstanding'] . '</td>';

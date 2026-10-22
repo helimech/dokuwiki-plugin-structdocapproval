@@ -583,7 +583,8 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
         $summary = trim($summary);
         return $summary === ''
             ? '<span class="docapproval-dashboard-none">—</span>'
-            : nl2br(hsc($summary));
+            : '<span class="docapproval-dashboard-summary-text">' .
+                nl2br(hsc($summary)) . '</span>';
     }
 
     protected function statusPriority(string $status): int

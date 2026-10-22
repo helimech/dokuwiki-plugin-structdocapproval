@@ -941,12 +941,20 @@
         width: 100%;
     }
 
-    .docapproval-dashboard-summary-cell {
+    .docapproval-dashboard-tablewrap td.docapproval-dashboard-summary-cell {
         width: 28rem;
         max-width: 28rem;
-        white-space: normal;
+        white-space: normal !important;
+        overflow: hidden;
+    }
+
+    .docapproval-dashboard-summary-text {
+        display: block;
+        width: 100%;
+        max-width: 28rem;
+        white-space: normal !important;
         overflow-wrap: anywhere;
-        word-break: normal;
+        word-break: break-word;
     }
 
     .docapproval-dashboard-tablewrap th,

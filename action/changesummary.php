@@ -32,7 +32,9 @@ class action_plugin_structdocapproval_changesummary extends ActionPlugin
             $current = WorkflowRecord::latest($ID);
             if (!$current) throw new RuntimeException('No workflow record exists for this page.');
             if ($current->get('status') === Constants::STATUS_PUBLISHED) {
-                throw new RuntimeException('A Published change summary is fixed. Edit the page to begin a new Draft cycle.');
+                throw new RuntimeException(
+                    'A Published change summary is fixed. Edit the page to begin a new Draft cycle.'
+                );
             }
 
             if (
@@ -48,7 +50,9 @@ class action_plugin_structdocapproval_changesummary extends ActionPlugin
             $postedRevision = (int)($in['working_revision'] ?? 0);
             $currentRevision = (int)$current->get('revision');
             if (!$postedRevision || $postedRevision !== $currentRevision) {
-                throw new RuntimeException('The working revision changed. Reload the page before saving the change summary.');
+                throw new RuntimeException(
+                    'The working revision changed. Reload the page before saving the change summary.'
+                );
             }
 
             $actor = $INPUT->server->str('REMOTE_USER');

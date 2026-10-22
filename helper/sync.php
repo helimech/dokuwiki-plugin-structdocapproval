@@ -25,9 +25,7 @@ class helper_plugin_structdocapproval_sync extends Plugin
     {
         /** @var helper_plugin_structdocapproval_assignments $matcher */
         $matcher = plugin_load('helper', 'structdocapproval_assignments');
-        $patterns = array_values(array_unique(array_filter(array_map('trim', $patterns), static function ($p) {
-            return $p !== '';
-        })));
+        $patterns = array_values(array_unique(array_filter(array_map(trim(...), $patterns), static fn($p) => $p !== '')));
 
         $stats = $this->emptyStats();
         if (!$patterns) return $stats;
@@ -128,7 +126,7 @@ class helper_plugin_structdocapproval_sync extends Plugin
 
     protected function emptyStats(): array
     {
-        return ['matched'=>0,'initialized'=>0,'updated'=>0,'excluded'=>0,'directive_excluded'=>0,'conflicts'=>0,'unchanged'=>0,'errors'=>0];
+        return ['matched' => 0,'initialized' => 0,'updated' => 0,'excluded' => 0,'directive_excluded' => 0,'conflicts' => 0,'unchanged' => 0,'errors' => 0];
     }
 
     public function getAllWikiPages(): array

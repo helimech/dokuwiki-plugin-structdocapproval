@@ -47,8 +47,7 @@ class Assignments
         string $publisher = '',
         string $notify = '',
         string $acknowledge = ''
-    ): int
-    {
+    ): int {
         $max = (int)$this->sqlite->queryValue('SELECT COALESCE(MAX(sort_order), 0) FROM struct_docapproval_rules');
         $order = $max + 10;
         $this->sqlite->query(
@@ -78,8 +77,7 @@ class Assignments
         string $publisher = '',
         string $notify = '',
         string $acknowledge = ''
-    ): bool
-    {
+    ): bool {
         $ok = (bool)$this->sqlite->query(
             'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, training=?, publisher=?, notify=?, acknowledge=? WHERE id=?',
             [
@@ -258,7 +256,7 @@ class Assignments
     public function isControlled(string $pid): bool
     {
         $row = $this->getMaterialized($pid);
-        return $row ? (bool)$row['controlled'] : false;
+        return $row && (bool)$row['controlled'];
     }
 
     public function getRoleSpec(string $pid, string $role): string

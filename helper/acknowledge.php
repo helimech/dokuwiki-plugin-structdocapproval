@@ -28,9 +28,7 @@ class helper_plugin_structdocapproval_acknowledge extends Plugin
     {
         /** @var helper_plugin_structdocapproval_publication $publication */
         $publication = plugin_load('helper', 'structdocapproval_publication');
-        return $publication
-            ? $publication->isRequired($pid, $publicationRevision, $user)
-            : false;
+        return $publication && $publication->isRequired($pid, $publicationRevision, $user);
     }
 
     public function getAcknowledgement(string $pid, string $user, int $publicationRevision): ?array
@@ -90,11 +88,13 @@ class helper_plugin_structdocapproval_acknowledge extends Plugin
         $version = Constants::formatVersion((string)$currentPublished->get('version'));
         $now = time();
         $db = $this->db();
-        if (!$db || !$db->query(
-            'INSERT OR IGNORE INTO struct_docapproval_acknowledgements ' .
-            '(pid,user,publication_revision,content_revision,version,acknowledged_at) VALUES (?,?,?,?,?,?)',
-            [$pid, $user, $publicationRevision, $contentRevision, $version, $now]
-        )) {
+        if (
+            !$db || !$db->query(
+                'INSERT OR IGNORE INTO struct_docapproval_acknowledgements ' .
+                '(pid,user,publication_revision,content_revision,version,acknowledged_at) VALUES (?,?,?,?,?,?)',
+                [$pid, $user, $publicationRevision, $contentRevision, $version, $now]
+            )
+        ) {
             throw new RuntimeException('Could not record the acknowledgement.');
         }
 

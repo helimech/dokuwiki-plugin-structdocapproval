@@ -238,7 +238,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
             if ($audienceStaged && $publication) {
                 try {
                     $publication->removeAudience($pid, (int)$next->get('revision'));
-                } catch (Throwable $rollbackError) {
+                } catch (Throwable) {
                     // Preserve the original workflow-save failure; an orphan snapshot
                     // is non-current and can be detected/reconciled during testing.
                 }
@@ -267,11 +267,13 @@ class helper_plugin_structdocapproval_workflow extends Plugin
             throw new RuntimeException('A Published change summary is fixed. Edit the page to begin a new Draft cycle.');
         }
 
-        if (!$this->dbHelper->canEditChangeSummary(
-            $pid,
-            (string)$current->get('status'),
-            (string)$current->get('assigned_reviewer')
-        )) {
+        if (
+            !$this->dbHelper->canEditChangeSummary(
+                $pid,
+                (string)$current->get('status'),
+                (string)$current->get('assigned_reviewer')
+            )
+        ) {
             throw new RuntimeException('You may not edit the change summary at this workflow stage.');
         }
 

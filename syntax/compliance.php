@@ -1,12 +1,23 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_compliance extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 158; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 158;
+    }
 
     public function connectTo($mode)
     {
@@ -17,7 +28,7 @@ class syntax_plugin_structdocapproval_compliance extends DokuWiki_Syntax_Plugin
         );
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }

@@ -399,5 +399,4 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         $ts = strtotime($iso);
         return $ts ? dformat($ts) : $iso;
     }
-
 }

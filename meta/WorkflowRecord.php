@@ -31,7 +31,7 @@ class WorkflowRecord
     ];
 
     protected $pid;
-    protected $rid = null;
+    protected $rid;
     protected $data = [];
 
     public function __construct(string $pid, array $data = [], ?int $rid = null)
@@ -166,7 +166,7 @@ class WorkflowRecord
         if (!array_key_exists($field, self::FIELD_COLS)) {
             throw new \InvalidArgumentException('Unknown workflow field: ' . $field);
         }
-        $this->data[$field] = $value === null ? '' : $value;
+        $this->data[$field] = $value ?? '';
         return $this;
     }
 

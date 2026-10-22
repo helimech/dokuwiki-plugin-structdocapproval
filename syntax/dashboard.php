@@ -1,13 +1,24 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Assignments;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 159; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 159;
+    }
 
     public function connectTo($mode)
     {
@@ -18,7 +29,7 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
         );
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }
@@ -266,7 +277,8 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
 
         $html = '<div class="docapproval-dashboard-tablewrap"><table class="inline docapproval-dashboard-documents-table">';
         $html .= '<thead><tr>';
-        foreach ([
+        foreach (
+            [
             'page',
             'dashboard_workflow',
             'assigned_to',
@@ -275,7 +287,8 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
             'dashboard_acknowledgement',
             'change_summary',
             'compliance_details'
-        ] as $key) {
+            ] as $key
+        ) {
             $html .= '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';
@@ -570,20 +583,14 @@ class syntax_plugin_structdocapproval_dashboard extends DokuWiki_Syntax_Plugin
 
     protected function statusPriority(string $status): int
     {
-        switch ($status) {
-            case Constants::STATUS_AWAITING_REVIEW:
-                return 1;
-            case Constants::STATUS_AWAITING_TRAINING:
-                return 2;
-            case Constants::STATUS_READY_TO_PUBLISH:
-                return 3;
-            case Constants::STATUS_DRAFT:
-                return 4;
-            case Constants::STATUS_PUBLISHED:
-                return 5;
-            default:
-                return 99;
-        }
+        return match ($status) {
+            Constants::STATUS_AWAITING_REVIEW => 1,
+            Constants::STATUS_AWAITING_TRAINING => 2,
+            Constants::STATUS_READY_TO_PUBLISH => 3,
+            Constants::STATUS_DRAFT => 4,
+            Constants::STATUS_PUBLISHED => 5,
+            default => 99,
+        };
     }
 
     protected function formatAgeFromIso(string $iso): string

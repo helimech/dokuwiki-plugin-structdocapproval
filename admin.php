@@ -105,14 +105,20 @@ class admin_plugin_structdocapproval extends AdminPlugin
             msg($e->getMessage(), -1);
         }
 
-        send_redirect(wl($ID, ['do'=>'admin','page'=>'structdocapproval'], true, '&'));
+        send_redirect(wl($ID, ['do' => 'admin','page' => 'structdocapproval'], true, '&'));
     }
 
     protected function reportSync(array $s, string $langKey): void
     {
         $text = sprintf(
             $this->getLang($langKey),
-            $s['matched'], $s['initialized'], $s['updated'], $s['excluded'], $s['directive_excluded'], $s['conflicts'], $s['errors']
+            $s['matched'],
+            $s['initialized'],
+            $s['updated'],
+            $s['excluded'],
+            $s['directive_excluded'],
+            $s['conflicts'],
+            $s['errors']
         );
         msg($text, ($s['errors'] || $s['conflicts']) ? 0 : 1);
     }

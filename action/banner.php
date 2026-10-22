@@ -302,7 +302,9 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             echo '<label>' . hsc($this->getLang('training_note')) .
                 ' <input type="text" class="edit docapproval-note" ' .
                 'name="structdocapproval[training_note]" /></label> ';
-            echo '<label>' . hsc($this->getLang('note_optional')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+            echo '<label>' . hsc($this->getLang('note_optional')) .
+                ' <input type="text" class="edit docapproval-comment" ' .
+                'name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_TRAINING_REVIEWED);
             echo '</form>';
         } elseif ($status === Constants::STATUS_READY_TO_PUBLISH && $this->db->canPublish($pid)) {

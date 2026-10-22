@@ -275,7 +275,8 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
         /** @var helper_plugin_structdocapproval_publication $publication */
         $publication = plugin_load('helper', 'structdocapproval_publication');
 
-        $html = '<div class="docapproval-dashboard-tablewrap"><table class="inline docapproval-dashboard-documents-table">';
+        $html = '<div class="docapproval-dashboard-tablewrap">' .
+            '<table class="inline docapproval-dashboard-documents-table">';
         $html .= '<thead><tr>';
         foreach (
             [
@@ -416,7 +417,10 @@ class syntax_plugin_structdocapproval_dashboard extends SyntaxPlugin
                 $this->getLang('version'),
                 $row['published_version'] !== '' ? (string)$row['published_version'] : $this->getLang('version_unset')
             );
-            $html .= $this->detailPair($this->getLang('compliance_published'), $this->formatIsoDate((string)$row['published_at']));
+            $html .= $this->detailPair(
+                $this->getLang('compliance_published'),
+                $this->formatIsoDate((string)$row['published_at'])
+            );
             if ($row['published_by'] !== '') {
                 $html .= $this->detailPair(
                     $this->getLang('compliance_published_by'),

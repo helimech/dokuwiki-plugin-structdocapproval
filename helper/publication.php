@@ -119,7 +119,8 @@ class helper_plugin_structdocapproval_publication extends Plugin
         try {
             $db->query(
                 'REPLACE INTO struct_docapproval_publications ' .
-                '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at) ' .
+                '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,' .
+                'change_summary,published_by,published_at,ack_due_at) ' .
                 'VALUES (?,?,?,?,?,?,?,?,?,?)',
                 [
                     $pid,

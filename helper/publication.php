@@ -293,7 +293,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
         return [
             'pid' => $pid,
             'publication_revision' => $publicationRevision,
-            'version' => (string)$snapshot['version'],
+            'version' => Constants::formatVersion((string)$snapshot['version']),
             'published_at' => (int)$snapshot['published_at'],
             'ack_due_at' => (int)($snapshot['ack_due_at'] ?? 0),
             'notify_spec' => (string)$snapshot['notify_spec'],

@@ -61,8 +61,7 @@ class syntax_plugin_structdocapproval_current extends SyntaxPlugin
                 'version',
                 'updated',
                 'history',
-            ]
-            as $k
+            ] as $k
         ) {
             $html .= '<th>' . hsc($this->getLang($k)) . '</th>';
         }

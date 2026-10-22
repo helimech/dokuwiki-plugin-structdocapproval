@@ -40,10 +40,12 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
             // by a failed version write from making the next request rerun the ALTER.
             if ($version === 1) {
                 if (!$this->$method($sqlite)) return false;
-                if (!$sqlite->query(
-                    'REPLACE INTO opts (val,opt) VALUES (?,?)',
-                    [$version, 'dbversion_struct_docapproval']
-                )) {
+                if (
+                    !$sqlite->query(
+                        'REPLACE INTO opts (val,opt) VALUES (?,?)',
+                        [$version, 'dbversion_struct_docapproval']
+                    )
+                ) {
                     return false;
                 }
                 continue;
@@ -59,16 +61,18 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
                         'Struct DocApproval database migration ' . $version . ' failed.'
                     );
                 }
-                if (!$sqlite->query(
-                    'REPLACE INTO opts (val,opt) VALUES (?,?)',
-                    [$version, 'dbversion_struct_docapproval']
-                )) {
+                if (
+                    !$sqlite->query(
+                        'REPLACE INTO opts (val,opt) VALUES (?,?)',
+                        [$version, 'dbversion_struct_docapproval']
+                    )
+                ) {
                     throw new RuntimeException(
                         'Could not record Struct DocApproval database version ' . $version . '.'
                     );
                 }
                 if ($started) $pdo->commit();
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 if ($started && $pdo->inTransaction()) $pdo->rollBack();
                 return false;
             }
@@ -147,7 +151,7 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
             }
             if ($started) $pdo->commit();
             return true;
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             if ($started && $pdo->inTransaction()) $pdo->rollBack();
             return false;
         }

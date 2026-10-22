@@ -71,15 +71,11 @@ class helper_plugin_structdocapproval_db extends Plugin
     {
         if (auth_isadmin() || auth_quickaclcheck($pid) >= AUTH_EDIT) return true;
 
-        switch ($status) {
-            case Constants::STATUS_AWAITING_REVIEW:
-                return $this->canReview($pid, $assignedReviewer);
-            case Constants::STATUS_AWAITING_TRAINING:
-                return $this->canTrain($pid);
-            case Constants::STATUS_READY_TO_PUBLISH:
-                return $this->canPublish($pid);
-            default:
-                return false;
-        }
+        return match ($status) {
+            Constants::STATUS_AWAITING_REVIEW => $this->canReview($pid, $assignedReviewer),
+            Constants::STATUS_AWAITING_TRAINING => $this->canTrain($pid),
+            Constants::STATUS_READY_TO_PUBLISH => $this->canPublish($pid),
+            default => false,
+        };
     }
 }

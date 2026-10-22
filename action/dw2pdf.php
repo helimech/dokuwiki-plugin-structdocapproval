@@ -30,7 +30,8 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
         if (!is_array($event->data) || !isset($event->data['replace'])) return;
 
         $replace =& $event->data['replace'];
-        foreach ([
+        foreach (
+            [
             '@DOCREV@',
             '@DOCDATE@',
             '@DOCPUBLISHEDBY@',
@@ -38,7 +39,8 @@ class action_plugin_structdocapproval_dw2pdf extends ActionPlugin
             '@DOCLASTPUBREV@',
             '@DOCLASTPUBDATE@',
             '@DOCHEADERMETA@',
-        ] as $token) {
+            ] as $token
+        ) {
             if (!array_key_exists($token, $replace)) $replace[$token] = '';
         }
 

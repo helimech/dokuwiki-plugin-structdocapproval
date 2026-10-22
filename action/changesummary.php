@@ -35,11 +35,13 @@ class action_plugin_structdocapproval_changesummary extends ActionPlugin
                 throw new RuntimeException('A Published change summary is fixed. Edit the page to begin a new Draft cycle.');
             }
 
-            if (!$db->canEditChangeSummary(
-                $ID,
-                (string)$current->get('status'),
-                (string)$current->get('assigned_reviewer')
-            )) {
+            if (
+                !$db->canEditChangeSummary(
+                    $ID,
+                    (string)$current->get('status'),
+                    (string)$current->get('assigned_reviewer')
+                )
+            ) {
                 throw new RuntimeException('You may not edit the change summary at this workflow stage.');
             }
 

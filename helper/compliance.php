@@ -89,8 +89,8 @@ class helper_plugin_structdocapproval_compliance extends Plugin
 
             if (
                 $filters['page'] !== '' &&
-                stripos($pid, $filters['page']) === false &&
-                stripos($title, $filters['page']) === false
+                stripos($pid, (string) $filters['page']) === false &&
+                stripos($title, (string) $filters['page']) === false
             ) {
                 continue;
             }
@@ -184,7 +184,7 @@ class helper_plugin_structdocapproval_compliance extends Plugin
         $out = [];
         $batchSets = [];
         foreach ($rows as $row) {
-            $key = (string)$row['pid'] . '|' . (int)$row['publication_revision'];
+            $key = $row['pid'] . '|' . (int)$row['publication_revision'];
             if (!isset($out[$key])) {
                 $out[$key] = [
                     'batches' => 0,

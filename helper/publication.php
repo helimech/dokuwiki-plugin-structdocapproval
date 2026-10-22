@@ -86,7 +86,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
                 continue;
             }
 
-            if (strpos($token, '@') !== false) {
+            if (str_contains($token, '@')) {
                 throw new RuntimeException(
                     'Acknowledge accepts DokuWiki users and @groups only, not literal email addresses: ' . $token
                 );
@@ -233,9 +233,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
             'WHERE pid=? AND publication_revision=? ORDER BY user',
             [cleanID($pid), $publicationRevision]
         ) ?: [];
-        return array_values(array_filter(array_map(static function ($row) {
-            return (string)($row['user'] ?? '');
-        }, $rows)));
+        return array_values(array_filter(array_map(static fn($row) => (string)($row['user'] ?? ''), $rows)));
     }
 
     public function isRequired(string $pid, int $publicationRevision, string $user): bool
@@ -435,7 +433,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
         $runDate = date('Y-m-d');
         try {
             $token = bin2hex(random_bytes(8));
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             $token = substr(sha1(uniqid('', true)), 0, 16);
         }
         $startedAt = time();
@@ -639,7 +637,7 @@ class helper_plugin_structdocapproval_publication extends Plugin
             }
         }
 
-        uksort($items, 'strnatcasecmp');
+        uksort($items, strnatcasecmp(...));
         return array_keys($items);
     }
 }

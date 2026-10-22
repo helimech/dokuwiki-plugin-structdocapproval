@@ -1,19 +1,30 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_current extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_current extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 155; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 155;
+    }
 
     public function connectTo($mode)
     {
         $this->Lexer->addSpecialPattern('----+ *struct[_]?docapproval *-+\n.*?\n?----+', $mode, 'plugin_structdocapproval_current');
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }

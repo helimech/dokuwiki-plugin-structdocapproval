@@ -1,4 +1,5 @@
 <?php
+
 $meta['email_enable'] = ['onoff'];
 $meta['review_queue_cc'] = ['string'];
 $meta['publish_notify'] = ['string'];

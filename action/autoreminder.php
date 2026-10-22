@@ -71,7 +71,7 @@ class action_plugin_structdocapproval_autoreminder extends ActionPlugin
                     $sentPublications++;
                     $sentDeliveries += count($deliveries);
                 } catch (Throwable $e) {
-                    $errors[] = (string)$candidate['pid'] . ': ' . $e->getMessage();
+                    $errors[] = $candidate['pid'] . ': ' . $e->getMessage();
                 }
             }
 
@@ -100,7 +100,7 @@ class action_plugin_structdocapproval_autoreminder extends ActionPlugin
                         'failed',
                         $e->getMessage()
                     );
-                } catch (Throwable $ignored) {
+                } catch (Throwable) {
                     // Best effort only; the stale-run recovery can reclaim it later.
                 }
             }

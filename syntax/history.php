@@ -1,19 +1,30 @@
 <?php
 
+use dokuwiki\Extension\SyntaxPlugin;
+use dokuwiki\Parsing\Handler;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
 
-class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
+class syntax_plugin_structdocapproval_history extends SyntaxPlugin
 {
-    public function getType() { return 'substition'; }
-    public function getPType() { return 'block'; }
-    public function getSort() { return 156; }
+    public function getType()
+    {
+        return 'substition';
+    }
+    public function getPType()
+    {
+        return 'block';
+    }
+    public function getSort()
+    {
+        return 156;
+    }
 
     public function connectTo($mode)
     {
         $this->Lexer->addSpecialPattern('----+ *struct[_]?docapprovalhistory *-+\n.*?\n?----+', $mode, 'plugin_structdocapproval_history');
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler)
+    public function handle($match, $state, $pos, Handler $handler)
     {
         return [];
     }
@@ -91,7 +102,7 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
                 }
                 $html .= '</tr></thead><tbody>';
                 foreach ($rows as $row) {
-                    $revlink = wl($selected, ['rev'=>$row['col5']]);
+                    $revlink = wl($selected, ['rev' => $row['col5']]);
                     $html .= '<tr>';
                     $html .= '<td>' . hsc($this->formatDate($row['col4'])) . '</td>';
                     $html .= '<td>' . hsc($this->getLang('action_' . $row['col2'])) . '</td>';

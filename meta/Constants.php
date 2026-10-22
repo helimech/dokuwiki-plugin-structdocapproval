@@ -124,5 +124,4 @@ class Constants
         $parts[] = $last;
         return implode('.', $parts);
     }
-
 }

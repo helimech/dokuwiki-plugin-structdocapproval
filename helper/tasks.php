@@ -150,22 +150,26 @@ class helper_plugin_structdocapproval_tasks extends Plugin
 
                 case Constants::STATUS_AWAITING_TRAINING:
                     // Training remains assignment-rule based and may be a user/@group list.
-                    if ($assignments->userMatchesSpec(
-                        (string)($row['rule_training'] ?? ''),
-                        $user,
-                        $groups
-                    )) {
+                    if (
+                        $assignments->userMatchesSpec(
+                            (string)($row['rule_training'] ?? ''),
+                            $user,
+                            $groups
+                        )
+                    ) {
                         $out['training'][] = $task;
                     }
                     break;
 
                 case Constants::STATUS_READY_TO_PUBLISH:
                     // Publisher remains assignment-rule based and may be a user/@group list.
-                    if ($assignments->userMatchesSpec(
-                        (string)($row['rule_publisher'] ?? ''),
-                        $user,
-                        $groups
-                    )) {
+                    if (
+                        $assignments->userMatchesSpec(
+                            (string)($row['rule_publisher'] ?? ''),
+                            $user,
+                            $groups
+                        )
+                    ) {
                         $out['publish'][] = $task;
                     }
                     break;

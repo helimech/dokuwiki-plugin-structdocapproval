@@ -74,7 +74,7 @@ class action_plugin_structdocapproval_save extends ActionPlugin
         $assignments = Assignments::getInstance(true);
         $oldAssignment = $assignments->getMaterialized($id);
         $wasControlled = $oldAssignment && (bool)$oldAssignment['controlled'];
-        $oldContent = (string)($event->data['oldContent'] ?? '');
+        $event->data['oldContent'] ?? '';
         $newContent = (string)($event->data['newContent'] ?? '');
         $hasDirective = Assignments::contentHasNoRevisionControl($newContent);
         $resolved = $assignments->resolvePage($id, $newContent);

@@ -151,7 +151,7 @@ class action_plugin_structdocapproval_move extends ActionPlugin
 
     protected function isExactPagePattern(string $pattern): bool
     {
-        return $pattern !== '' && $pattern[0] !== '/' && substr($pattern, -1) !== '*';
+        return $pattern !== '' && $pattern[0] !== '/' && !str_ends_with($pattern, '*');
     }
 
     public function handleMove(Event $event): void

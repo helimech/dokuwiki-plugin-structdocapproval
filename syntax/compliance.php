@@ -178,8 +178,7 @@ class syntax_plugin_structdocapproval_compliance extends SyntaxPlugin
     protected function renderPublicationTable(
         array $rows,
         helper_plugin_structdocapproval_publication $publication
-    ): string
-    {
+    ): string {
         $html = '<section class="docapproval-compliance-section">';
         $html .= '<h3>' . hsc($this->getLang('compliance_publication_table')) . ' (' . count($rows) . ')</h3>';
 

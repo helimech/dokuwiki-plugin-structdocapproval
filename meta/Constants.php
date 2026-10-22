@@ -25,6 +25,8 @@ class Constants
     public const ROLE_REVIEWER = 'reviewer';
     public const ROLE_TRAINING = 'training';
     public const ROLE_PUBLISHER = 'publisher';
+    public const ROLE_NOTIFY = 'notify';
+    public const ROLE_ACKNOWLEDGE = 'acknowledge';
 
     public const TRAINING_NA = 'na';
     public const TRAINING_EXISTING = 'existing_adequate';
@@ -57,6 +59,26 @@ class Constants
         ];
     }
 
+    public static function assignmentRoles(): array
+    {
+        return [
+            self::ROLE_REVIEWER,
+            self::ROLE_TRAINING,
+            self::ROLE_PUBLISHER,
+            self::ROLE_NOTIFY,
+            self::ROLE_ACKNOWLEDGE,
+        ];
+    }
+
+    public static function workflowRoles(): array
+    {
+        return [
+            self::ROLE_REVIEWER,
+            self::ROLE_TRAINING,
+            self::ROLE_PUBLISHER,
+        ];
+    }
+
     public static function trainingDispositions(): array
     {
         return [
@@ -77,14 +99,15 @@ class Constants
         ], true);
     }
     /**
-     * Display/store simple numeric document revisions as three digits.
+     * Display/store simple numeric document revisions with a minimum width of two
+     * digits: 00..09, 10..99, then naturally 100, 101, etc.
      * Non-numeric version labels are left untouched.
      */
     public static function formatVersion(string $version): string
     {
         $version = trim($version);
         if ($version === '') return '';
-        if (ctype_digit($version)) return str_pad((string)((int)$version), 3, '0', STR_PAD_LEFT);
+        if (ctype_digit($version)) return str_pad((string)((int)$version), 2, '0', STR_PAD_LEFT);
         return $version;
     }
 
@@ -92,7 +115,7 @@ class Constants
     public static function nextVersion(string $version): string
     {
         $version = trim($version);
-        if ($version === '') return '001';
+        if ($version === '') return '01';
         if (ctype_digit($version)) return self::formatVersion((string)((int)$version + 1));
 
         $parts = explode('.', $version);

@@ -29,10 +29,16 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         $current = WorkflowRecord::latest($pid);
         if (!$current) throw new RuntimeException('No workflow record exists for this page.');
 
+        // Save the visible Change Summary before processing the workflow transition.
+        // This makes the stage/action buttons behave like Save Summary + transition,
+        // while the standalone Save Summary button remains available for interim edits.
+        $this->savePostedChangeSummary($pid, $current, $params, $actor);
+
         $revision = (int)@filemtime(wikiFN($pid));
         if (!$revision) $revision = (int)$current->get('revision');
         $next = $current->copyForRevision($revision)->stamp($action, $actor);
         $now = $next->get('datetime');
+        $publicationAudience = null;
 
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
@@ -101,6 +107,54 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 if (!$this->dbHelper->canPublish($pid)) throw new RuntimeException('You may not publish this page.');
                 $version = Constants::formatVersion((string)($params['version'] ?? ''));
                 if ($version === '') throw new RuntimeException('Enter the document version before publishing.');
+
+                /** @var helper_plugin_structdocapproval_publication $publication */
+                $publication = plugin_load('helper', 'structdocapproval_publication');
+                if (!$publication) throw new RuntimeException('Publication audience helper is unavailable.');
+
+                $notifyEnabled = !empty($params['notify_enabled']);
+                $acknowledgeEnabled = !empty($params['acknowledge_enabled']);
+                $notifySpec = $notifyEnabled
+                    ? trim((string)($params['notify_spec'] ?? ''))
+                    : '';
+                $acknowledgeSpec = $acknowledgeEnabled
+                    ? trim((string)($params['acknowledge_spec'] ?? ''))
+                    : '';
+
+                /** @var helper_plugin_structdocapproval_changesummary $changeSummary */
+                $changeSummary = plugin_load('helper', 'structdocapproval_changesummary');
+                if (!$changeSummary) throw new RuntimeException('Change summary helper is unavailable.');
+                $summaryText = trim($changeSummary->getSummary($pid));
+
+                // A release communication should never go out without a plain-language
+                // explanation. Grammar/admin-only releases can still Publish with an empty
+                // summary when neither Notify nor Acknowledge is selected.
+                if (($notifyEnabled || $acknowledgeEnabled) && $summaryText === '') {
+                    throw new RuntimeException($this->getLang('change_summary_required_for_release'));
+                }
+
+                // Validate and resolve the acknowledgement audience before the workflow
+                // commits. This prevents a typo or unresolvable group from producing a
+                // Published revision with an incomplete compliance audience.
+                $publicationAudience = $publication->prepareAudience($notifySpec, $acknowledgeSpec);
+                $publicationAudience['change_summary'] = $summaryText;
+
+                $dueAt = 0;
+                if ($acknowledgeEnabled) {
+                    $dueDate = trim((string)($params['ack_due_date'] ?? ''));
+                    if ($dueDate !== '') {
+                        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
+                            throw new RuntimeException('Enter a valid acknowledgement due date.');
+                        }
+                        $dueAt = strtotime($dueDate . ' 23:59:59');
+                        if (!$dueAt) throw new RuntimeException('Enter a valid acknowledgement due date.');
+                        if ($dueAt < strtotime(date('Y-m-d') . ' 00:00:00')) {
+                            throw new RuntimeException($this->getLang('ack_due_past'));
+                        }
+                    }
+                }
+                $publicationAudience['ack_due_at'] = $dueAt;
+
                 $next->set('status', Constants::STATUS_PUBLISHED)
                     ->set('version', $version)
                     ->set('published_by', $actor)
@@ -144,16 +198,99 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 throw new RuntimeException('Unknown workflow action.');
         }
 
-        $next->save();
+        // Recheck immediately before committing. This catches the normal
+        // double-click/two-tab race where another request has already advanced the
+        // workflow after this request loaded its starting record.
+        $live = WorkflowRecord::latest($pid);
+        if (!$live || $live->getRid() !== $current->getRid()) {
+            throw new RuntimeException($this->getLang('workflow_stale_reload'));
+        }
+
+        // For a normal Publish, persist the immutable release/audience snapshot
+        // before committing the Published workflow row. If audience persistence fails,
+        // the document remains Ready to Publish instead of becoming Published without
+        // its compliance boundary. If the workflow save itself fails, remove the
+        // pre-staged snapshot as compensation.
+        $publish = null;
         if ($next->get('status') === Constants::STATUS_PUBLISHED) {
             /** @var helper_plugin_structdocapproval_publish $publish */
             $publish = plugin_load('helper', 'structdocapproval_publish');
+            if (!$publish) {
+                throw new RuntimeException('Struct publication helper is unavailable.');
+            }
+        }
+
+        $publication = null;
+        $audienceStaged = false;
+        if ($action === Constants::ACTION_PUBLISH) {
+            /** @var helper_plugin_structdocapproval_publication $publication */
+            $publication = plugin_load('helper', 'structdocapproval_publication');
+            if (!$publication || $publicationAudience === null) {
+                throw new RuntimeException('The release audience could not be prepared for publication.');
+            }
+            $publication->persistAudience($next, $publicationAudience);
+            $audienceStaged = true;
+        }
+
+        try {
+            $next->save();
+        } catch (Throwable $e) {
+            if ($audienceStaged && $publication) {
+                try {
+                    $publication->removeAudience($pid, (int)$next->get('revision'));
+                } catch (Throwable $rollbackError) {
+                    // Preserve the original workflow-save failure; an orphan snapshot
+                    // is non-current and can be detected/reconciled during testing.
+                }
+            }
+            throw $e;
+        }
+
+        if ($next->get('status') === Constants::STATUS_PUBLISHED) {
             $publish->publishStructData($pid, (int)$next->get('revision'));
         }
 
         $eventData = ['pid' => $pid, 'action' => $action, 'record' => $next, 'previous' => $current];
         Event::createAndTrigger('STRUCTDOCAPPROVAL_TRANSITION', $eventData);
         return $next;
+    }
+
+    protected function savePostedChangeSummary(
+        string $pid,
+        WorkflowRecord $current,
+        array $params,
+        string $actor
+    ): void {
+        if (!array_key_exists('change_summary', $params)) return;
+
+        if ($current->get('status') === Constants::STATUS_PUBLISHED) {
+            throw new RuntimeException('A Published change summary is fixed. Edit the page to begin a new Draft cycle.');
+        }
+
+        if (!$this->dbHelper->canEditChangeSummary(
+            $pid,
+            (string)$current->get('status'),
+            (string)$current->get('assigned_reviewer')
+        )) {
+            throw new RuntimeException('You may not edit the change summary at this workflow stage.');
+        }
+
+        $postedRevision = (int)($params['change_summary_revision'] ?? 0);
+        $currentRevision = (int)$current->get('revision');
+        if (!$postedRevision || $postedRevision !== $currentRevision) {
+            throw new RuntimeException('The working revision changed. Reload the page before continuing the workflow.');
+        }
+
+        /** @var helper_plugin_structdocapproval_changesummary $summary */
+        $summary = plugin_load('helper', 'structdocapproval_changesummary');
+        if (!$summary) throw new RuntimeException('Change summary helper is unavailable.');
+
+        $summary->save(
+            $pid,
+            (string)($params['change_summary'] ?? ''),
+            $actor,
+            $currentRevision
+        );
     }
 
     protected function requireStatus(WorkflowRecord $record, string $status): void

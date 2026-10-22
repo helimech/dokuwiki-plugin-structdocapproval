@@ -29,27 +29,62 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         if (!$db) return false;
 
         $pages = $db->queryAll('SELECT DISTINCT pid FROM data_struct_docapproval ORDER BY pid') ?: [];
-        $selected = cleanID($INPUT->str('docapproval_history_page'));
+        $rawSelected = trim($INPUT->str('docapproval_history_page'));
 
-        $html = '<div id="docapproval-history" class="plugin-structdocapproval-history">';
+        // Build the accessible autocomplete set once. A user may select a page ID
+        // from the datalist or type an exact document title; an exact title is
+        // accepted only when it resolves uniquely.
+        $availablePages = [];
+        foreach ($pages as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if ($pid === '') continue;
+            if (auth_quickaclcheck($pid) < AUTH_READ || !$dbHelper->canViewWorking($pid)) continue;
+            $title = $this->pageTitle($pid);
+            $availablePages[] = [
+                'pid' => $pid,
+                'title' => $title,
+                'label' => $title !== $pid ? $title . ' — ' . $pid : $pid,
+            ];
+        }
+        $selected = $this->resolvePageSelection($rawSelected, $availablePages);
+
+        $embedded = is_array($data) && !empty($data['embedded']);
+        $html = '<div id="docapproval-history" class="plugin-structdocapproval-history' .
+            ($embedded ? ' embedded' : '') . '">';
         $html .= '<form method="get" action="' . hsc(DOKU_BASE . DOKU_SCRIPT) . '">';
         $html .= '<input type="hidden" name="id" value="' . hsc($ID) . '" />';
-        $html .= '<label>' . hsc($this->getLang('select_page')) . ' <select name="docapproval_history_page">';
-        $html .= '<option value="">' . hsc($this->getLang('select_page_prompt')) . '</option>';
-        foreach ($pages as $row) {
-            $pid = $row['pid'];
-            if (auth_quickaclcheck($pid) < AUTH_READ || !$dbHelper->canViewWorking($pid)) continue;
-            $sel = $pid === $selected ? ' selected' : '';
-            $html .= '<option value="' . hsc($pid) . '"' . $sel . '>' . hsc($pid) . '</option>';
+        if ($INPUT->str('docapproval_dash_view') === 'history') {
+            $html .= '<input type="hidden" name="docapproval_dash_view" value="history" />';
         }
-        $html .= '</select></label> <button type="submit">' . hsc($this->getLang('show_history')) . '</button></form>';
+        $html .= '<label>' . hsc($this->getLang('select_page')) . ' ';
+        $html .= '<input type="search" class="edit docapproval-history-page-picker" ' .
+            'name="docapproval_history_page" list="docapproval-history-pages" ' .
+            'value="' . hsc($selected !== '' ? $selected : $rawSelected) . '" placeholder="' .
+            hsc($this->getLang('select_page_prompt')) . '" autocomplete="off" /></label>';
+        $html .= '<datalist id="docapproval-history-pages">';
+        foreach ($availablePages as $page) {
+            $html .= '<option value="' . hsc($page['pid']) . '" label="' .
+                hsc($page['label']) . '"></option>';
+        }
+        $html .= '</datalist>';
+        $html .= ' <button type="submit">' . hsc($this->getLang('show_history')) . '</button></form>';
+
+        if ($rawSelected !== '' && $selected === '') {
+            $html .= '<p class="docapproval-warning">' .
+                hsc($this->getLang('history_page_not_found')) . '</p>';
+        }
 
         if ($selected !== '') {
             if (auth_quickaclcheck($selected) < AUTH_READ || !$dbHelper->canViewWorking($selected)) {
                 $html .= '<p class="docapproval-warning">' . hsc($this->getLang('history_denied')) . '</p>';
             } else {
                 $rows = $db->queryAll('SELECT * FROM data_struct_docapproval WHERE pid=? ORDER BY rid ASC', [$selected]) ?: [];
-                $html .= '<h3><a href="' . hsc(wl($selected)) . '">' . hsc($selected) . '</a></h3>';
+                $title = $this->pageTitle($selected);
+                $html .= '<h3><a href="' . hsc(wl($selected)) . '">' . hsc($title) . '</a>';
+                if ($title !== $selected) {
+                    $html .= ' <small class="docapproval-page-id">' . hsc($selected) . '</small>';
+                }
+                $html .= '</h3>';
                 $html .= '<table class="inline"><thead><tr>';
                 foreach (['date','action','actor','status','revision','assigned_reviewer','reviewed_by','training','version','comment'] as $k) {
                     $html .= '<th>' . hsc($this->getLang($k)) . '</th>';
@@ -77,6 +112,39 @@ class syntax_plugin_structdocapproval_history extends DokuWiki_Syntax_Plugin
         $html .= '</div>';
         $renderer->doc .= $html;
         return true;
+    }
+
+    protected function resolvePageSelection(string $input, array $pages): string
+    {
+        if ($input === '') return '';
+
+        $clean = cleanID($input);
+        foreach ($pages as $page) {
+            if ($page['pid'] === $clean || strcasecmp($page['pid'], $input) === 0) {
+                return $page['pid'];
+            }
+        }
+
+        $matches = [];
+        foreach ($pages as $page) {
+            if (
+                strcasecmp($page['title'], $input) === 0 ||
+                strcasecmp($page['label'], $input) === 0
+            ) {
+                $matches[] = $page['pid'];
+            }
+        }
+
+        return count($matches) === 1 ? $matches[0] : '';
+    }
+
+    protected function pageTitle(string $pid): string
+    {
+        $title = '';
+        if (function_exists('p_get_first_heading')) {
+            $title = trim((string)p_get_first_heading($pid));
+        }
+        return $title !== '' ? $title : $pid;
     }
 
     protected function formatDate($iso): string

@@ -120,6 +120,8 @@ class action_plugin_structdocapproval_move extends ActionPlugin
             Constants::ROLE_REVIEWER => '',
             Constants::ROLE_TRAINING => '',
             Constants::ROLE_PUBLISHER => '',
+            Constants::ROLE_NOTIFY => '',
+            Constants::ROLE_ACKNOWLEDGE => '',
         ];
         $pns = ':' . getNS($new) . ':';
 
@@ -137,7 +139,7 @@ class action_plugin_structdocapproval_move extends ActionPlugin
             }
 
             $resolved['controlled'] = true;
-            foreach ([Constants::ROLE_REVIEWER, Constants::ROLE_TRAINING, Constants::ROLE_PUBLISHER] as $role) {
+            foreach (Constants::assignmentRoles() as $role) {
                 if (trim((string)$rule[$role]) !== '') {
                     $resolved[$role] = trim((string)$rule[$role]);
                 }
@@ -167,11 +169,58 @@ class action_plugin_structdocapproval_move extends ActionPlugin
         // destination's resolved assignment. Struct has already moved the permanent
         // workflow history to $new by the time this AFTER hook runs.
         $sourceRows = $db->queryAll(
-            'SELECT controlled, reviewer, training, publisher, resolved_at FROM struct_docapproval_pages WHERE pid=? LIMIT 1',
+            'SELECT controlled, reviewer, training, publisher, notify, acknowledge, resolved_at FROM struct_docapproval_pages WHERE pid=? LIMIT 1',
             [$old]
         ) ?: [];
         $source = $sourceRows ? $sourceRows[0] : null;
         $wasControlled = $source && (bool)$source['controlled'];
+
+        // Change summaries, publication audience snapshots, requirements, and
+        // acknowledgement evidence follow the page ID just like workflow history.
+        $db->query(
+            'INSERT OR REPLACE INTO struct_docapproval_change_summary ' .
+            '(pid,working_revision,summary,updated_by,updated_at) ' .
+            'SELECT ?,working_revision,summary,updated_by,updated_at ' .
+            'FROM struct_docapproval_change_summary WHERE pid=?',
+            [$new, $old]
+        );
+        $db->query('DELETE FROM struct_docapproval_change_summary WHERE pid=?', [$old]);
+        $db->query(
+            'UPDATE struct_docapproval_change_summary_history SET pid=? WHERE pid=?',
+            [$new, $old]
+        );
+
+        // Merge immutable publication snapshots safely in case stale rows already
+        // exist at the destination.
+        $db->query(
+            'INSERT OR IGNORE INTO struct_docapproval_publications ' .
+            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at) ' .
+            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at ' .
+            'FROM struct_docapproval_publications WHERE pid=?',
+            [$new, $old]
+        );
+        $db->query('DELETE FROM struct_docapproval_publications WHERE pid=?', [$old]);
+
+        $db->query(
+            'INSERT OR IGNORE INTO struct_docapproval_requirements (pid,publication_revision,user,required_at) ' .
+            'SELECT ?,publication_revision,user,required_at FROM struct_docapproval_requirements WHERE pid=?',
+            [$new, $old]
+        );
+        $db->query('DELETE FROM struct_docapproval_requirements WHERE pid=?', [$old]);
+
+        $db->query(
+            'INSERT OR IGNORE INTO struct_docapproval_acknowledgements ' .
+            '(pid,user,publication_revision,content_revision,version,acknowledged_at) ' .
+            'SELECT ?,user,publication_revision,content_revision,version,acknowledged_at ' .
+            'FROM struct_docapproval_acknowledgements WHERE pid=?',
+            [$new, $old]
+        );
+        $db->query('DELETE FROM struct_docapproval_acknowledgements WHERE pid=?', [$old]);
+
+        $db->query(
+            'UPDATE struct_docapproval_reminders SET pid=? WHERE pid=?',
+            [$new, $old]
+        );
 
         // Exact page rules follow a page rename. Wildcard and regex rules stay where
         // they are and naturally resolve according to the destination namespace.
@@ -199,8 +248,17 @@ class action_plugin_structdocapproval_move extends ActionPlugin
             !$resolved['controlled']
         ) {
             $db->query(
-                'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, resolved_at) VALUES (?,?,?,?,?,?)',
-                [$new, 1, $source['reviewer'], $source['training'], $source['publisher'], time()]
+                'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) VALUES (?,?,?,?,?,?,?,?)',
+                [
+                    $new,
+                    1,
+                    $source['reviewer'],
+                    $source['training'],
+                    $source['publisher'],
+                    $source['notify'] ?? '',
+                    $source['acknowledge'] ?? '',
+                    time(),
+                ]
             );
             $db->query('DELETE FROM struct_docapproval_pages WHERE pid=?', [$old]);
             msg(sprintf($this->getLang('move_safeguard_active_uncontrolled'), hsc($new)), -1);

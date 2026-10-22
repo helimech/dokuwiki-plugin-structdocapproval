@@ -39,7 +39,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                     $pattern,
                     (string)($rule['reviewer'] ?? ''),
                     (string)($rule['training'] ?? ''),
-                    (string)($rule['publisher'] ?? '')
+                    (string)($rule['publisher'] ?? ''),
+                    (string)($rule['notify'] ?? ''),
+                    (string)($rule['acknowledge'] ?? '')
                 );
                 msg($this->getLang('rule_added'), 1);
             } elseif ($action === 'save_rules') {
@@ -52,7 +54,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                         $pattern,
                         (string)($rule['reviewer'] ?? ''),
                         (string)($rule['training'] ?? ''),
-                        (string)($rule['publisher'] ?? '')
+                        (string)($rule['publisher'] ?? ''),
+                        (string)($rule['notify'] ?? ''),
+                        (string)($rule['acknowledge'] ?? '')
                     );
                 }
                 msg($this->getLang('rules_saved'), 1);
@@ -86,7 +90,9 @@ class admin_plugin_structdocapproval extends AdminPlugin
                         $pattern,
                         (string)($rule['reviewer'] ?? ''),
                         (string)($rule['training'] ?? ''),
-                        (string)($rule['publisher'] ?? '')
+                        (string)($rule['publisher'] ?? ''),
+                        (string)($rule['notify'] ?? ''),
+                        (string)($rule['acknowledge'] ?? '')
                     );
                 }
                 $stats = $sync->syncRule($id, $actor, [(string)$old['pattern']]);
@@ -130,7 +136,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<input type="hidden" name="page" value="structdocapproval" />';
         echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<table class="inline plugin-structdocapproval-rules">';
-        echo '<tr><th>#</th><th>+/-</th><th>' . hsc($this->getLang('pattern')) . '</th><th>' . hsc($this->getLang('reviewer')) . '</th><th>' . hsc($this->getLang('training')) . '</th><th>' . hsc($this->getLang('publisher')) . '</th><th>' . hsc($this->getLang('actions')) . '</th></tr>';
+        echo '<tr><th>#</th><th>+/-</th><th>' . hsc($this->getLang('pattern')) . '</th><th>' . hsc($this->getLang('reviewer')) . '</th><th>' . hsc($this->getLang('training')) . '</th><th>' . hsc($this->getLang('publisher')) . '</th><th>' . hsc($this->getLang('notify')) . '</th><th>' . hsc($this->getLang('acknowledge')) . '</th><th>' . hsc($this->getLang('actions')) . '</th></tr>';
 
         foreach ($rules as $idx => $rule) {
             $id = (int)$rule['id'];
@@ -141,6 +147,8 @@ class admin_plugin_structdocapproval extends AdminPlugin
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][reviewer]" value="' . hsc($rule['reviewer']) . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][training]" value="' . hsc($rule['training']) . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][publisher]" value="' . hsc($rule['publisher']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][notify]" value="' . hsc($rule['notify'] ?? '') . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][acknowledge]" value="' . hsc($rule['acknowledge'] ?? '') . '" /></td>';
             echo '<td class="rule-actions">';
             echo '<button type="submit" name="action" value="move_up:' . $id . '" title="' . hsc($this->getLang('move_up')) . '">↑</button>';
             echo '<button type="submit" name="action" value="move_down:' . $id . '" title="' . hsc($this->getLang('move_down')) . '">↓</button>';
@@ -162,6 +170,8 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<td><input class="edit" type="text" name="newrule[reviewer]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[training]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[publisher]" placeholder="user or @group" /></td>';
+        echo '<td><input class="edit" type="text" name="newrule[notify]" placeholder="user, @group, or email" /></td>';
+        echo '<td><input class="edit" type="text" name="newrule[acknowledge]" placeholder="user or @group" /></td>';
         echo '<td><button type="submit" name="action" value="add_rule">' . hsc($this->getLang('add_rule')) . '</button></td>';
         echo '</tr></table></form>';
 
@@ -171,5 +181,62 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<input type="hidden" name="do" value="admin" /><input type="hidden" name="page" value="structdocapproval" /><input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<button type="submit" name="action" value="reconcile">' . hsc($this->getLang('reconcile_run')) . '</button>';
         echo '</form>';
+
+        $this->renderAcknowledgementStatus();
+    }
+
+    protected function renderAcknowledgementStatus(): void
+    {
+        /** @var helper_plugin_structdocapproval_publication $publication */
+        $publication = plugin_load('helper', 'structdocapproval_publication');
+        if (!$publication) return;
+
+        $rows = $publication->getCurrentComplianceRows();
+
+        echo '<h2>' . hsc($this->getLang('ack_status_heading')) . '</h2>';
+        echo '<p>' . hsc($this->getLang('ack_status_intro')) . '</p>';
+
+        if (!$rows) {
+            echo '<p><em>' . hsc($this->getLang('ack_status_none')) . '</em></p>';
+            return;
+        }
+
+        echo '<table class="inline plugin-structdocapproval-ack-status">';
+        echo '<thead><tr>';
+        foreach (['page','version','ack_published','ack_required_count','ack_complete_count','ack_outstanding_count','release_notify','release_acknowledge'] as $key) {
+            echo '<th>' . hsc($this->getLang($key)) . '</th>';
+        }
+        echo '</tr></thead><tbody>';
+
+        foreach ($rows as $row) {
+            $pid = (string)$row['pid'];
+            $required = count($row['required_users']);
+            $complete = count($row['acknowledged_users']);
+            $outstanding = count($row['outstanding_users']);
+
+            echo '<tr>';
+            echo '<td><a href="' . hsc(wl($pid)) . '">' . hsc($pid) . '</a></td>';
+            echo '<td>' . hsc($row['version']) . '</td>';
+            echo '<td>' . hsc(dformat((int)$row['published_at'])) . '</td>';
+            echo '<td>' . $required . '</td>';
+            echo '<td>' . $complete . '</td>';
+            echo '<td>';
+            if ($outstanding) {
+                $names = [];
+                foreach ($row['outstanding_users'] as $outstandingUser) {
+                    $names[] = $publication->getUserDisplayName((string)$outstandingUser);
+                }
+                echo '<details><summary>' . $outstanding . '</summary>' .
+                    hsc(implode(', ', $names)) . '</details>';
+            } else {
+                echo '0';
+            }
+            echo '</td>';
+            echo '<td>' . hsc($row['notify_spec']) . '</td>';
+            echo '<td>' . hsc($row['acknowledge_spec']) . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
     }
 }

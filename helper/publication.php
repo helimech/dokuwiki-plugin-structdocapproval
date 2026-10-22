@@ -1,0 +1,645 @@
+<?php
+
+use dokuwiki\Extension\Plugin;
+use dokuwiki\Extension\AuthPlugin;
+use dokuwiki\plugin\structdocapproval\meta\Constants;
+use dokuwiki\plugin\structdocapproval\meta\WorkflowRecord;
+
+class helper_plugin_structdocapproval_publication extends Plugin
+{
+    protected function db()
+    {
+        /** @var helper_plugin_structdocapproval_db $helper */
+        $helper = plugin_load('helper', 'structdocapproval_db');
+        return $helper ? $helper->getDB() : null;
+    }
+
+    public function normalizeSpec(string $spec): string
+    {
+        $tokens = preg_split('/\s*,\s*/', trim($spec), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $seen = [];
+        foreach ($tokens as $token) {
+            $token = trim($token);
+            if ($token !== '') $seen[$token] = true;
+        }
+        return implode(', ', array_keys($seen));
+    }
+
+    /**
+     * Validate publication audiences before the workflow is committed.
+     *
+     * Acknowledge is intentionally restricted to authenticated users and @groups so
+     * every requirement can be snapshotted to an account at publication time.
+     */
+    public function prepareAudience(string $notifySpec, string $acknowledgeSpec): array
+    {
+        $notifySpec = $this->normalizeSpec($notifySpec);
+        $acknowledgeSpec = $this->normalizeSpec($acknowledgeSpec);
+
+        return [
+            'notify_spec' => $notifySpec,
+            'acknowledge_spec' => $acknowledgeSpec,
+            'required_users' => $this->resolveAcknowledgementUsers($acknowledgeSpec),
+        ];
+    }
+
+    protected function resolveAcknowledgementUsers(string $spec): array
+    {
+        /** @var AuthPlugin $auth */
+        global $auth;
+        if ($spec === '') return [];
+        if (!$auth) throw new RuntimeException('The authentication backend is unavailable.');
+
+        $users = [];
+        foreach (preg_split('/\s*,\s*/', $spec, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $token) {
+            $token = trim($token);
+            if ($token === '') continue;
+
+            if ($token[0] === '@') {
+                if (!$auth->canDo('getUsers')) {
+                    throw new RuntimeException(
+                        'The authentication backend cannot enumerate group members for acknowledgement: ' . $token
+                    );
+                }
+
+                $group = substr($token, 1);
+                $members = $auth->retrieveUsers(0, 5000, ['grps' => $group]) ?: [];
+                $resolved = 0;
+                foreach ($members as $login => $data) {
+                    if (is_int($login) && is_array($data) && isset($data['user'])) $login = $data['user'];
+                    if (is_string($login) && trim($login) !== '') {
+                        $users[$login] = true;
+                        $resolved++;
+                    }
+                }
+                if ($resolved === 0) {
+                    throw new RuntimeException(
+                        sprintf($this->getLang('ack_group_empty'), $token)
+                    );
+                }
+                continue;
+            }
+
+            $data = $auth->getUserData($token);
+            if ($data) {
+                $users[$token] = true;
+                continue;
+            }
+
+            if (strpos($token, '@') !== false) {
+                throw new RuntimeException(
+                    'Acknowledge accepts DokuWiki users and @groups only, not literal email addresses: ' . $token
+                );
+            }
+
+            throw new RuntimeException('Unknown acknowledgement user: ' . $token);
+        }
+
+        ksort($users, SORT_NATURAL | SORT_FLAG_CASE);
+        return array_keys($users);
+    }
+
+    public function persistAudience(WorkflowRecord $record, array $audience): void
+    {
+        $db = $this->db();
+        if (!$db) throw new RuntimeException('DocApproval database is unavailable.');
+
+        $pid = $record->getPid();
+        $publicationRevision = (int)$record->get('revision');
+        if (!$publicationRevision) throw new RuntimeException('Published revision is unavailable.');
+
+        $version = Constants::formatVersion((string)$record->get('version'));
+        $publishedAt = strtotime((string)($record->get('published_at') ?: $record->get('datetime')));
+        if (!$publishedAt) $publishedAt = time();
+
+        $pdo = $db->getPdo();
+        $started = !$pdo->inTransaction();
+        if ($started) $pdo->beginTransaction();
+
+        try {
+            $db->query(
+                'REPLACE INTO struct_docapproval_publications ' .
+                '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at) ' .
+                'VALUES (?,?,?,?,?,?,?,?,?,?)',
+                [
+                    $pid,
+                    $publicationRevision,
+                    $publicationRevision,
+                    $version,
+                    (string)($audience['notify_spec'] ?? ''),
+                    (string)($audience['acknowledge_spec'] ?? ''),
+                    (string)($audience['change_summary'] ?? ''),
+                    (string)$record->get('published_by'),
+                    $publishedAt,
+                    (int)($audience['ack_due_at'] ?? 0),
+                ]
+            );
+
+            $db->query(
+                'DELETE FROM struct_docapproval_requirements WHERE pid=? AND publication_revision=?',
+                [$pid, $publicationRevision]
+            );
+
+            foreach (($audience['required_users'] ?? []) as $user) {
+                $db->query(
+                    'INSERT OR IGNORE INTO struct_docapproval_requirements ' .
+                    '(pid,publication_revision,user,required_at) VALUES (?,?,?,?)',
+                    [$pid, $publicationRevision, $user, $publishedAt]
+                );
+            }
+
+            if ($started) $pdo->commit();
+        } catch (Throwable $e) {
+            if ($started && $pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function removeAudience(string $pid, int $publicationRevision): void
+    {
+        $db = $this->db();
+        if (!$db || !$publicationRevision) return;
+
+        $pid = cleanID($pid);
+        $pdo = $db->getPdo();
+        $started = !$pdo->inTransaction();
+        if ($started) $pdo->beginTransaction();
+
+        try {
+            $db->query(
+                'DELETE FROM struct_docapproval_requirements WHERE pid=? AND publication_revision=?',
+                [$pid, $publicationRevision]
+            );
+            $db->query(
+                'DELETE FROM struct_docapproval_publications WHERE pid=? AND publication_revision=?',
+                [$pid, $publicationRevision]
+            );
+            if ($started) $pdo->commit();
+        } catch (Throwable $e) {
+            if ($started && $pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function getSnapshot(string $pid, int $publicationRevision): ?array
+    {
+        $db = $this->db();
+        if (!$db || !$publicationRevision) return null;
+        $rows = $db->queryAll(
+            'SELECT * FROM struct_docapproval_publications WHERE pid=? AND publication_revision=? LIMIT 1',
+            [cleanID($pid), $publicationRevision]
+        ) ?: [];
+        return $rows ? $rows[0] : null;
+    }
+
+    /**
+     * Find the current release boundary. Minor edits do not establish a new formal
+     * publication cycle. Initialize and Admin Override to Published deliberately
+     * establish a boundary without automatically assigning an acknowledgement audience.
+     */
+    public function getCurrentPublicationRevision(string $pid): int
+    {
+        $db = $this->db();
+        if (!$db) return 0;
+
+        $rows = $db->queryAll(
+            'SELECT col5 AS revision FROM data_struct_docapproval ' .
+            'WHERE pid=? AND col1=? AND (col2=? OR col2=? OR col2=?) ' .
+            'ORDER BY rid DESC LIMIT 1',
+            [
+                cleanID($pid),
+                Constants::STATUS_PUBLISHED,
+                Constants::ACTION_PUBLISH,
+                Constants::ACTION_INITIALIZE,
+                Constants::ACTION_ADMIN_OVERRIDE,
+            ]
+        ) ?: [];
+
+        return $rows ? (int)$rows[0]['revision'] : 0;
+    }
+
+    public function getCurrentSnapshot(string $pid): ?array
+    {
+        $revision = $this->getCurrentPublicationRevision($pid);
+        return $revision ? $this->getSnapshot($pid, $revision) : null;
+    }
+
+    public function getRequiredUsers(string $pid, int $publicationRevision): array
+    {
+        $db = $this->db();
+        if (!$db || !$publicationRevision) return [];
+        $rows = $db->queryAll(
+            'SELECT user FROM struct_docapproval_requirements ' .
+            'WHERE pid=? AND publication_revision=? ORDER BY user',
+            [cleanID($pid), $publicationRevision]
+        ) ?: [];
+        return array_values(array_filter(array_map(static function ($row) {
+            return (string)($row['user'] ?? '');
+        }, $rows)));
+    }
+
+    public function isRequired(string $pid, int $publicationRevision, string $user): bool
+    {
+        if ($user === '' || !$publicationRevision) return false;
+        $db = $this->db();
+        if (!$db) return false;
+        return (bool)$db->queryValue(
+            'SELECT 1 FROM struct_docapproval_requirements ' .
+            'WHERE pid=? AND publication_revision=? AND user=? LIMIT 1',
+            [cleanID($pid), $publicationRevision, $user]
+        );
+    }
+
+    public function getComplianceForPage(
+        string $pid,
+        ?int $publicationRevision = null,
+        ?array $snapshot = null
+    ): ?array {
+        $db = $this->db();
+        if (!$db) return null;
+
+        $pid = cleanID($pid);
+        if ($publicationRevision === null) {
+            $publicationRevision = $this->getCurrentPublicationRevision($pid);
+        }
+        if (!$publicationRevision) return null;
+
+        // Callers already iterating immutable publication rows may pass that row
+        // through and avoid a duplicate SELECT for every document.
+        if ($snapshot === null) {
+            $snapshot = $this->getSnapshot($pid, $publicationRevision);
+        }
+        if (!$snapshot) return null;
+
+        $required = $this->getRequiredUsers($pid, $publicationRevision);
+        $ackRows = $db->queryAll(
+            'SELECT user,acknowledged_at FROM struct_docapproval_acknowledgements ' .
+            'WHERE pid=? AND publication_revision=? ORDER BY user',
+            [$pid, $publicationRevision]
+        ) ?: [];
+
+        $acknowledged = [];
+        foreach ($ackRows as $ack) {
+            $user = (string)($ack['user'] ?? '');
+            if ($user !== '') $acknowledged[$user] = (int)($ack['acknowledged_at'] ?? 0);
+        }
+
+        $requiredSet = array_fill_keys($required, true);
+        $completed = [];
+        foreach ($acknowledged as $user => $ts) {
+            if (isset($requiredSet[$user])) $completed[$user] = $ts;
+        }
+
+        return [
+            'pid' => $pid,
+            'publication_revision' => $publicationRevision,
+            'version' => Constants::formatVersion((string)$snapshot['version']),
+            'published_at' => (int)$snapshot['published_at'],
+            'ack_due_at' => (int)($snapshot['ack_due_at'] ?? 0),
+            'notify_spec' => (string)$snapshot['notify_spec'],
+            'acknowledge_spec' => (string)$snapshot['acknowledge_spec'],
+            'required_users' => $required,
+            'acknowledged_users' => $completed,
+            'outstanding_users' => array_values(array_diff($required, array_keys($completed))),
+        ];
+    }
+
+    public function getCurrentComplianceRows(): array
+    {
+        $db = $this->db();
+        if (!$db) return [];
+
+        $rows = $db->queryAll(
+            'SELECT DISTINCT pid FROM struct_docapproval_publications ORDER BY pid'
+        ) ?: [];
+        $out = [];
+
+        /** @var helper_plugin_structdocapproval_db $dbHelper */
+        $dbHelper = plugin_load('helper', 'structdocapproval_db');
+
+        foreach ($rows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            if ($pid === '') continue;
+            if ($dbHelper && !$dbHelper->isControlled($pid)) continue;
+
+            $publicationRevision = $this->getCurrentPublicationRevision($pid);
+            if (!$publicationRevision) continue;
+            $compliance = $this->getComplianceForPage($pid, $publicationRevision, $row);
+            if ($compliance) $out[] = $compliance;
+        }
+
+        return $out;
+    }
+
+    public function getPendingForUser(string $user): array
+    {
+        $user = trim($user);
+        if ($user === '') return [];
+
+        $db = $this->db();
+        if (!$db) return [];
+
+        // Join requirements directly to each page's latest formal publication
+        // boundary. This avoids re-querying workflow history once per historical
+        // requirement merely to discard old releases.
+        return $db->queryAll(
+            'SELECT r.pid,r.publication_revision,p.version,p.published_at,p.ack_due_at ' .
+            'FROM struct_docapproval_requirements r ' .
+            'JOIN struct_docapproval_publications p ' .
+                'ON p.pid=r.pid AND p.publication_revision=r.publication_revision ' .
+            'JOIN (' .
+                'SELECT d.pid,d.col5 AS publication_revision ' .
+                'FROM data_struct_docapproval d ' .
+                'JOIN (' .
+                    'SELECT pid,MAX(rid) AS max_rid ' .
+                    'FROM data_struct_docapproval ' .
+                    'WHERE col1=? AND (col2=? OR col2=? OR col2=?) ' .
+                    'GROUP BY pid' .
+                ') x ON x.pid=d.pid AND x.max_rid=d.rid' .
+            ') current_pub ' .
+                'ON current_pub.pid=r.pid AND current_pub.publication_revision=r.publication_revision ' .
+            'LEFT JOIN struct_docapproval_acknowledgements a ' .
+                'ON a.pid=r.pid AND a.publication_revision=r.publication_revision AND a.user=r.user ' .
+            'WHERE r.user=? AND a.user IS NULL ' .
+            'ORDER BY p.published_at DESC,r.pid',
+            [
+                Constants::STATUS_PUBLISHED,
+                Constants::ACTION_PUBLISH,
+                Constants::ACTION_INITIALIZE,
+                Constants::ACTION_ADMIN_OVERRIDE,
+                $user,
+            ]
+        ) ?: [];
+    }
+
+    public function recordReminder(
+        string $pid,
+        int $publicationRevision,
+        array $deliveries,
+        string $sentBy,
+        string $reminderType = 'manual',
+        string $ccSpec = ''
+    ): string {
+        $db = $this->db();
+        if (!$db) throw new RuntimeException('DocApproval database is unavailable.');
+        if (!$publicationRevision || !$deliveries) return '';
+
+        $pid = cleanID($pid);
+        $sentAt = time();
+        try {
+            $batchId = date('YmdHis', $sentAt) . '-' . bin2hex(random_bytes(4));
+        } catch (Throwable $e) {
+            $batchId = date('YmdHis', $sentAt) . '-' . substr(sha1(uniqid('', true)), 0, 8);
+        }
+
+        $pdo = $db->getPdo();
+        $started = !$pdo->inTransaction();
+        if ($started) $pdo->beginTransaction();
+
+        try {
+            foreach ($deliveries as $user => $email) {
+                $user = trim((string)$user);
+                $email = trim((string)$email);
+                if ($user === '' || $email === '') continue;
+                $db->query(
+                    'INSERT INTO struct_docapproval_reminders ' .
+                    '(batch_id,pid,publication_revision,user,email,sent_by,sent_at,reminder_type,cc_spec) ' .
+                    'VALUES (?,?,?,?,?,?,?,?,?)',
+                    [
+                        $batchId,
+                        $pid,
+                        $publicationRevision,
+                        $user,
+                        $email,
+                        $sentBy,
+                        $sentAt,
+                        $reminderType === 'auto' ? 'auto' : 'manual',
+                        $ccSpec,
+                    ]
+                );
+            }
+            if ($started) $pdo->commit();
+        } catch (Throwable $e) {
+            if ($started && $pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+
+        return $batchId;
+    }
+
+    public function claimAutomaticReminderRun(): array
+    {
+        $db = $this->db();
+        if (!$db) return ['', ''];
+
+        $runDate = date('Y-m-d');
+        try {
+            $token = bin2hex(random_bytes(8));
+        } catch (Throwable $e) {
+            $token = substr(sha1(uniqid('', true)), 0, 16);
+        }
+        $startedAt = time();
+
+        $db->query(
+            'INSERT OR IGNORE INTO struct_docapproval_auto_reminder_runs ' .
+            '(run_date,token,started_at,finished_at,status,detail) VALUES (?,?,?,?,?,?)',
+            [$runDate, $token, $startedAt, 0, 'running', '']
+        );
+
+        $rows = $db->queryAll(
+            'SELECT token,status,started_at FROM struct_docapproval_auto_reminder_runs ' .
+            'WHERE run_date=? LIMIT 1',
+            [$runDate]
+        ) ?: [];
+        if (!$rows) return ['', $runDate];
+        if ((string)$rows[0]['token'] === $token) return [$token, $runDate];
+
+        // A worker that dies after claiming the day would otherwise suppress all
+        // reminders until tomorrow. Reclaim only a clearly stale running claim.
+        $existingToken = (string)$rows[0]['token'];
+        $existingStatus = (string)$rows[0]['status'];
+        $existingStarted = (int)$rows[0]['started_at'];
+        if ($existingStatus === 'running' && $existingStarted > 0 && $existingStarted < ($startedAt - 1800)) {
+            $db->query(
+                'UPDATE struct_docapproval_auto_reminder_runs ' .
+                'SET token=?,started_at=?,finished_at=0,status=?,detail=? ' .
+                'WHERE run_date=? AND token=? AND status=? AND started_at=?',
+                [
+                    $token,
+                    $startedAt,
+                    'running',
+                    'Reclaimed stale reminder sweep.',
+                    $runDate,
+                    $existingToken,
+                    'running',
+                    $existingStarted,
+                ]
+            );
+            $winner = (string)$db->queryValue(
+                'SELECT token FROM struct_docapproval_auto_reminder_runs WHERE run_date=? LIMIT 1',
+                [$runDate]
+            );
+            if ($winner === $token) return [$token, $runDate];
+        }
+
+        return ['', $runDate];
+    }
+
+    public function finishAutomaticReminderRun(
+        string $runDate,
+        string $token,
+        string $status,
+        string $detail = ''
+    ): void {
+        $db = $this->db();
+        if (!$db || $runDate === '' || $token === '') return;
+
+        $db->query(
+            'UPDATE struct_docapproval_auto_reminder_runs ' .
+            'SET finished_at=?,status=?,detail=? WHERE run_date=? AND token=?',
+            [time(), $status, $detail, $runDate, $token]
+        );
+    }
+
+    public function getAutomaticReminderCandidates(int $intervalDays): array
+    {
+        $db = $this->db();
+        if (!$db) return [];
+
+        /** @var helper_plugin_structdocapproval_db $dbHelper */
+        $dbHelper = plugin_load('helper', 'structdocapproval_db');
+        if (!$dbHelper) return [];
+
+        $intervalDays = max(1, $intervalDays);
+        $now = time();
+        $today = date('Y-m-d', $now);
+
+        $rows = $db->queryAll(
+            'SELECT * FROM struct_docapproval_publications ' .
+            'WHERE ack_due_at>0 AND ack_due_at<? ORDER BY ack_due_at ASC,pid ASC',
+            [$now]
+        ) ?: [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = cleanID((string)($row['pid'] ?? ''));
+            $publicationRevision = (int)($row['publication_revision'] ?? 0);
+            if ($pid === '' || !$publicationRevision) continue;
+            if (!$dbHelper->isControlled($pid)) continue;
+            if ($this->getCurrentPublicationRevision($pid) !== $publicationRevision) continue;
+
+            $compliance = $this->getComplianceForPage($pid, $publicationRevision);
+            if (!$compliance || empty($compliance['outstanding_users'])) continue;
+
+            // Any reminder sent after the due date resets the automatic cadence.
+            // A manual reminder before the due date does not suppress the first
+            // automatic reminder on the first overdue day.
+            $lastOverdueReminder = (int)$db->queryValue(
+                'SELECT COALESCE(MAX(sent_at),0) FROM struct_docapproval_reminders ' .
+                'WHERE pid=? AND publication_revision=? AND sent_at>?',
+                [$pid, $publicationRevision, (int)$row['ack_due_at']]
+            );
+            if ($lastOverdueReminder > 0) {
+                $lastDay = date('Y-m-d', $lastOverdueReminder);
+                $nextDay = date(
+                    'Y-m-d',
+                    strtotime('+' . $intervalDays . ' days', strtotime($lastDay . ' 00:00:00'))
+                );
+                if ($today < $nextDay) continue;
+            }
+
+            $out[] = [
+                'pid' => $pid,
+                'publication_revision' => $publicationRevision,
+                'ack_due_at' => (int)$row['ack_due_at'],
+                'outstanding_users' => (array)$compliance['outstanding_users'],
+                'last_overdue_reminder_at' => $lastOverdueReminder,
+            ];
+        }
+
+        return $out;
+    }
+
+    public function getReminderSummary(string $pid, int $publicationRevision): array
+    {
+        $db = $this->db();
+        if (!$db || !$publicationRevision) {
+            return [
+                'batches' => 0,
+                'deliveries' => 0,
+                'last_sent_at' => 0,
+                'last_sent_by' => '',
+                'last_type' => '',
+                'last_cc_spec' => '',
+            ];
+        }
+
+        $rows = $db->queryAll(
+            'SELECT batch_id,sent_by,sent_at,reminder_type,cc_spec FROM struct_docapproval_reminders ' .
+            'WHERE pid=? AND publication_revision=? ORDER BY sent_at DESC,id DESC',
+            [cleanID($pid), $publicationRevision]
+        ) ?: [];
+
+        if (!$rows) {
+            return [
+                'batches' => 0,
+                'deliveries' => 0,
+                'last_sent_at' => 0,
+                'last_sent_by' => '',
+                'last_type' => '',
+                'last_cc_spec' => '',
+            ];
+        }
+
+        $batches = [];
+        foreach ($rows as $row) $batches[(string)$row['batch_id']] = true;
+
+        return [
+            'batches' => count($batches),
+            'deliveries' => count($rows),
+            'last_sent_at' => (int)$rows[0]['sent_at'],
+            'last_sent_by' => (string)$rows[0]['sent_by'],
+            'last_type' => (string)($rows[0]['reminder_type'] ?? ''),
+            'last_cc_spec' => (string)($rows[0]['cc_spec'] ?? ''),
+        ];
+    }
+
+    public function getUserDisplayName(string $user): string
+    {
+        /** @var AuthPlugin $auth */
+        global $auth;
+        $user = trim($user);
+        if ($user === '') return '';
+        if ($auth) {
+            $data = $auth->getUserData($user);
+            if ($data && trim((string)($data['name'] ?? '')) !== '') {
+                return trim((string)$data['name']);
+            }
+        }
+        return $user;
+    }
+
+    /**
+     * Lightweight browser-autocomplete candidates for publication fields.
+     */
+    public function getPrincipalSuggestions(): array
+    {
+        /** @var AuthPlugin $auth */
+        global $auth;
+        if (!$auth || !$auth->canDo('getUsers')) return [];
+
+        $users = $auth->retrieveUsers(0, 5000, []) ?: [];
+        $items = [];
+        foreach ($users as $login => $data) {
+            if (is_int($login) && is_array($data) && isset($data['user'])) $login = $data['user'];
+            if (is_string($login) && $login !== '') $items[$login] = true;
+            foreach ((array)($data['grps'] ?? []) as $group) {
+                $group = trim((string)$group);
+                if ($group !== '') $items['@' . $group] = true;
+            }
+        }
+
+        uksort($items, 'strnatcasecmp');
+        return array_keys($items);
+    }
+}

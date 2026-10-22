@@ -169,7 +169,8 @@ class action_plugin_structdocapproval_move extends ActionPlugin
         // destination's resolved assignment. Struct has already moved the permanent
         // workflow history to $new by the time this AFTER hook runs.
         $sourceRows = $db->queryAll(
-            'SELECT controlled, reviewer, training, publisher, notify, acknowledge, resolved_at FROM struct_docapproval_pages WHERE pid=? LIMIT 1',
+            'SELECT controlled, reviewer, training, publisher, notify, acknowledge, resolved_at ' .
+            'FROM struct_docapproval_pages WHERE pid=? LIMIT 1',
             [$old]
         ) ?: [];
         $source = $sourceRows ? $sourceRows[0] : null;
@@ -194,8 +195,10 @@ class action_plugin_structdocapproval_move extends ActionPlugin
         // exist at the destination.
         $db->query(
             'INSERT OR IGNORE INTO struct_docapproval_publications ' .
-            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at) ' .
-            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,change_summary,published_by,published_at,ack_due_at ' .
+            '(pid,publication_revision,content_revision,version,notify_spec,acknowledge_spec,' .
+            'change_summary,published_by,published_at,ack_due_at) ' .
+            'SELECT ?,publication_revision,content_revision,version,notify_spec,acknowledge_spec,' .
+            'change_summary,published_by,published_at,ack_due_at ' .
             'FROM struct_docapproval_publications WHERE pid=?',
             [$new, $old]
         );
@@ -248,7 +251,9 @@ class action_plugin_structdocapproval_move extends ActionPlugin
             !$resolved['controlled']
         ) {
             $db->query(
-                'REPLACE INTO struct_docapproval_pages (pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) VALUES (?,?,?,?,?,?,?,?)',
+                'REPLACE INTO struct_docapproval_pages ' .
+                '(pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) ' .
+                'VALUES (?,?,?,?,?,?,?,?)',
                 [
                     $new,
                     1,

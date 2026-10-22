@@ -25,7 +25,9 @@ class helper_plugin_structdocapproval_sync extends Plugin
     {
         /** @var helper_plugin_structdocapproval_assignments $matcher */
         $matcher = plugin_load('helper', 'structdocapproval_assignments');
-        $patterns = array_values(array_unique(array_filter(array_map(trim(...), $patterns), static fn($p) => $p !== '')));
+        $patterns = array_map(trim(...), $patterns);
+        $patterns = array_filter($patterns, static fn($pattern) => $pattern !== '');
+        $patterns = array_values(array_unique($patterns));
 
         $stats = $this->emptyStats();
         if (!$patterns) return $stats;
@@ -63,7 +65,13 @@ class helper_plugin_structdocapproval_sync extends Plugin
             $resolved = $assignments->resolvePage($pid);
             $current = WorkflowRecord::latest($pid);
 
-            if (!$resolved['controlled'] && $old && (bool)$old['controlled'] && $current && $current->get('status') !== Constants::STATUS_PUBLISHED) {
+            if (
+                !$resolved['controlled'] &&
+                $old &&
+                (bool)$old['controlled'] &&
+                $current &&
+                $current->get('status') !== Constants::STATUS_PUBLISHED
+            ) {
                 $stats['conflicts']++;
                 return;
             }
@@ -126,7 +134,16 @@ class helper_plugin_structdocapproval_sync extends Plugin
 
     protected function emptyStats(): array
     {
-        return ['matched' => 0,'initialized' => 0,'updated' => 0,'excluded' => 0,'directive_excluded' => 0,'conflicts' => 0,'unchanged' => 0,'errors' => 0];
+        return [
+            'matched' => 0,
+            'initialized' => 0,
+            'updated' => 0,
+            'excluded' => 0,
+            'directive_excluded' => 0,
+            'conflicts' => 0,
+            'unchanged' => 0,
+            'errors' => 0,
+        ];
     }
 
     public function getAllWikiPages(): array

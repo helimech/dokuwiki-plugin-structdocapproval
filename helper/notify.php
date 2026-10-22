@@ -27,7 +27,9 @@ class helper_plugin_structdocapproval_notify extends Plugin
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
                 if ($record->get('assigned_reviewer')) $specs[] = (string)$record->get('assigned_reviewer');
-                if (trim((string)$this->getConf('review_queue_cc')) !== '') $specs[] = (string)$this->getConf('review_queue_cc');
+                if (trim((string)$this->getConf('review_queue_cc')) !== '') {
+                    $specs[] = (string)$this->getConf('review_queue_cc');
+                }
                 break;
             case Constants::ACTION_REVIEW_RETURNED:
             case Constants::ACTION_RETURN_DRAFT:
@@ -180,7 +182,10 @@ class helper_plugin_structdocapproval_notify extends Plugin
 
         $ackKeys = [];
         foreach ($ackRecipients as $email) $ackKeys[strtolower($email)] = true;
-        $notifyRecipients = array_values(array_filter($notifyRecipients, static fn($email) => !isset($ackKeys[strtolower($email)])));
+        $notifyRecipients = array_values(array_filter(
+            $notifyRecipients,
+            static fn($email) => !isset($ackKeys[strtolower($email)])
+        ));
 
         if ($ackRecipients) {
             $this->sendPublicationMail($record, $ackRecipients, true);
@@ -259,7 +264,9 @@ class helper_plugin_structdocapproval_notify extends Plugin
         ) . '</strong></p>';
 
         if (trim((string)$record->get('comment')) !== '') {
-            $html .= '<p>' . $this->htmlField($this->getLang('email_comment'), (string)$record->get('comment')) . '</p>';
+            $html .= '<p>' .
+                $this->htmlField($this->getLang('email_comment'), (string)$record->get('comment')) .
+                '</p>';
         }
 
         $mailer = new Mailer();
@@ -337,7 +344,10 @@ class helper_plugin_structdocapproval_notify extends Plugin
         $ccRecipients = $ccSpec !== '' ? $this->resolveRecipients([$ccSpec], true) : [];
         $recipientKeys = [];
         foreach (array_keys($emails) as $email) $recipientKeys[strtolower($email)] = true;
-        $ccRecipients = array_values(array_filter($ccRecipients, static fn($email) => !isset($recipientKeys[strtolower($email)])));
+        $ccRecipients = array_values(array_filter(
+            $ccRecipients,
+            static fn($email) => !isset($recipientKeys[strtolower($email)])
+        ));
 
         $title = trim((string)p_get_first_heading($pid));
         if ($title === '') $title = $pid;

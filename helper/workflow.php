@@ -43,7 +43,9 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
                 $this->requireStatus($current, Constants::STATUS_DRAFT);
-                if (!$this->dbHelper->canSubmit($pid)) throw new RuntimeException('You may not submit this page for review.');
+                if (!$this->dbHelper->canSubmit($pid)) {
+                    throw new RuntimeException('You may not submit this page for review.');
+                }
                 $eligible = Assignments::getInstance()->getEligibleReviewers($pid);
                 if (!$eligible) throw new RuntimeException('No eligible reviewers are configured for this page.');
                 $reviewer = trim((string)($params['reviewer'] ?? ''));
@@ -56,19 +58,39 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                     ->set('submitted_at', $now)
                     ->set('assigned_reviewer', $reviewer)
                     ->set('comment', trim((string)($params['comment'] ?? '')))
-                    ->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+                    ->clear([
+                        'reviewed_by',
+                        'reviewed_at',
+                        'training_by',
+                        'training_at',
+                        'training_disposition',
+                        'training_note',
+                        'published_by',
+                        'published_at',
+                        'version',
+                    ]);
                 break;
 
             case Constants::ACTION_REVIEW_APPROVED:
                 $this->requireStatus($current, Constants::STATUS_AWAITING_REVIEW);
                 if (!$this->dbHelper->canReview($pid, (string)$current->get('assigned_reviewer'))) {
-                    throw new RuntimeException('Only the assigned reviewer or an administrator may approve this review.');
+                    throw new RuntimeException(
+                        'Only the assigned reviewer or an administrator may approve this review.'
+                    );
                 }
                 $next->set('status', Constants::STATUS_AWAITING_TRAINING)
                     ->set('reviewed_by', $actor)
                     ->set('reviewed_at', $now)
                     ->set('comment', trim((string)($params['comment'] ?? '')))
-                    ->clear(['training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+                    ->clear([
+                        'training_by',
+                        'training_at',
+                        'training_disposition',
+                        'training_note',
+                        'published_by',
+                        'published_at',
+                        'version',
+                    ]);
                 break;
 
             case Constants::ACTION_REVIEW_RETURNED:
@@ -79,12 +101,24 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 $comment = $this->requiredComment($params);
                 $next->set('status', Constants::STATUS_DRAFT)
                     ->set('comment', $comment)
-                    ->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+                    ->clear([
+                        'reviewed_by',
+                        'reviewed_at',
+                        'training_by',
+                        'training_at',
+                        'training_disposition',
+                        'training_note',
+                        'published_by',
+                        'published_at',
+                        'version',
+                    ]);
                 break;
 
             case Constants::ACTION_TRAINING_REVIEWED:
                 $this->requireStatus($current, Constants::STATUS_AWAITING_TRAINING);
-                if (!$this->dbHelper->canTrain($pid)) throw new RuntimeException('You may not complete the training review for this page.');
+                if (!$this->dbHelper->canTrain($pid)) {
+                    throw new RuntimeException('You may not complete the training review for this page.');
+                }
                 $disposition = trim((string)($params['training_disposition'] ?? ''));
                 if (!in_array($disposition, Constants::trainingDispositions(), true)) {
                     throw new RuntimeException('Select a valid training disposition.');
@@ -164,32 +198,62 @@ class helper_plugin_structdocapproval_workflow extends Plugin
 
             case Constants::ACTION_RETURN_TRAINING:
                 $this->requireStatus($current, Constants::STATUS_READY_TO_PUBLISH);
-                if (!$this->dbHelper->canPublish($pid)) throw new RuntimeException('You may not return this page from publication.');
+                if (!$this->dbHelper->canPublish($pid)) {
+                    throw new RuntimeException('You may not return this page from publication.');
+                }
                 $next->set('status', Constants::STATUS_AWAITING_TRAINING)
                     ->set('comment', $this->requiredComment($params))
-                    ->clear(['training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+                    ->clear([
+                        'training_by',
+                        'training_at',
+                        'training_disposition',
+                        'training_note',
+                        'published_by',
+                        'published_at',
+                        'version',
+                    ]);
                 break;
 
             case Constants::ACTION_RETURN_DRAFT:
                 $this->requireStatus($current, Constants::STATUS_READY_TO_PUBLISH);
-                if (!$this->dbHelper->canPublish($pid)) throw new RuntimeException('You may not return this page from publication.');
+                if (!$this->dbHelper->canPublish($pid)) {
+                    throw new RuntimeException('You may not return this page from publication.');
+                }
                 $next->set('status', Constants::STATUS_DRAFT)
                     ->set('comment', $this->requiredComment($params))
-                    ->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+                    ->clear([
+                        'reviewed_by',
+                        'reviewed_at',
+                        'training_by',
+                        'training_at',
+                        'training_disposition',
+                        'training_note',
+                        'published_by',
+                        'published_at',
+                        'version',
+                    ]);
                 break;
 
             case Constants::ACTION_ADMIN_OVERRIDE:
-                if (!$this->getConf('admin_override_enable')) throw new RuntimeException('Administrator workflow override is disabled in the plugin configuration.');
+                if (!$this->getConf('admin_override_enable')) {
+                    throw new RuntimeException(
+                        'Administrator workflow override is disabled in the plugin configuration.'
+                    );
+                }
                 if (!auth_isadmin()) throw new RuntimeException('Only administrators may use workflow override.');
                 $target = trim((string)($params['target_status'] ?? ''));
                 if (!in_array($target, Constants::adminOverrideStatuses(), true)) {
-                    throw new RuntimeException('Invalid override target status. Draft must be created by editing the page.');
+                    throw new RuntimeException(
+                        'Invalid override target status. Draft must be created by editing the page.'
+                    );
                 }
                 $next->set('status', $target)->set('comment', $this->requiredComment($params));
                 $this->applyOverrideClears($next, $target);
                 if ($target === Constants::STATUS_PUBLISHED) {
                     $version = Constants::formatVersion((string)($params['version'] ?? $current->get('version')));
-                    if ($version === '') throw new RuntimeException('A version is required when overriding to Published.');
+                    if ($version === '') {
+                        throw new RuntimeException('A version is required when overriding to Published.');
+                    }
                     $next->set('version', $version)->set('published_by', $actor)->set('published_at', $now);
                 }
                 break;
@@ -264,7 +328,9 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         if (!array_key_exists('change_summary', $params)) return;
 
         if ($current->get('status') === Constants::STATUS_PUBLISHED) {
-            throw new RuntimeException('A Published change summary is fixed. Edit the page to begin a new Draft cycle.');
+            throw new RuntimeException(
+                'A Published change summary is fixed. Edit the page to begin a new Draft cycle.'
+            );
         }
 
         if (
@@ -312,9 +378,27 @@ class helper_plugin_structdocapproval_workflow extends Plugin
     protected function applyOverrideClears(WorkflowRecord $record, string $target): void
     {
         if ($target === Constants::STATUS_AWAITING_REVIEW) {
-            $record->clear(['reviewed_by','reviewed_at','training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+            $record->clear([
+                'reviewed_by',
+                'reviewed_at',
+                'training_by',
+                'training_at',
+                'training_disposition',
+                'training_note',
+                'published_by',
+                'published_at',
+                'version',
+            ]);
         } elseif ($target === Constants::STATUS_AWAITING_TRAINING) {
-            $record->clear(['training_by','training_at','training_disposition','training_note','published_by','published_at','version']);
+            $record->clear([
+                'training_by',
+                'training_at',
+                'training_disposition',
+                'training_note',
+                'published_by',
+                'published_at',
+                'version',
+            ]);
         } elseif ($target === Constants::STATUS_READY_TO_PUBLISH) {
             $record->clear(['published_by','published_at','version']);
         }

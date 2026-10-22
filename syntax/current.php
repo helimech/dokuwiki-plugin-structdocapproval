@@ -21,7 +21,11 @@ class syntax_plugin_structdocapproval_current extends SyntaxPlugin
 
     public function connectTo($mode)
     {
-        $this->Lexer->addSpecialPattern('----+ *struct[_]?docapproval *-+\n.*?\n?----+', $mode, 'plugin_structdocapproval_current');
+        $this->Lexer->addSpecialPattern(
+            '----+ *struct[_]?docapproval *-+\n.*?\n?----+',
+            $mode,
+            'plugin_structdocapproval_current'
+        );
     }
 
     public function handle($match, $state, $pos, Handler $handler)
@@ -46,7 +50,10 @@ class syntax_plugin_structdocapproval_current extends SyntaxPlugin
 
         global $ID;
         $html = '<div class="plugin-structdocapproval-current"><table class="inline"><thead><tr>';
-        foreach (['page','status','assigned_to','submitted_by','reviewed_by','training','version','updated','history'] as $k) {
+        foreach (
+            ['page', 'status', 'assigned_to', 'submitted_by', 'reviewed_by', 'training', 'version', 'updated', 'history']
+            as $k
+        ) {
             $html .= '<th>' . hsc($this->getLang($k)) . '</th>';
         }
         $html .= '</tr></thead><tbody>';

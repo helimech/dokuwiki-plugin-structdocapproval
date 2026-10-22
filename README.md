@@ -14,7 +14,7 @@ A controlled-document workflow plugin for DokuWiki backed by the Struct database
 - Training performs a release-readiness review and records the training impact.
 - Publishers can **Publish**, **Return to Training**, or **Return to Draft**.
 - Ordinary readers continue to see the last Published revision while a newer working revision moves through the workflow.
-- Numeric document revisions are normalized to three digits, e.g. `2 → 002`. A brand-new controlled document's first formal Publish defaults to `000`; subsequent revisions increment normally.
+- Numeric document revisions use a minimum width of two digits: `0 → 00`, `2 → 02`, `9 → 09`, `10 → 10`, and values continue naturally to `100`, `101`, etc. A brand-new controlled document's first formal Publish defaults to `00`; subsequent revisions increment normally.
 - The exceptional administrator workflow override tool can be enabled or disabled in plugin configuration.
 
 ## Assignment rules

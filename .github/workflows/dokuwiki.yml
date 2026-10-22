@@ -12,4 +12,74 @@ permissions: write-all
 
 jobs:
   all:
+    if: github.event_name != 'pull_request'
     uses: dokuwiki/github-action/.github/workflows/all.yml@main
+
+  pr-code-style:
+    if: github.event_name == 'pull_request'
+    name: all / code-style / PHP CodeSniffer
+    runs-on: ubuntu-latest
+    env:
+      COMPOSER: _test/composer.json
+      COMPOSER_VENDOR_DIR: _test/vendor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mbstring, intl, PDO, pdo_sqlite, bz2
+      - name: Create DokuWiki Environment
+        id: dokuwiki-env
+        uses: dokuwiki/github-action/.github/actions/dokuenv@main
+        with:
+          branch: master
+      - name: Install Composer Dependencies
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+      - name: Run PHP codesniffer
+        run: composer exec -- phpcs -q --standard=_test/phpcs.xml ${{ steps.dokuwiki-env.outputs.dir }}
+
+  pr-test-stable:
+    if: github.event_name == 'pull_request'
+    name: all / test-stable / PHP ${{ matrix.php-version }} DokuWiki stable
+    runs-on: ubuntu-latest
+    env:
+      COMPOSER: _test/composer.json
+      COMPOSER_VENDOR_DIR: _test/vendor
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.2'
+          - '8.5'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, intl, PDO, pdo_sqlite, bz2
+      - name: Setup problem matchers
+        run: |
+          echo ::add-matcher::${{ runner.tool_cache }}/php.json
+          echo ::add-matcher::${{ runner.tool_cache }}/phpunit.json
+      - name: Create DokuWiki Environment
+        id: dokuwiki-env
+        uses: dokuwiki/github-action/.github/actions/dokuenv@main
+        with:
+          branch: stable
+      - name: Install Composer Dependencies
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+      - name: Check Syntax
+        run: find ${{ steps.dokuwiki-env.outputs.dir }} -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0L1 php -l
+      - name: Run pre-test hook
+        working-directory: ${{ steps.dokuwiki-env.outputs.dir }}
+        run: |
+          if [ -f _test/pretest.sh ]; then
+            echo "Running _test/pretest.sh"
+            bash _test/pretest.sh
+          fi
+      - name: Run PHPUnit
+        run: composer exec -- phpunit -c _test/phpunit.xml --verbose --stderr --group ${{ steps.dokuwiki-env.outputs.type }}_${{ steps.dokuwiki-env.outputs.base }}

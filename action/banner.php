@@ -46,14 +46,18 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
 
         $compact = $this->getConf('compact_view') ? ' compact' : '';
         echo '<div class="plugin-structdocapproval-banner status-' . hsc($shown->get('status')) . $compact . '">';
-        echo '<div class="docapproval-headline"><strong>' . hsc($this->getLang('headline_' . $shown->get('status'))) . '</strong></div>';
+        echo '<div class="docapproval-headline"><strong>' .
+            hsc($this->getLang('headline_' . $shown->get('status'))) .
+            '</strong></div>';
 
         $this->renderContext($ID, $shown);
         $this->renderStages($shown);
         $this->renderChangeSummary($ID, $shown, $isCurrent);
 
         if ($shown->get('comment')) {
-            echo '<div class="docapproval-return-note"><strong>' . hsc($this->getLang('return_note')) . ':</strong> ' . hsc($shown->get('comment')) . '</div>';
+            echo '<div class="docapproval-return-note"><strong>' .
+                hsc($this->getLang('return_note')) . ':</strong> ' .
+                hsc($shown->get('comment')) . '</div>';
         }
 
         if ($isCurrent) $this->renderActions($ID, $shown);
@@ -132,7 +136,9 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         $this->stage(
             $this->getLang('stage_review'),
             $reviewDone ? 'done' : ($status === Constants::STATUS_AWAITING_REVIEW ? 'active' : 'pending'),
-            $reviewDone ? $r->get('reviewed_by') : ($status === Constants::STATUS_AWAITING_REVIEW ? $r->get('assigned_reviewer') : ''),
+            $reviewDone
+                ? $r->get('reviewed_by')
+                : ($status === Constants::STATUS_AWAITING_REVIEW ? $r->get('assigned_reviewer') : ''),
             $reviewDone ? $r->get('reviewed_at') : ''
         );
         $this->stage(
@@ -150,7 +156,8 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         echo '</div>';
 
         if ($trainingDone && $r->get('training_disposition')) {
-            echo '<div class="docapproval-training-summary"><strong>' . hsc($this->getLang('training_impact')) . ':</strong> ' .
+            echo '<div class="docapproval-training-summary"><strong>' .
+                hsc($this->getLang('training_impact')) . ':</strong> ' .
                 hsc($this->getLang('training_' . $r->get('training_disposition')));
             if ($r->get('training_note')) echo ' — ' . hsc($r->get('training_note'));
             echo '</div>';
@@ -224,7 +231,9 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         echo '<div class="stage-title"><span class="stage-symbol">' . $symbol . '</span> ' . hsc($label) . '</div>';
         if ($user !== '') echo '<div class="stage-user">' . userlink($user) . '</div>';
         if ($date !== '') echo '<div class="stage-date">' . hsc($this->formatDate($date)) . '</div>';
-        elseif ($state === 'active') echo '<div class="stage-date">' . hsc($this->getLang('awaiting_action')) . '</div>';
+        elseif ($state === 'active') {
+            echo '<div class="stage-date">' . hsc($this->getLang('awaiting_action')) . '</div>';
+        }
         echo '</div>';
     }
 
@@ -254,30 +263,45 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
                 echo $this->formStart($changeSummaryText, $workingRevision);
                 if (count($reviewers) > 1) {
                     echo '<label>' . hsc($this->getLang('reviewer')) . ' <select name="structdocapproval[reviewer]">';
-                    foreach ($reviewers as $reviewer) echo '<option value="' . hsc($reviewer) . '">' . hsc(userlink($reviewer, true)) . '</option>';
+                    foreach ($reviewers as $reviewer) {
+                        echo '<option value="' . hsc($reviewer) . '">' .
+                            hsc(userlink($reviewer, true)) . '</option>';
+                    }
                     echo '</select></label> ';
                 } else {
-                    echo '<input type="hidden" name="structdocapproval[reviewer]" value="' . hsc($reviewers[0]) . '" />';
-                    echo '<span class="assigned-to">' . hsc($this->getLang('reviewer')) . ': ' . userlink($reviewers[0]) . '</span> ';
+                    echo '<input type="hidden" name="structdocapproval[reviewer]" value="' .
+                        hsc($reviewers[0]) . '" />';
+                    echo '<span class="assigned-to">' . hsc($this->getLang('reviewer')) . ': ' .
+                        userlink($reviewers[0]) . '</span> ';
                 }
-                echo '<label>' . hsc($this->getLang('note_optional')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+                echo '<label>' . hsc($this->getLang('note_optional')) .
+                    ' <input type="text" class="edit docapproval-comment" ' .
+                    'name="structdocapproval[comment]" /></label> ';
                 echo $this->actionButton(Constants::ACTION_READY_FOR_REVIEW);
                 echo '</form>';
             }
-        } elseif ($status === Constants::STATUS_AWAITING_REVIEW && $this->db->canReview($pid, (string)$record->get('assigned_reviewer'))) {
+        } elseif (
+            $status === Constants::STATUS_AWAITING_REVIEW &&
+            $this->db->canReview($pid, (string)$record->get('assigned_reviewer'))
+        ) {
             echo $this->formStart($changeSummaryText, $workingRevision);
-            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) .
+                ' <input type="text" class="edit docapproval-comment" ' .
+                'name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_REVIEW_APPROVED);
             echo $this->actionButton(Constants::ACTION_REVIEW_RETURNED, 'danger');
             echo '</form>';
         } elseif ($status === Constants::STATUS_AWAITING_TRAINING && $this->db->canTrain($pid)) {
             echo $this->formStart($changeSummaryText, $workingRevision);
-            echo '<label>' . hsc($this->getLang('training_impact')) . ' <select name="structdocapproval[training_disposition]">';
+            echo '<label>' . hsc($this->getLang('training_impact')) .
+                ' <select name="structdocapproval[training_disposition]">';
             foreach (Constants::trainingDispositions() as $d) {
                 echo '<option value="' . hsc($d) . '">' . hsc($this->getLang('training_' . $d)) . '</option>';
             }
             echo '</select></label> ';
-            echo '<label>' . hsc($this->getLang('training_note')) . ' <input type="text" class="edit docapproval-note" name="structdocapproval[training_note]" /></label> ';
+            echo '<label>' . hsc($this->getLang('training_note')) .
+                ' <input type="text" class="edit docapproval-note" ' .
+                'name="structdocapproval[training_note]" /></label> ';
             echo '<label>' . hsc($this->getLang('note_optional')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_TRAINING_REVIEWED);
             echo '</form>';
@@ -299,20 +323,29 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             $listId = 'docapproval-principal-suggestions';
 
             echo $this->formStart($changeSummaryText, $workingRevision);
-            echo '<fieldset class="docapproval-release-audience"><legend>' . hsc($this->getLang('release_audience')) . '</legend>';
+            echo '<fieldset class="docapproval-release-audience"><legend>' .
+                hsc($this->getLang('release_audience')) . '</legend>';
 
             echo '<div class="release-audience-row">';
-            echo '<label class="release-toggle"><input type="checkbox" name="structdocapproval[notify_enabled]" value="1"' .
-                ($notifyDefault !== '' ? ' checked' : '') . ' /> ' . hsc($this->getLang('notify_on_publish')) . '</label>';
-            echo '<input type="text" class="edit docapproval-audience docapproval-token-source" data-allow-free-email="1" list="' . hsc($listId) . '" name="structdocapproval[notify_spec]" value="' .
+            echo '<label class="release-toggle"><input type="checkbox" ' .
+                'name="structdocapproval[notify_enabled]" value="1"' .
+                ($notifyDefault !== '' ? ' checked' : '') . ' /> ' .
+                hsc($this->getLang('notify_on_publish')) . '</label>';
+            echo '<input type="text" class="edit docapproval-audience docapproval-token-source" ' .
+                'data-allow-free-email="1" list="' . hsc($listId) .
+                '" name="structdocapproval[notify_spec]" value="' .
                 hsc($notifyDefault) . '" placeholder="user, @group, or email" />';
             echo '<span class="release-help">' . hsc($this->getLang('notify_publish_help')) . '</span>';
             echo '</div>';
 
             echo '<div class="release-audience-row">';
-            echo '<label class="release-toggle"><input type="checkbox" name="structdocapproval[acknowledge_enabled]" value="1"' .
-                ($ackDefault !== '' ? ' checked' : '') . ' /> ' . hsc($this->getLang('require_acknowledgement')) . '</label>';
-            echo '<input type="text" class="edit docapproval-audience docapproval-token-source" data-allow-free-email="0" list="' . hsc($listId) . '" name="structdocapproval[acknowledge_spec]" value="' .
+            echo '<label class="release-toggle"><input type="checkbox" ' .
+                'name="structdocapproval[acknowledge_enabled]" value="1"' .
+                ($ackDefault !== '' ? ' checked' : '') . ' /> ' .
+                hsc($this->getLang('require_acknowledgement')) . '</label>';
+            echo '<input type="text" class="edit docapproval-audience docapproval-token-source" ' .
+                'data-allow-free-email="0" list="' . hsc($listId) .
+                '" name="structdocapproval[acknowledge_spec]" value="' .
                 hsc($ackDefault) . '" placeholder="user or @group" />';
             echo '<span class="release-help">' . hsc($this->getLang('ack_publish_help')) . '</span>';
             echo '<label class="release-due">' . hsc($this->getLang('ack_due_date')) .
@@ -341,11 +374,15 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             // Keep release-specific action fields next to the buttons they affect.
             echo '<div class="docapproval-publish-actionbar">';
             echo '<div class="docapproval-publish-primary">';
-            echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" value="' . hsc($suggested) . '" /></label> ';
+            echo '<label>' . hsc($this->getLang('new_version')) .
+                ' <input type="text" class="edit docapproval-version" ' .
+                'name="structdocapproval[version]" value="' . hsc($suggested) . '" /></label> ';
             echo $this->actionButton(Constants::ACTION_PUBLISH);
             echo '</div>';
             echo '<div class="docapproval-publish-return">';
-            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+            echo '<label>' . hsc($this->getLang('comment_optional_return_required')) .
+                ' <input type="text" class="edit docapproval-comment" ' .
+                'name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_RETURN_TRAINING, 'secondary');
             echo $this->actionButton(Constants::ACTION_RETURN_DRAFT, 'danger');
             echo '</div>';
@@ -354,13 +391,22 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         }
 
         if ($this->getConf('admin_override_enable') && auth_isadmin()) {
-            echo '<details class="docapproval-admin-override"><summary>' . hsc($this->getLang('admin_override')) . '</summary>';
+            echo '<details class="docapproval-admin-override"><summary>' .
+                hsc($this->getLang('admin_override')) . '</summary>';
             echo $this->formStart();
-            echo '<label>' . hsc($this->getLang('override_target')) . ' <select name="structdocapproval[target_status]">';
-            foreach (Constants::adminOverrideStatuses() as $s) echo '<option value="' . hsc($s) . '">' . hsc($this->getLang('status_' . $s)) . '</option>';
+            echo '<label>' . hsc($this->getLang('override_target')) .
+                ' <select name="structdocapproval[target_status]">';
+            foreach (Constants::adminOverrideStatuses() as $s) {
+                echo '<option value="' . hsc($s) . '">' .
+                    hsc($this->getLang('status_' . $s)) . '</option>';
+            }
             echo '</select></label> ';
-            echo '<label>' . hsc($this->getLang('new_version')) . ' <input type="text" class="edit docapproval-version" name="structdocapproval[version]" /></label> ';
-            echo '<label>' . hsc($this->getLang('override_reason')) . ' <input type="text" class="edit docapproval-comment" name="structdocapproval[comment]" /></label> ';
+            echo '<label>' . hsc($this->getLang('new_version')) .
+                ' <input type="text" class="edit docapproval-version" ' .
+                'name="structdocapproval[version]" /></label> ';
+            echo '<label>' . hsc($this->getLang('override_reason')) .
+                ' <input type="text" class="edit docapproval-comment" ' .
+                'name="structdocapproval[comment]" /></label> ';
             echo $this->actionButton(Constants::ACTION_ADMIN_OVERRIDE, 'danger');
             echo '</form></details>';
         }
@@ -390,7 +436,9 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
     protected function actionButton(string $action, string $class = ''): string
     {
         $label = $this->getLang('action_' . $action);
-        return '<button type="submit" class="' . hsc($class) . '" name="structdocapproval[action]" value="' . hsc($action) . '">' . hsc($label) . '</button> ';
+        return '<button type="submit" class="' . hsc($class) .
+            '" name="structdocapproval[action]" value="' . hsc($action) . '">' .
+            hsc($label) . '</button> ';
     }
 
     protected function formatDate(string $iso): string

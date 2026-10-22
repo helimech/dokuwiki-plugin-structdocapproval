@@ -65,7 +65,7 @@ An already assigned reviewer remains attached to the current Awaiting Review wor
 
 Ordinary readers see a compact publication banner:
 
-`Published Revision: 002 {date}`
+`Published Revision: 02 {date}`
 
 Editors and workflow participants see the full workflow tracker and the actions relevant to their current stage.
 
@@ -109,7 +109,7 @@ For mixed controlled/uncontrolled templates, a header can use:
 
 Examples:
 
-- Published controlled page: `Title -- REV: 009 (Published 2026-10-02)`
+- Published controlled page: `Title -- REV: 09 (Published 2026-10-02)`
 - Working controlled page: `Title -- REV: DRAFT (WORKING DRAFT - NOT APPROVED)`
 - Uncontrolled page: `Title -- PAGE NOT SUBJECT TO REVISION CONTROL`
 

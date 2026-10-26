@@ -148,7 +148,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<table class="inline plugin-structdocapproval-rules">';
         echo '<tr><th>#</th><th>+/-</th>';
-        foreach (['pattern', 'reviewer', 'reviewer2', 'training', 'publisher', 'notify', 'acknowledge', 'actions'] as $key) {
+        foreach (['pattern', 'reviewer1', 'reviewer2', 'training', 'publisher', 'notify', 'acknowledge', 'actions'] as $key) {
             echo '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         echo '</tr>';

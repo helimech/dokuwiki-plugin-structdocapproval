@@ -4,6 +4,14 @@
 
 Repository established as the authoritative source for Struct DocApproval.
 
+- Added an optional **Reviewer 2** assignment field for sequential two-review workflows.
+- Reviewer 2 blank preserves the existing single-review workflow unchanged.
+- Two-review submissions freeze both selected reviewers for the active review cycle; Reviewer 1 approval hands the document to Reviewer 2 while remaining Awaiting Review, and Reviewer 2 approval advances to Training.
+- Workflow history records distinct **Review 1 Approved** and **Review 2 Approved** actions.
+- The banner shows separate Review 1 / Review 2 stages only when a second reviewer is configured.
+- Added database migration 7 for Reviewer 2 assignment materialization and frozen review-cycle routing.
+- **Database migration required:** 6 → 7.
+
 ## 0.12.14 two-digit minimum document revisions — 2026-10-22
 
 - Changed simple numeric document revisions from fixed three-digit formatting to a minimum width of two digits.

@@ -120,11 +120,26 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
 
     protected function renderStages(WorkflowRecord $r): void
     {
-        $status = $r->get('status');
+        $status = (string)$r->get('status');
         $submissionDone = $status !== Constants::STATUS_DRAFT;
-        $reviewDone = (string)$r->get('reviewed_by') !== '';
         $trainingDone = (string)$r->get('training_by') !== '';
         $published = $status === Constants::STATUS_PUBLISHED;
+
+        /** @var helper_plugin_structdocapproval_reviewcycle $reviewCycle */
+        $reviewCycle = plugin_load('helper', 'structdocapproval_reviewcycle');
+        $cycle = $reviewCycle
+            ? $reviewCycle->getActiveForRevision($r->getPid(), (int)$r->get('revision'))
+            : null;
+        $hasSecondReview = trim((string)($cycle['reviewer2'] ?? '')) !== '';
+
+        $review1Event = null;
+        $review2Event = null;
+        if ($hasSecondReview) {
+            foreach (WorkflowRecord::eventsForRevision($r->getPid(), (int)$r->get('revision')) as $event) {
+                if ($event->get('action') === Constants::ACTION_REVIEW1_APPROVED) $review1Event = $event;
+                if ($event->get('action') === Constants::ACTION_REVIEW2_APPROVED) $review2Event = $event;
+            }
+        }
 
         echo '<div class="docapproval-stages">';
         $this->stage(
@@ -133,14 +148,39 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             $submissionDone ? $r->get('submitted_by') : $r->get('actor'),
             $submissionDone ? $r->get('submitted_at') : $r->get('datetime')
         );
-        $this->stage(
-            $this->getLang('stage_review'),
-            $reviewDone ? 'done' : ($status === Constants::STATUS_AWAITING_REVIEW ? 'active' : 'pending'),
-            $reviewDone
-                ? $r->get('reviewed_by')
-                : ($status === Constants::STATUS_AWAITING_REVIEW ? $r->get('assigned_reviewer') : ''),
-            $reviewDone ? $r->get('reviewed_at') : ''
-        );
+
+        if ($hasSecondReview) {
+            $reviewer1 = (string)$cycle['reviewer1'];
+            $reviewer2 = (string)$cycle['reviewer2'];
+            $review1Active = $status === Constants::STATUS_AWAITING_REVIEW &&
+                (string)$r->get('assigned_reviewer') === $reviewer1;
+            $review2Active = $status === Constants::STATUS_AWAITING_REVIEW &&
+                (string)$r->get('assigned_reviewer') === $reviewer2;
+
+            $this->stage(
+                $this->getLang('stage_review1'),
+                $review1Event ? 'done' : ($review1Active ? 'active' : 'pending'),
+                $review1Event ? $review1Event->get('actor') : ($review1Active ? $reviewer1 : ''),
+                $review1Event ? $review1Event->get('datetime') : ''
+            );
+            $this->stage(
+                $this->getLang('stage_review2'),
+                $review2Event ? 'done' : ($review2Active ? 'active' : 'pending'),
+                $review2Event ? $review2Event->get('actor') : ($review2Active ? $reviewer2 : ''),
+                $review2Event ? $review2Event->get('datetime') : ''
+            );
+        } else {
+            $reviewDone = (string)$r->get('reviewed_by') !== '';
+            $this->stage(
+                $this->getLang('stage_review'),
+                $reviewDone ? 'done' : ($status === Constants::STATUS_AWAITING_REVIEW ? 'active' : 'pending'),
+                $reviewDone
+                    ? $r->get('reviewed_by')
+                    : ($status === Constants::STATUS_AWAITING_REVIEW ? $r->get('assigned_reviewer') : ''),
+                $reviewDone ? $r->get('reviewed_at') : ''
+            );
+        }
+
         $this->stage(
             $this->getLang('stage_training'),
             $trainingDone ? 'done' : ($status === Constants::STATUS_AWAITING_TRAINING ? 'active' : 'pending'),
@@ -257,12 +297,20 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
 
         if ($status === Constants::STATUS_DRAFT && $this->db->canSubmit($pid)) {
             $reviewers = $assignments->getEligibleReviewers($pid);
+            $reviewer2Spec = trim($assignments->getRoleSpec($pid, Constants::ROLE_REVIEWER2));
+            $reviewers2 = $reviewer2Spec !== '' ? $assignments->getEligibleSecondReviewers($pid) : [];
+
             if (!$reviewers) {
                 echo '<p class="docapproval-warning">' . hsc($this->getLang('no_reviewer')) . '</p>';
+            } elseif ($reviewer2Spec !== '' && !$reviewers2) {
+                echo '<p class="docapproval-warning">' . hsc($this->getLang('no_reviewer2')) . '</p>';
             } else {
                 echo $this->formStart($changeSummaryText, $workingRevision);
+                $reviewerLabel = $reviewer2Spec !== ''
+                    ? $this->getLang('reviewer1')
+                    : $this->getLang('reviewer');
                 if (count($reviewers) > 1) {
-                    echo '<label>' . hsc($this->getLang('reviewer')) . ' <select name="structdocapproval[reviewer]">';
+                    echo '<label>' . hsc($reviewerLabel) . ' <select name="structdocapproval[reviewer]">';
                     foreach ($reviewers as $reviewer) {
                         echo '<option value="' . hsc($reviewer) . '">' .
                             hsc(userlink($reviewer, true)) . '</option>';
@@ -271,9 +319,27 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
                 } else {
                     echo '<input type="hidden" name="structdocapproval[reviewer]" value="' .
                         hsc($reviewers[0]) . '" />';
-                    echo '<span class="assigned-to">' . hsc($this->getLang('reviewer')) . ': ' .
+                    echo '<span class="assigned-to">' . hsc($reviewerLabel) . ': ' .
                         userlink($reviewers[0]) . '</span> ';
                 }
+
+                if ($reviewer2Spec !== '') {
+                    if (count($reviewers2) > 1) {
+                        echo '<label>' . hsc($this->getLang('reviewer2')) .
+                            ' <select name="structdocapproval[reviewer2]">';
+                        foreach ($reviewers2 as $reviewer2) {
+                            echo '<option value="' . hsc($reviewer2) . '">' .
+                                hsc(userlink($reviewer2, true)) . '</option>';
+                        }
+                        echo '</select></label> ';
+                    } else {
+                        echo '<input type="hidden" name="structdocapproval[reviewer2]" value="' .
+                            hsc($reviewers2[0]) . '" />';
+                        echo '<span class="assigned-to">' . hsc($this->getLang('reviewer2')) . ': ' .
+                            userlink($reviewers2[0]) . '</span> ';
+                    }
+                }
+
                 echo '<label>' . hsc($this->getLang('note_optional')) .
                     ' <input type="text" class="edit docapproval-comment" ' .
                     'name="structdocapproval[comment]" /></label> ';

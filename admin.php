@@ -38,6 +38,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
                     ((string)($rule['include'] ?? '+')) === '+',
                     $pattern,
                     (string)($rule['reviewer'] ?? ''),
+                    (string)($rule['reviewer2'] ?? ''),
                     (string)($rule['training'] ?? ''),
                     (string)($rule['publisher'] ?? ''),
                     (string)($rule['notify'] ?? ''),
@@ -147,7 +148,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '<input type="hidden" name="sectok" value="' . hsc(getSecurityToken()) . '" />';
         echo '<table class="inline plugin-structdocapproval-rules">';
         echo '<tr><th>#</th><th>+/-</th>';
-        foreach (['pattern', 'reviewer', 'training', 'publisher', 'notify', 'acknowledge', 'actions'] as $key) {
+        foreach (['pattern', 'reviewer', 'reviewer2', 'training', 'publisher', 'notify', 'acknowledge', 'actions'] as $key) {
             echo '<th>' . hsc($this->getLang($key)) . '</th>';
         }
         echo '</tr>';
@@ -164,6 +165,8 @@ class admin_plugin_structdocapproval extends AdminPlugin
                 hsc($rule['pattern']) . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][reviewer]" value="' .
                 hsc($rule['reviewer']) . '" /></td>';
+            echo '<td><input class="edit" type="text" name="rules[' . $id . '][reviewer2]" value="' .
+                hsc($rule['reviewer2'] ?? '') . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][training]" value="' .
                 hsc($rule['training']) . '" /></td>';
             echo '<td><input class="edit" type="text" name="rules[' . $id . '][publisher]" value="' .
@@ -200,6 +203,7 @@ class admin_plugin_structdocapproval extends AdminPlugin
         echo '</select></td>';
         echo '<td><input class="edit" type="text" name="newrule[pattern]" placeholder="policy:**" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[reviewer]" placeholder="user or @group" /></td>';
+        echo '<td><input class="edit" type="text" name="newrule[reviewer2]" placeholder="optional user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[training]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[publisher]" placeholder="user or @group" /></td>';
         echo '<td><input class="edit" type="text" name="newrule[notify]" placeholder="user, @group, or email" /></td>';

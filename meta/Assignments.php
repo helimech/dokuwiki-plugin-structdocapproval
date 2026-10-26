@@ -43,6 +43,7 @@ class Assignments
         bool $include,
         string $pattern,
         string $reviewer = '',
+        string $reviewer2 = '',
         string $training = '',
         string $publisher = '',
         string $notify = '',
@@ -52,13 +53,14 @@ class Assignments
         $order = $max + 10;
         $this->sqlite->query(
             'INSERT INTO struct_docapproval_rules ' .
-            '(sort_order, include_rule, pattern, reviewer, training, publisher, notify, acknowledge) ' .
-            'VALUES (?,?,?,?,?,?,?,?)',
+            '(sort_order, include_rule, pattern, reviewer, reviewer2, training, publisher, notify, acknowledge) ' .
+            'VALUES (?,?,?,?,?,?,?,?,?)',
             [
                 $order,
                 $include ? 1 : 0,
                 trim($pattern),
                 trim($reviewer),
+                trim($reviewer2),
                 trim($training),
                 trim($publisher),
                 trim($notify),
@@ -75,18 +77,20 @@ class Assignments
         bool $include,
         string $pattern,
         string $reviewer = '',
+        string $reviewer2 = '',
         string $training = '',
         string $publisher = '',
         string $notify = '',
         string $acknowledge = ''
     ): bool {
         $ok = (bool)$this->sqlite->query(
-            'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, training=?, ' .
+            'UPDATE struct_docapproval_rules SET include_rule=?, pattern=?, reviewer=?, reviewer2=?, training=?, ' .
             'publisher=?, notify=?, acknowledge=? WHERE id=?',
             [
                 $include ? 1 : 0,
                 trim($pattern),
                 trim($reviewer),
+                trim($reviewer2),
                 trim($training),
                 trim($publisher),
                 trim($notify),
@@ -164,6 +168,7 @@ class Assignments
         $resolved = [
             'controlled' => false,
             Constants::ROLE_REVIEWER => '',
+            Constants::ROLE_REVIEWER2 => '',
             Constants::ROLE_TRAINING => '',
             Constants::ROLE_PUBLISHER => '',
             Constants::ROLE_NOTIFY => '',
@@ -241,12 +246,13 @@ class Assignments
         $resolved = $this->resolvePage($pid, $content);
         $this->sqlite->query(
             'REPLACE INTO struct_docapproval_pages ' .
-            '(pid, controlled, reviewer, training, publisher, notify, acknowledge, resolved_at) ' .
-            'VALUES (?,?,?,?,?,?,?,?)',
+            '(pid, controlled, reviewer, reviewer2, training, publisher, notify, acknowledge, resolved_at) ' .
+            'VALUES (?,?,?,?,?,?,?,?,?)',
             [
                 $pid,
                 $resolved['controlled'] ? 1 : 0,
                 $resolved[Constants::ROLE_REVIEWER],
+                $resolved[Constants::ROLE_REVIEWER2],
                 $resolved[Constants::ROLE_TRAINING],
                 $resolved[Constants::ROLE_PUBLISHER],
                 $resolved[Constants::ROLE_NOTIFY],
@@ -381,6 +387,11 @@ class Assignments
     public function getEligibleReviewers(string $pid): array
     {
         return $this->resolveUsers($this->getRoleSpec($pid, Constants::ROLE_REVIEWER));
+    }
+
+    public function getEligibleSecondReviewers(string $pid): array
+    {
+        return $this->resolveUsers($this->getRoleSpec($pid, Constants::ROLE_REVIEWER2));
     }
 
     public function getControlledPages(): array

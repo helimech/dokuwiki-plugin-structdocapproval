@@ -148,7 +148,7 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
             }
         }
 
-        echo '<div class="docapproval-stages">';
+        echo '<div class="docapproval-stages' . ($hasSecondReview ? ' two-review' : '') . '">';
         $this->stage(
             $submissionDone ? $this->getLang('stage_submitted') : $this->getLang('stage_draft'),
             $submissionDone ? 'done' : 'active',

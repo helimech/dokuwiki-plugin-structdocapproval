@@ -36,7 +36,7 @@ class action_plugin_structdocapproval_workflow extends ActionPlugin
         try {
             /** @var helper_plugin_structdocapproval_notify $notify */
             $notify = plugin_load('helper', 'structdocapproval_notify');
-            if ($notify) $notify->sendForTransition($action, $record);
+            if ($notify) $notify->sendForTransition((string)$record->get('action'), $record);
         } catch (Throwable $e) {
             msg(sprintf($this->getLang('notification_failed'), $e->getMessage()), 0);
         }

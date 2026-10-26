@@ -15,6 +15,8 @@ class Constants
     public const ACTION_INITIALIZE = 'initialize';
     public const ACTION_READY_FOR_REVIEW = 'ready_for_review';
     public const ACTION_REVIEW_APPROVED = 'review_approved';
+    public const ACTION_REVIEW1_APPROVED = 'review1_approved';
+    public const ACTION_REVIEW2_APPROVED = 'review2_approved';
     public const ACTION_REVIEW_RETURNED = 'review_returned';
     public const ACTION_TRAINING_REVIEWED = 'training_reviewed';
     public const ACTION_PUBLISH = 'publish';
@@ -23,6 +25,7 @@ class Constants
     public const ACTION_ADMIN_OVERRIDE = 'admin_override';
 
     public const ROLE_REVIEWER = 'reviewer';
+    public const ROLE_REVIEWER2 = 'reviewer2';
     public const ROLE_TRAINING = 'training';
     public const ROLE_PUBLISHER = 'publisher';
     public const ROLE_NOTIFY = 'notify';
@@ -63,6 +66,7 @@ class Constants
     {
         return [
             self::ROLE_REVIEWER,
+            self::ROLE_REVIEWER2,
             self::ROLE_TRAINING,
             self::ROLE_PUBLISHER,
             self::ROLE_NOTIFY,
@@ -74,6 +78,7 @@ class Constants
     {
         return [
             self::ROLE_REVIEWER,
+            self::ROLE_REVIEWER2,
             self::ROLE_TRAINING,
             self::ROLE_PUBLISHER,
         ];

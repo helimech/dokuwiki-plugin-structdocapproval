@@ -136,6 +136,13 @@ class action_plugin_structdocapproval_banner extends ActionPlugin
         $review2Event = null;
         if ($hasSecondReview) {
             foreach (WorkflowRecord::eventsForRevision($r->getPid(), (int)$r->get('revision')) as $event) {
+                if ($event->get('action') === Constants::ACTION_READY_FOR_REVIEW) {
+                    // A page can be returned and resubmitted without a content edit.
+                    // Reset the displayed approvals at the newest review-cycle boundary.
+                    $review1Event = null;
+                    $review2Event = null;
+                    continue;
+                }
                 if ($event->get('action') === Constants::ACTION_REVIEW1_APPROVED) $review1Event = $event;
                 if ($event->get('action') === Constants::ACTION_REVIEW2_APPROVED) $review2Event = $event;
             }

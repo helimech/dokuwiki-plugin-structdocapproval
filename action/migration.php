@@ -34,14 +34,12 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
 
         $start = ($ourVersion === null ? 0 : (int)$ourVersion) + 1;
         for ($version = $start; $version <= $latest; $version++) {
-            $method = 'migration' . $version;
-
             // SchemaImporter used by migration 1 owns its own transaction. Later
             // migrations are plain SQL and can atomically commit both the schema
             // change and our version marker, preventing a successful ALTER followed
             // by a failed version write from making the next request rerun the ALTER.
             if ($version === 1) {
-                if (!$this->$method($sqlite)) return false;
+                if (!$this->migration1($sqlite)) return false;
                 if (
                     !$sqlite->query(
                         'REPLACE INTO opts (val,opt) VALUES (?,?)',
@@ -58,7 +56,7 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
             if ($started) $pdo->beginTransaction();
 
             try {
-                if (!$this->$method($sqlite)) {
+                if (!$this->runSqlMigration($sqlite, $version)) {
                     throw new RuntimeException(
                         'Struct DocApproval database migration ' . $version . ' failed.'
                     );
@@ -105,36 +103,6 @@ class action_plugin_structdocapproval_migration extends ActionPlugin
         if (!$ok) return false;
 
         return $this->runSqlMigration($sqlite, 1);
-    }
-
-    protected function migration2(SQLiteDB $sqlite): bool
-    {
-        return $this->runSqlMigration($sqlite, 2);
-    }
-
-    protected function migration3(SQLiteDB $sqlite): bool
-    {
-        return $this->runSqlMigration($sqlite, 3);
-    }
-
-    protected function migration4(SQLiteDB $sqlite): bool
-    {
-        return $this->runSqlMigration($sqlite, 4);
-    }
-
-    protected function migration5(SQLiteDB $sqlite): bool
-    {
-        return $this->runSqlMigration($sqlite, 5);
-    }
-
-    protected function migration6(SQLiteDB $sqlite): bool
-    {
-        return $this->runSqlMigration($sqlite, 6);
-    }
-
-    protected function migration7(SQLiteDB $sqlite): bool
-    {
-        return $this->runSqlMigration($sqlite, 7);
     }
 
     protected function runSqlMigration(SQLiteDB $sqlite, int $version): bool

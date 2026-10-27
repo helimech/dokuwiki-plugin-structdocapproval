@@ -572,3 +572,48 @@ Use the unified dashboard Documents tab with a realistic controlled-document set
 5. Confirm historical records physically stored under the former three-digit convention display using the new minimum-two-digit convention (for example stored `002` displays as **02**, while stored `100` remains **100**).
 6. Check the banner, Documents, History, My Tasks, Compliance, acknowledgement report, emails, PDF placeholders, and Compliance CSV for consistent revision display.
 7. Confirm non-simple revision labels continue unchanged.
+
+
+## Optional Reviewer 2 sequential review
+
+Use the test wiki and a disposable controlled page/rule before promoting this feature.
+
+1. **Database upgrade**
+   - Update the plugin from the `devel` branch.
+   - Open the wiki and confirm the SQLite migration advances to database version 7 without errors.
+   - Confirm the assignment admin page shows **Reviewer 1** and **Reviewer 2** columns.
+
+2. **Single-review regression**
+   - Leave Reviewer 2 blank on a rule and sync it.
+   - Submit a Draft for review.
+   - Confirm the submission form and workflow behave as before: one reviewer approves directly to Training.
+   - Confirm History records the existing **Approve** action and no Review 2 stage appears.
+
+3. **Two-review happy path**
+   - Configure Reviewer 1 and Reviewer 2 with different users and sync the rule.
+   - Submit a Draft and confirm both selected reviewers are shown before submission.
+   - Confirm only Reviewer 1 is initially assigned and notified.
+   - Reviewer 1 approves. Confirm the document remains **Awaiting Review**, Reviewer 2 becomes the current assignee, and the stage display shows Review 1 complete / Review 2 active.
+   - Confirm History shows **Review 1 Approved**.
+   - Reviewer 2 approves. Confirm the document advances to **Awaiting Training**.
+   - Confirm History shows **Review 2 Approved** and Training receives the normal notification.
+
+4. **Reviewer pools**
+   - Configure multiple eligible users for Reviewer 1 and/or Reviewer 2.
+   - Confirm the submit form provides separate selectors.
+   - Confirm selecting the same login for both reviewers is rejected.
+   - Confirm the selected users remain frozen for the active review cycle after the assignment rule is edited.
+
+5. **Return for changes**
+   - From Reviewer 1, return the document to Draft with the required note.
+   - Repeat from Reviewer 2 after Reviewer 1 has approved.
+   - In both cases confirm the review cycle resets; resubmission starts again at Reviewer 1 and prior approvals do not display as current.
+
+6. **Tasks, dashboard, reminders and access**
+   - Confirm My Tasks shows the review only for the currently assigned reviewer.
+   - Confirm the Documents dashboard Assigned To field changes from Reviewer 1 to Reviewer 2 after the first approval.
+   - Confirm workflow reminders while Awaiting Review go only to the current assigned reviewer (plus configured review queue CC).
+   - Confirm the frozen current reviewer can still access the working page if the assignment rule is changed during the cycle.
+
+7. **Logs**
+   - Exercise the full two-review path through publication and verify the DokuWiki error log remains clean.

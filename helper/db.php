@@ -4,6 +4,7 @@ use dokuwiki\Extension\Plugin;
 use dokuwiki\plugin\sqlite\SQLiteDB;
 use dokuwiki\plugin\structdocapproval\meta\Assignments;
 use dokuwiki\plugin\structdocapproval\meta\Constants;
+use dokuwiki\plugin\structdocapproval\meta\WorkflowRecord;
 
 class helper_plugin_structdocapproval_db extends Plugin
 {
@@ -42,7 +43,14 @@ class helper_plugin_structdocapproval_db extends Plugin
     {
         if (auth_isadmin()) return true;
         if (auth_quickaclcheck($pid) >= AUTH_EDIT) return true;
-        return $this->hasAnyRole($pid);
+        if ($this->hasAnyRole($pid)) return true;
+
+        global $INPUT;
+        $current = WorkflowRecord::latest($pid);
+        return $current &&
+            $current->get('status') === Constants::STATUS_AWAITING_REVIEW &&
+            (string)$current->get('assigned_reviewer') !== '' &&
+            (string)$current->get('assigned_reviewer') === $INPUT->server->str('REMOTE_USER');
     }
 
     public function canSubmit(string $pid): bool

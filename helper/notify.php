@@ -35,7 +35,16 @@ class helper_plugin_structdocapproval_notify extends Plugin
             case Constants::ACTION_RETURN_DRAFT:
                 if ($record->get('submitted_by')) $specs[] = (string)$record->get('submitted_by');
                 break;
+            case Constants::ACTION_REVIEW1_APPROVED:
+                if ($record->get('assigned_reviewer')) {
+                    $specs[] = (string)$record->get('assigned_reviewer');
+                }
+                if (trim((string)$this->getConf('review_queue_cc')) !== '') {
+                    $specs[] = (string)$this->getConf('review_queue_cc');
+                }
+                break;
             case Constants::ACTION_REVIEW_APPROVED:
+            case Constants::ACTION_REVIEW2_APPROVED:
             case Constants::ACTION_RETURN_TRAINING:
                 $specs[] = $assignments->getRoleSpec($pid, Constants::ROLE_TRAINING);
                 break;

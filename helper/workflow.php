@@ -39,6 +39,8 @@ class helper_plugin_structdocapproval_workflow extends Plugin
         $next = $current->copyForRevision($revision)->stamp($action, $actor);
         $now = $next->get('datetime');
         $publicationAudience = null;
+        $reviewCycleStart = null;
+        $deactivateReviewCycle = false;
 
         switch ($action) {
             case Constants::ACTION_READY_FOR_REVIEW:
@@ -46,13 +48,34 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 if (!$this->dbHelper->canSubmit($pid)) {
                     throw new RuntimeException('You may not submit this page for review.');
                 }
-                $eligible = Assignments::getInstance()->getEligibleReviewers($pid);
+
+                $assignments = Assignments::getInstance();
+                $eligible = $assignments->getEligibleReviewers($pid);
                 if (!$eligible) throw new RuntimeException('No eligible reviewers are configured for this page.');
+
                 $reviewer = trim((string)($params['reviewer'] ?? ''));
                 if (count($eligible) === 1) $reviewer = $eligible[0];
                 if ($reviewer === '' || !in_array($reviewer, $eligible, true)) {
-                    throw new RuntimeException('Select an eligible reviewer.');
+                    throw new RuntimeException('Select an eligible Reviewer 1.');
                 }
+
+                $reviewer2 = '';
+                $reviewer2Spec = trim($assignments->getRoleSpec($pid, Constants::ROLE_REVIEWER2));
+                if ($reviewer2Spec !== '') {
+                    $eligible2 = $assignments->getEligibleSecondReviewers($pid);
+                    if (!$eligible2) {
+                        throw new RuntimeException('No eligible Reviewer 2 users are configured for this page.');
+                    }
+                    $reviewer2 = trim((string)($params['reviewer2'] ?? ''));
+                    if (count($eligible2) === 1) $reviewer2 = $eligible2[0];
+                    if ($reviewer2 === '' || !in_array($reviewer2, $eligible2, true)) {
+                        throw new RuntimeException('Select an eligible Reviewer 2.');
+                    }
+                    if ($reviewer2 === $reviewer) {
+                        throw new RuntimeException('Reviewer 1 and Reviewer 2 must be different users.');
+                    }
+                }
+
                 $next->set('status', Constants::STATUS_AWAITING_REVIEW)
                     ->set('submitted_by', $actor)
                     ->set('submitted_at', $now)
@@ -69,15 +92,56 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                         'published_at',
                         'version',
                     ]);
+                $reviewCycleStart = [
+                    'revision' => $revision,
+                    'reviewer1' => $reviewer,
+                    'reviewer2' => $reviewer2,
+                    'started_by' => $actor,
+                ];
                 break;
 
             case Constants::ACTION_REVIEW_APPROVED:
                 $this->requireStatus($current, Constants::STATUS_AWAITING_REVIEW);
-                if (!$this->dbHelper->canReview($pid, (string)$current->get('assigned_reviewer'))) {
+                $assignedReviewer = (string)$current->get('assigned_reviewer');
+                if (!$this->dbHelper->canReview($pid, $assignedReviewer)) {
                     throw new RuntimeException(
                         'Only the assigned reviewer or an administrator may approve this review.'
                     );
                 }
+
+                /** @var helper_plugin_structdocapproval_reviewcycle $reviewCycle */
+                $reviewCycle = plugin_load('helper', 'structdocapproval_reviewcycle');
+                $cycle = $reviewCycle
+                    ? $reviewCycle->getActiveForRevision($pid, (int)$current->get('revision'))
+                    : null;
+                $secondReviewer = trim((string)($cycle['reviewer2'] ?? ''));
+
+                if ($secondReviewer !== '') {
+                    $firstReviewer = trim((string)($cycle['reviewer1'] ?? ''));
+                    if ($assignedReviewer === $firstReviewer) {
+                        $next->set('action', Constants::ACTION_REVIEW1_APPROVED)
+                            ->set('status', Constants::STATUS_AWAITING_REVIEW)
+                            ->set('assigned_reviewer', $secondReviewer)
+                            ->set('reviewed_by', $actor)
+                            ->set('reviewed_at', $now)
+                            ->set('comment', trim((string)($params['comment'] ?? '')))
+                            ->clear([
+                                'training_by',
+                                'training_at',
+                                'training_disposition',
+                                'training_note',
+                                'published_by',
+                                'published_at',
+                                'version',
+                            ]);
+                        break;
+                    }
+                    if ($assignedReviewer !== $secondReviewer) {
+                        throw new RuntimeException('The active review assignment no longer matches this review cycle.');
+                    }
+                    $next->set('action', Constants::ACTION_REVIEW2_APPROVED);
+                }
+
                 $next->set('status', Constants::STATUS_AWAITING_TRAINING)
                     ->set('reviewed_by', $actor)
                     ->set('reviewed_at', $now)
@@ -99,6 +163,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                     throw new RuntimeException('Only the assigned reviewer or an administrator may return this page.');
                 }
                 $comment = $this->requiredComment($params);
+                $deactivateReviewCycle = true;
                 $next->set('status', Constants::STATUS_DRAFT)
                     ->set('comment', $comment)
                     ->clear([
@@ -219,6 +284,7 @@ class helper_plugin_structdocapproval_workflow extends Plugin
                 if (!$this->dbHelper->canPublish($pid)) {
                     throw new RuntimeException('You may not return this page from publication.');
                 }
+                $deactivateReviewCycle = true;
                 $next->set('status', Constants::STATUS_DRAFT)
                     ->set('comment', $this->requiredComment($params))
                     ->clear([
@@ -296,9 +362,31 @@ class helper_plugin_structdocapproval_workflow extends Plugin
             $audienceStaged = true;
         }
 
+        $reviewCycleHelper = null;
+        $reviewCycleId = 0;
+        if ($reviewCycleStart !== null) {
+            /** @var helper_plugin_structdocapproval_reviewcycle $reviewCycleHelper */
+            $reviewCycleHelper = plugin_load('helper', 'structdocapproval_reviewcycle');
+            if (!$reviewCycleHelper) throw new RuntimeException('Review cycle helper is unavailable.');
+            $reviewCycleId = $reviewCycleHelper->start(
+                $pid,
+                (int)$reviewCycleStart['revision'],
+                (string)$reviewCycleStart['reviewer1'],
+                (string)$reviewCycleStart['reviewer2'],
+                (string)$reviewCycleStart['started_by']
+            );
+        }
+
         try {
             $next->save();
         } catch (Throwable $e) {
+            if ($reviewCycleId && $reviewCycleHelper) {
+                try {
+                    $reviewCycleHelper->remove($reviewCycleId);
+                } catch (Throwable) {
+                    // Preserve the workflow-save failure.
+                }
+            }
             if ($audienceStaged && $publication) {
                 try {
                     $publication->removeAudience($pid, (int)$next->get('revision'));
@@ -310,11 +398,22 @@ class helper_plugin_structdocapproval_workflow extends Plugin
             throw $e;
         }
 
+        if ($deactivateReviewCycle) {
+            /** @var helper_plugin_structdocapproval_reviewcycle $reviewCycleHelper */
+            $reviewCycleHelper = plugin_load('helper', 'structdocapproval_reviewcycle');
+            if ($reviewCycleHelper) $reviewCycleHelper->deactivate($pid);
+        }
+
         if ($next->get('status') === Constants::STATUS_PUBLISHED) {
             $publish->publishStructData($pid, (int)$next->get('revision'));
         }
 
-        $eventData = ['pid' => $pid, 'action' => $action, 'record' => $next, 'previous' => $current];
+        $eventData = [
+            'pid' => $pid,
+            'action' => (string)$next->get('action'),
+            'record' => $next,
+            'previous' => $current,
+        ];
         Event::createAndTrigger('STRUCTDOCAPPROVAL_TRANSITION', $eventData);
         return $next;
     }
